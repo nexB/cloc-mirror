@@ -1909,6 +1909,7 @@ sub set_constants {                          # {{{1
             'scm'         => 'Lisp'                  ,
             'sed'         => 'sed'                   ,
             'ses'         => 'Patran Command Language'   ,
+            'pcl'         => 'Patran Command Language'   ,
             'sh'          => 'Bourne Shell'          ,
             'sql'         => 'SQL'                   ,
             'tcl'         => 'Tcl/Tk'                ,
@@ -2023,7 +2024,8 @@ sub set_constants {                          # {{{1
     'Modula3'            => [   [ 'call_regexp_common'  , 'Pascal' ], ],
         # Modula 3 comments are (* ... *) so applying the Pascal filter
         # which also treats { ... } as a comment is not really correct.
-    'Objective C'        => [   [ 'call_regexp_common'  , 'C'      ], ], 
+    'Objective C'        => [   [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ], ], 
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
     'Octave'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
@@ -2466,6 +2468,7 @@ sub set_constants {                          # {{{1
     'lotus notes'                  =>   3.64,
     'lucid 3d'                     =>  13.33,
     'lyric'                        =>   1.51,
+    'm4'                           =>   1.00,
     'm'                            =>   5.00,
     'macforth'                     =>   1.25,
     'mach1'                        =>   2.00,
