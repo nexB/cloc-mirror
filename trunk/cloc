@@ -1977,7 +1977,9 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
-    'C/C++ Header'       => [   [ 'call_regexp_common'  , 'C'      ], ],
+    'C/C++ Header'       => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ], ],
     'C#'                 => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <results>
-<header>http://cloc.sourceforge.net v 1.00</header>
+<header>http://cloc.sourceforge.net v 1.01</header>
 <language name="C++" files_count="1" blank="5" comment="3" code="22" factor="1.51" scaled="33.22" />
 <language name="XSLT" files_count="2" blank="0" comment="4" code="19" factor="1.90" scaled="36.10" />
 <language name="C" files_count="3" blank="5" comment="10" code="16" factor="0.77" scaled="12.32" />
