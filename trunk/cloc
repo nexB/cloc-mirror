@@ -1934,6 +1934,7 @@ sub set_constants {                          # {{{1
             'xsl'         => 'XSLT'                  ,
             'y'           => 'yacc'                  ,
             'yaml'        => 'YAML'                  ,
+            'yml'         => 'YAML'                  ,
             );
 # 1}}}
 %{$rh_Language_by_Script}    = (                 # {{{1
