@@ -27,7 +27,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.02;
+my $VERSION = 1.03;
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -1790,6 +1790,9 @@ sub set_constants {                          # {{{1
             'ads'         => 'Ada'                   ,
             'adso'        => 'ADSO/IDSM'             ,
             'am'          => 'make'                  ,
+            'ample'       => 'AMPLE'                 ,
+            'dofile'      => 'AMPLE'                 ,
+            'startup'     => 'AMPLE'                 ,
             'asa'         => 'ASP'                   ,
             'asax'        => 'ASP.Net'               ,
             'ascx'        => 'ASP.Net'               ,
@@ -1852,6 +1855,8 @@ sub set_constants {                          # {{{1
             'i3'          => 'Modula3'               ,
             'idl'         => 'IDL'                   ,
             'ig'          => 'Modula3'               ,
+            'il'          => 'SKILL'                 ,
+            'ils'         => 'SKILL++'               ,
             'inc'         => 'inc'                   , # might be PHP
             'itk'         => 'Tcl/Tk'                ,
             'java'        => 'Java'                  ,
@@ -1963,6 +1968,7 @@ sub set_constants {                          # {{{1
     'ASP.Net'            => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ada'                => [   [ 'remove_matches'      , '^\s*--' ], ],
     'ADSO/IDSM'          => [   [ 'remove_matches'      , '^\s*\*[\+\!]' ], ],
+    'AMPLE'              => [   [ 'remove_matches'      , '^\s*//' ], ],
     'Assembler'          => [  
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'remove_matches'      , '^\s*;'  ],
@@ -2049,6 +2055,14 @@ sub set_constants {                          # {{{1
                             ],
     'Rexx'               => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ruby'               => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'SKILL'              => [   
+                                [ 'remove_matches'      , '^\s*;'  ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                            ],
+    'SKILL++'            => [   
+                                [ 'remove_matches'      , '^\s*;'  ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                            ],
     'SQL'                => [   
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'call_regexp_common'  , 'C'      ], 
@@ -2198,6 +2212,7 @@ sub set_constants {                          # {{{1
     'algol w'                      =>   0.75,
     'ambush'                       =>   2.50,
     'aml'                          =>   1.63,
+    'AMPLE'                        =>   2.00,
     'amppl ii'                     =>   1.25,
     'ansi basic'                   =>   1.25,
     'ansi cobol 74'                =>   0.75,
@@ -2622,6 +2637,8 @@ sub set_constants {                          # {{{1
     'simula'                       =>   1.74,
     'simula 67'                    =>   1.74,
     'simulation default'           =>   1.74,
+    'SKILL'                        =>   2.00,
+    'SKILL++'                      =>   2.00,
     'slogan'                       =>   0.98,
     'smalltalk'                    =>   2.50,
     'smalltalk 286'                =>   3.81,
