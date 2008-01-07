@@ -4570,6 +4570,71 @@ sub matlab_or_objective_C {                  # {{{1
     }
 
 } # 1}}}
+sub html_colored_text {                      # {{{1
+    # http://www.pagetutor.com/pagetutor/makapage/pics/net216-2.gif
+    my ($color, $text) = @_;
+    if      ($color =~ /^red$/i)   {
+        $color = "#ff0000";
+    } elsif ($color =~ /^green$/i) {
+        $color = "#00ff00";
+    } elsif ($color =~ /^blue$/i)  {
+        $color = "#0000ff";
+    } elsif ($color =~ /^grey$/i)  {
+        $color = "#cccccc";
+    }
+    return '<font color="' . $color . '">' . "$text</font>";
+} # 1}}}
+sub html_metachars {                         # {{{1
+    # replace html metacharacters with their printable forms
+    my (@in_chars, ) = @_;
+    my  @out_chars   = ();
+    foreach my $c (@in_chars) {
+        if      ($c eq '<') {
+            push @out_chars, '&lt;'
+        } elsif ($c eq '>') {
+            push @out_chars, '&gt;'
+        } elsif ($c eq '&') {
+            push @out_chars, '&amp;'
+        } else {
+            push @out_chars, $c;
+        }
+    }
+    return @out_chars; 
+} # 1}}}
+sub test_alg_diff { # {{{1
+    my ($file_1 ,
+        $file_2 )
+       = @_;
+    my $fh_1 = new IO::File $file_1, "r";
+    die "Unable to read $file_1:  $!\n" unless defined $fh_1;
+    my @lines_1 = <$fh_1>;
+    $fh_1->close;
+
+    my $fh_2 = new IO::File $file_2, "r";
+    die "Unable to read $file_2:  $!\n" unless defined $fh_2;
+    my @lines_2 = <$fh_2>;
+    $fh_2->close;
+
+    my $n_no_change = 0;
+    my $n_modified  = 0;
+    my $n_added     = 0;
+    my $n_deleted   = 0;
+    my @min_sdiff   = ();
+
+    my @sdiffs = sdiff( \@lines_1, \@lines_2 );
+    foreach my $entry (@sdiffs) {
+       if ($entry->[0] eq 'u') { ++$n_no_change; next; }
+       push @min_sdiff, $entry;
+       if      ($entry->[0] eq 'c') { ++$n_modified;
+       } elsif ($entry->[0] eq '+') { ++$n_added;
+       } elsif ($entry->[0] eq '-') { ++$n_deleted;
+       } else { die "unknown entry->[0]=[$entry->[0]]\n"; }
+    }
+
+    foreach my $entry (@min_sdiff) {
+        printf "DIFF:  %s  %s  %s\n", @{$entry};
+    }
+} # 1}}}
 
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
@@ -4848,40 +4913,6 @@ sub really_is_php {                          # {{{1
  $php_files{$filename} = $is_php; # Store result in cache.
 
  return $is_php;
-} # 1}}}
-sub test_alg_diff { # {{{1
-    my ($file_1 ,
-        $file_2 )
-       = @_;
-    my $fh_1 = new IO::File $file_1, "r";
-    die "Unable to read $file_1:  $!\n" unless defined $fh_1;
-    my @lines_1 = <$fh_1>;
-    $fh_1->close;
-
-    my $fh_2 = new IO::File $file_2, "r";
-    die "Unable to read $file_2:  $!\n" unless defined $fh_2;
-    my @lines_2 = <$fh_2>;
-    $fh_2->close;
-
-    my $n_no_change = 0;
-    my $n_modified  = 0;
-    my $n_added     = 0;
-    my $n_deleted   = 0;
-    my @min_sdiff   = ();
-
-    my @sdiffs = sdiff( \@lines_1, \@lines_2 );
-    foreach my $entry (@sdiffs) {
-       if ($entry->[0] eq 'u') { ++$n_no_change; next; }
-       push @min_sdiff, $entry;
-       if      ($entry->[0] eq 'c') { ++$n_modified;
-       } elsif ($entry->[0] eq '+') { ++$n_added;
-       } elsif ($entry->[0] eq '-') { ++$n_deleted;
-       } else { die "unknown entry->[0]=[$entry->[0]]\n"; }
-    }
-
-    foreach my $entry (@min_sdiff) {
-        printf "DIFF:  %s  %s  %s\n", @{$entry};
-    }
 } # 1}}}
 __END__
 mode values (stat $item)[2]
