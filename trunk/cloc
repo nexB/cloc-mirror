@@ -69,8 +69,7 @@ if (defined $Algorithm::Diff::VERSION) {
     Install_Algorithm_Diff();
 }
 # print "HAVE_Algorith_Diff = $HAVE_Algorith_Diff\n";
-# test_alg_diff("cloc-0.80.pl", "cloc-0.90.pl", );
-# die;
+# test_alg_diff("cloc-0.80.pl", "cloc-0.90.pl", ); die;
 
 # Uncomment next two lines when building Windows executable with perl2exe
 # or if running on a system that already has Regexp::Common.
@@ -4601,18 +4600,60 @@ sub html_metachars {                         # {{{1
     }
     return @out_chars; 
 } # 1}}}
+sub diff_two_strings {                       # {{{1
+    # Compute the difference between two strings and return
+    # the strings with special markers prefixing characters
+    # that differ.
+    my ($text_1, 
+        $text_2,
+       ) = @_;
+    my $MARKER  = "\cA";
+
+    my @chars_1 = split '', $text_1;
+    my @chars_2 = split '', $text_2;
+    my %changed_1 = ();
+    my %changed_2 = ();
+    my $diff = Algorithm::Diff->new ( \@chars_1, \@chars_2 );
+    while(  $diff->Next()  ) {
+        next if $diff->Same();
+        my $sep = "";
+        if      ( ! $diff->Items(2) ) {
+            my ($a, $b, $c ) = $diff->Get(qw( Min1 Max1 Max2 ));
+            foreach ($a..$b) { $changed_1{$_} = 1; }
+            $changed_2{$c} = 1;
+        } elsif ( ! $diff->Items(1) ) {
+            my ($a, $b, $c ) = $diff->Get(qw( Max1 Min2 Max2 ));
+            $changed_1{$a} = 1;
+            foreach ($b..$c) { $changed_2{$_} = 1; }
+        } else {
+            $sep = "---\n";
+            my ($a, $b, $c, $d ) = $diff->Get(qw( Min1 Max1 Min2 Max2 ));
+            foreach ($a..$b) { $changed_1{$_} = 1; }
+            foreach ($c..$d) { $changed_2{$_} = 1; }
+        }
+    }
+    for (my $i = 0; $i < scalar @chars_1; $i++) {
+        $chars_1[$i] = $MARKER . $chars_1[$i];
+    }
+    for (my $i = 0; $i < scalar @chars_2; $i++) {
+        $chars_2[$i] = $MARKER . $chars_2[$i];
+    }
+    my $new_1 = join "", @chars_1;
+    my $new_2 = join "", @chars_2;
+    return ($new_1, $new_2);
+} # 1}}}
 sub test_alg_diff { # {{{1
     my ($file_1 ,
         $file_2 )
        = @_;
     my $fh_1 = new IO::File $file_1, "r";
     die "Unable to read $file_1:  $!\n" unless defined $fh_1;
-    my @lines_1 = <$fh_1>;
+    chomp(my @lines_1 = <$fh_1>);
     $fh_1->close;
 
     my $fh_2 = new IO::File $file_2, "r";
     die "Unable to read $file_2:  $!\n" unless defined $fh_2;
-    my @lines_2 = <$fh_2>;
+    chomp(my @lines_2 = <$fh_2>);
     $fh_2->close;
 
     my $n_no_change = 0;
@@ -4620,20 +4661,42 @@ sub test_alg_diff { # {{{1
     my $n_added     = 0;
     my $n_deleted   = 0;
     my @min_sdiff   = ();
+my $NN = chr(27) . "[0m";  # normal
+my $BB = chr(27) . "[1m";  # bold
 
     my @sdiffs = sdiff( \@lines_1, \@lines_2 );
     foreach my $entry (@sdiffs) {
-       if ($entry->[0] eq 'u') { ++$n_no_change; next; }
-       push @min_sdiff, $entry;
-       if      ($entry->[0] eq 'c') { ++$n_modified;
-       } elsif ($entry->[0] eq '+') { ++$n_added;
-       } elsif ($entry->[0] eq '-') { ++$n_deleted;
-       } else { die "unknown entry->[0]=[$entry->[0]]\n"; }
+        my ($out_1, $out_2) = ('', '');
+        if ($entry->[0] eq 'u') { 
+            ++$n_no_change; 
+          # $out_1 = $entry->[1];
+          # $out_2 = $entry->[2];
+            next; 
+        }
+#       push @min_sdiff, $entry;
+        if      ($entry->[0] eq 'c') { 
+            ++$n_modified;
+            ($out_1, $out_2) = diff_two_strings($entry->[1], $entry->[2]);
+            $out_1 =~ s/\cA(\w)/${BB}$1${NN}/g;
+            $out_2 =~ s/\cA(\w)/${BB}$1${NN}/g;
+          # $out_1 =~ s/\cA//g;
+          # $out_2 =~ s/\cA//g;
+        } elsif ($entry->[0] eq '+') { 
+            ++$n_added;
+            $out_1 = $entry->[1];
+            $out_2 = $entry->[2];
+        } elsif ($entry->[0] eq '-') { 
+            ++$n_deleted;
+            $out_1 = $entry->[1];
+            $out_2 = $entry->[2];
+        } elsif ($entry->[0] eq 'u') { 
+        } else { die "unknown entry->[0]=[$entry->[0]]\n"; }
+        printf "%-80s | %s\n", $out_1, $out_2;
     }
 
-    foreach my $entry (@min_sdiff) {
-        printf "DIFF:  %s  %s  %s\n", @{$entry};
-    }
+#   foreach my $entry (@min_sdiff) {
+#       printf "DIFF:  %s  %s  %s\n", @{$entry};
+#   }
 } # 1}}}
 
 # subroutines copied from SLOCCount
