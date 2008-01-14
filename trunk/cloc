@@ -1964,6 +1964,7 @@ sub set_constants {                          # {{{1
             'sed'      => 'sed'                   ,
             'sh'       => 'Bourne Shell'          ,
             'tcl'      => 'Tcl/Tk'                ,
+            'tclsh'    => 'Tcl/Tk'                ,
             'tcsh'     => 'C Shell'               ,
             'wish'     => 'Tcl/Tk'                ,
             );
@@ -2684,7 +2685,7 @@ sub set_constants {                          # {{{1
     'synon/2e'                     =>   4.21,
     'systemw'                      =>   2.22,
     'tandem access language'       =>   0.88,
-    'Tcl/Tk'                       =>   1.25,
+    'Tcl/Tk'                       =>   4.00,
     'Teamcenter def'               =>   1.00,
     'Teamcenter met'               =>   1.00,
     'Teamcenter mth'               =>   1.00,
