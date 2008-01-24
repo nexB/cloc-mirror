@@ -149,6 +149,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              The language name is case insensitive.  This 
                              option can be specified multiple times.
    --found=<file>            Save names of every file found to <file>.
+   --html                    Create HTML files of each input file showing
+                             comment and code lines in different colors.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
    --no3                     Suppress third-generation language output.
@@ -198,6 +200,7 @@ my (
     $opt_categorized          ,
     $opt_found                ,
     @opt_force_lang           ,
+    $opt_html                 ,
     $opt_ignored              ,
     $opt_counted              ,
     $opt_show_ext             ,
@@ -234,6 +237,7 @@ GetOptions(
            "extract_with=s"      => \$opt_extract_with        , 
            "extract-with=s"      => \$opt_extract_with        , 
            "found=s"             => \$opt_found               ,
+           "html"                => \$opt_html                ,
            "ignored=s"           => \$opt_ignored             ,
            "quiet"               => \$opt_quiet               ,
            "read_lang_def=s"     => \$opt_read_lang_def       ,
@@ -318,6 +322,7 @@ if ($opt_read_lang_def) {
         \%Known_Binary_Archives, # Known_Binary_Archives{.tar} = 1
         );
 }
+my $COMMENT_COLOR = "blue";
 
 # Process command line provided extention-to-language mapping overrides.
 # Make a hash of known languages in lower case for easier matching.
@@ -4471,12 +4476,23 @@ sub call_regexp_common {                     # {{{1
         # Curiously, testing for "defined $1" breaks the substitution.
         no warnings; 
 
-        $all_lines =~ s/$1//g;
+#?#     my $comment = $1;
+        if ($opt_html) {
+            # colorize comments
+#?#         $all_lines = $RE{comment}{$language}->subs("XYZ");
+#?#         die "comment = $comment";
+#?#         $all_lines =~ s/$comment/html_colored_text($COMMENT_COLOR, $comment)/ge;
+#?#         $all_lines =~ s/($comment)/($COMMENT_COLOR, $1)/g;
+#?#         $all_lines =~ s/$comment/html_colored_text($COMMENT_COLOR, $1)/g;
+        } else {
+            # remove   comments
+            $all_lines =~ s/$1//g;
+        }
     }
     # a bogus use of %RE to avoid:
     # Name "main::RE" used only once: possible typo at cloc line xx.
     print scalar keys %RE if $opt_v < -20;
-
+#?#print "$all_lines\n";
     print "<- call_regexp_common\n" if $opt_v > 2;
     return split("\n", $all_lines);
 } # 1}}}
@@ -4575,6 +4591,7 @@ sub matlab_or_objective_C {                  # {{{1
 sub html_colored_text {                      # {{{1
     # http://www.pagetutor.com/pagetutor/makapage/pics/net216-2.gif
     my ($color, $text) = @_;
+#?#die "html_colored_text($text)";
     if      ($color =~ /^red$/i)   {
         $color = "#ff0000";
     } elsif ($color =~ /^green$/i) {
@@ -4584,11 +4601,13 @@ sub html_colored_text {                      # {{{1
     } elsif ($color =~ /^grey$/i)  {
         $color = "#cccccc";
     }
-    return '<font color="' . $color . '">' . "$text</font>";
+    return '<font color="' . $color . '">' . html_metachars($text) . "</font>";
 } # 1}}}
 sub html_metachars {                         # {{{1
     # replace html metacharacters with their printable forms
-    my (@in_chars, ) = @_;
+    my ($string, ) = shift @_;
+
+    my  @in_chars    = split(//, $string);
     my  @out_chars   = ();
     foreach my $c (@in_chars) {
         if      ($c eq '<') {
@@ -4601,7 +4620,7 @@ sub html_metachars {                         # {{{1
             push @out_chars, $c;
         }
     }
-    return @out_chars; 
+    return join "", @out_chars; 
 } # 1}}}
 sub diff_two_strings {                       # {{{1
     # Compute the difference between two strings and return
