@@ -1407,7 +1407,8 @@ sub call_counter {                           # {{{1
     # Some files don't end with a new line.  Force this:
     $lines[$#lines] .= "\n" unless $lines[$#lines] =~ m/\n$/;
 
-    my $total_lines = scalar @lines;
+    my @original_lines = @lines;
+    my $total_lines    = scalar @lines;
 
     print_lines($file, "Original file:", \@lines) if $opt_print_filter_stages;
     if ($language eq "COBOL") {
@@ -1448,6 +1449,9 @@ sub call_counter {                           # {{{1
         my $stripped_file = basename $file . ".$opt_strip_comments";
         write_file($stripped_file, @lines);
     }
+my ($raa_diff_orig, $raa_diff_nocomment) = 
+diff_two_arrays(\@original_lines, \@lines);   # compare original w/comment-removed
+write_diff_to_html($raa_diff_orig, $raa_diff_nocomment);
 
     print "<- call_counter($total_lines, $blank_lines, $comment_lines)\n" 
         if $opt_v > 2;
@@ -4601,6 +4605,7 @@ sub html_colored_text {                      # {{{1
     } elsif ($color =~ /^grey$/i)  {
         $color = "#cccccc";
     }
+#   return "" unless $text;
     return '<font color="' . $color . '">' . html_metachars($text) . "</font>";
 } # 1}}}
 sub html_metachars {                         # {{{1
@@ -4664,6 +4669,53 @@ sub diff_two_strings {                       # {{{1
     my $new_2 = join "", @chars_2;
     return ($new_1, $new_2);
 } # 1}}}
+sub diff_two_arrays { # {{{1
+    my ($ra_lines_1 ,
+        $ra_lines_2 )
+       = @_;
+    # returns $raa_diff_1[0..n] = [ u | c | + | - , text ]
+    #         $raa_diff_2[0..n] = [ u | c | + | - , text ]
+    # u = unchanged
+    # c = changed
+    # + = added
+    # - = removed
+    my ($raa_diff_1, $raa_diff_2);
+
+    my $n_no_change = 0;
+    my $n_modified  = 0;
+    my $n_added     = 0;
+    my $n_deleted   = 0;
+    my @min_sdiff   = ();
+my $NN = chr(27) . "[0m";  # normal
+my $BB = chr(27) . "[1m";  # bold
+
+    my @sdiffs = sdiff( $ra_lines_1, $ra_lines_2 );
+    foreach my $entry (@sdiffs) {
+        my ($out_1, $out_2) = ('', '');
+        if ($entry->[0] eq 'u') { 
+            ++$n_no_change; 
+            push @{$raa_diff_1}, [ 'u', $entry->[1]];
+            push @{$raa_diff_2}, [ 'u', $entry->[1]];
+            next; 
+        }
+        if      ($entry->[0] eq 'c') { 
+            ++$n_modified;
+            push @{$raa_diff_1}, [ 'c', $entry->[1]];
+            push @{$raa_diff_2}, [ 'c', $entry->[2]];
+        } elsif ($entry->[0] eq '+') { 
+            ++$n_added;
+            push @{$raa_diff_1}, [ '+', $entry->[1]];
+            push @{$raa_diff_2}, [ '+', $entry->[2]];
+        } elsif ($entry->[0] eq '-') { 
+            ++$n_deleted;
+            push @{$raa_diff_1}, [ '-', $entry->[1]];
+            push @{$raa_diff_2}, [ '-', $entry->[2]];
+        } elsif ($entry->[0] eq 'u') { 
+        } else { die "diff_two_arrays unknown entry->[0]=[$entry->[0]]\n"; }
+    }
+
+    return ($raa_diff_1, $raa_diff_2);
+} # 1}}}
 sub test_alg_diff { # {{{1
     my ($file_1 ,
         $file_2 )
@@ -4719,6 +4771,56 @@ my $BB = chr(27) . "[1m";  # bold
 #   foreach my $entry (@min_sdiff) {
 #       printf "DIFF:  %s  %s  %s\n", @{$entry};
 #   }
+} # 1}}}
+sub write_diff_to_html {                     # {{{1
+    my ($raa_diff_left ,
+        $raa_diff_right,
+       ) = @_;
+
+my $file = "test.html";
+    print "-> write_diff_to_html($file)\n" if $opt_v > 2;
+
+    my $OUT = new IO::File $file, "w";
+    if (defined $OUT) {
+        print $OUT html_header("test");
+        print $OUT "<PRE>\n";
+        foreach my $entry (@{$raa_diff_left}) {
+            if      ($entry->[0] eq 'u') {
+                print $OUT html_metachars($entry->[1]);
+            } elsif ($entry->[0] eq 'c') {
+                print $OUT html_colored_text("blue" , $entry->[1]);
+            } elsif ($entry->[0] eq '+') {
+                print $OUT html_colored_text("green", $entry->[1]);
+            } elsif ($entry->[0] eq '-') {
+                print $OUT html_colored_text("red"  , $entry->[1]);
+            } 
+        }
+        print $OUT "</PRE></body></html>\n";
+        $OUT->close;
+    } else {
+        warn "Unable to write to $file\n";
+    }
+    print "Wrote $file\n";
+    
+    print "<- write_diff_to_html\n" if $opt_v > 2;
+} # 1}}}
+sub html_header {                            # {{{1
+    my ($title , ) = @_;
+
+    print "-> html_header\n" if $opt_v > 2;
+    return '
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html> 
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+' .
+"
+<!-- Created by $script v$VERSION -->
+<title>$title</title><body>
+<pre>
+";
+    print "<- html_header\n" if $opt_v > 2;
 } # 1}}}
 
 # subroutines copied from SLOCCount
