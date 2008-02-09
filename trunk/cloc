@@ -691,6 +691,11 @@ sub generate_report {                        # {{{1
         push @results, "<?xml version=\"1.0\"?>";
         push @results, "<results>";
         push @results, "<header>$header_line</header>";
+        if ($BY_FILE) {
+            push @results, "<files>";
+        } else {
+            push @results, "<languages>";
+        }
     } elsif ($opt_yaml) {
         push @results, "---\n# $header_line";
     } elsif ($opt_csv) {
@@ -835,13 +840,16 @@ sub generate_report {                        # {{{1
             $avg_scale   ,
             $sum_scaled  unless $opt_no3;
         push @results, "<total " . $data_line . "/>";
-        push @results, "<languages>";
         
-        foreach my $language (keys %{$languages}) {
-            push @results, '<language name="' . $language . '"/>';
+        if ($BY_FILE) {
+            push @results, "</files>";
+        } else {
+            foreach my $language (keys %{$languages}) {
+                push @results, '<language name="' . $language . '"/>';
+            }
+            push @results, "</languages>";
         }
         
-        push @results, "</languages>";
         push @results, "</results>";
     } elsif ($opt_yaml) {
         push @results, "SUM:";
@@ -1449,9 +1457,11 @@ sub call_counter {                           # {{{1
         my $stripped_file = basename $file . ".$opt_strip_comments";
         write_file($stripped_file, @lines);
     }
-my ($raa_diff_orig, $raa_diff_nocomment) = 
-diff_two_arrays(\@original_lines, \@lines);   # compare original w/comment-removed
-write_diff_to_html($raa_diff_orig, $raa_diff_nocomment);
+    if ($opt_html) {
+        my ($raa_diff_orig, $raa_diff_nocomment) = 
+        diff_two_arrays(\@original_lines, \@lines);   # compare original w/comment-removed
+        write_diff_to_html($file, $raa_diff_orig, $raa_diff_nocomment);
+    }
 
     print "<- call_counter($total_lines, $blank_lines, $comment_lines)\n" 
         if $opt_v > 2;
@@ -4479,19 +4489,8 @@ sub call_regexp_common {                     # {{{1
         #         (* This is { another } test. **)
         # Curiously, testing for "defined $1" breaks the substitution.
         no warnings; 
-
-#?#     my $comment = $1;
-        if ($opt_html) {
-            # colorize comments
-#?#         $all_lines = $RE{comment}{$language}->subs("XYZ");
-#?#         die "comment = $comment";
-#?#         $all_lines =~ s/$comment/html_colored_text($COMMENT_COLOR, $comment)/ge;
-#?#         $all_lines =~ s/($comment)/($COMMENT_COLOR, $1)/g;
-#?#         $all_lines =~ s/$comment/html_colored_text($COMMENT_COLOR, $1)/g;
-        } else {
-            # remove   comments
-            $all_lines =~ s/$1//g;
-        }
+        # remove   comments
+        $all_lines =~ s/$1//g;
     }
     # a bogus use of %RE to avoid:
     # Name "main::RE" used only once: possible typo at cloc line xx.
@@ -4773,12 +4772,13 @@ my $BB = chr(27) . "[1m";  # bold
 #   }
 } # 1}}}
 sub write_diff_to_html {                     # {{{1
-    my ($raa_diff_left ,
+    my ($filename      ,
+        $raa_diff_left ,
         $raa_diff_right,
        ) = @_;
 
-my $file = "test.html";
-    print "-> write_diff_to_html($file)\n" if $opt_v > 2;
+    print "-> write_diff_to_html($filename)\n" if $opt_v > 2;
+    my $file = $filename . ".html";
 
     my $OUT = new IO::File $file, "w";
     if (defined $OUT) {
@@ -4786,6 +4786,7 @@ my $file = "test.html";
         print $OUT "<PRE>\n";
         foreach my $entry (@{$raa_diff_left}) {
             if      ($entry->[0] eq 'u') {
+                # unchanged; don't color
                 print $OUT html_metachars($entry->[1]);
             } elsif ($entry->[0] eq 'c') {
                 print $OUT html_colored_text("blue" , $entry->[1]);
@@ -4800,7 +4801,7 @@ my $file = "test.html";
     } else {
         warn "Unable to write to $file\n";
     }
-    print "Wrote $file\n";
+    print "Wrote $file\n" unless $opt_quiet;
     
     print "<- write_diff_to_html\n" if $opt_v > 2;
 } # 1}}}
