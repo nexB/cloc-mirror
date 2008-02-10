@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # cloc -- Count Lines of Code {{{1
-# Copyright (C) 2006 Northrop Grumman Corporation
+# Copyright (C) 2006-2008 Northrop Grumman Corporation
 # Author:  Al Danial <al.danial@gmail.com>
 #          First release August 2006
 #
@@ -11,6 +11,12 @@
 #   - Regexp::Common v2.120
 #     http://search.cpan.org/~abigail/Regexp-Common-2.120/lib/Regexp/Common.pm
 #     by Damian Conway and Abigail
+#   - Win32::Autoglob 
+#     http://search.cpan.org/~sburke/Win32-Autoglob-1.01/Autoglob.pm
+#     by Sean M. Burke 
+#   - Algorithm::Diff
+#     http://search.cpan.org/~tyemq/Algorithm-Diff-1.1902/lib/Algorithm/Diff.pm
+#     by Tye McQueen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,8 +110,6 @@ if (defined $Algorithm::Diff::VERSION) {
 #perl2exe_include "File/Glob.pm"
 
 use Text::Tabs qw { expand };
-#use Data::Dumper::Simple;
-#use Data::Dumper;
 use Cwd qw { cwd };
 # 1}}}
 # Usage information, options processing.       {{{1
@@ -147,7 +151,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              counter, use
                                --force-lang=\"Fortran 90\",f
                              The language name is case insensitive.  This 
-                             option can be specified multiple times.
+                             option can be specified multiple times.  See
+                             also --script-lang.
    --found=<file>            Save names of every file found to <file>.
    --html                    Create HTML files of each input file showing
                              comment and code lines in different colors.
@@ -167,6 +172,16 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --read-lang-def=<file>    Load from <file> the language processing filters.
                              (see also --write-lang-def) then use these filters
                              instead of the built-in filters.
+   --script-lang=<lang>,<s>  Process all files that invoke <s> as a #!
+                             scripting language with the counter for language
+                             <lang>.  For example, files that begins with
+                                #!/usr/local/bin/perl5.8.8
+                             will be counted with the Perl counter by using
+                                --script-lang=Perl,perl5.8.8
+                             The language name is case insensitive but the
+                             name of the script language executable, <s>,
+                             must have the right case.  This option can be 
+                             specified multiple times.  See also --force-lang.
    --sdir=<dir>              Use <dir> as the scratch directory instead of
                              letting File::Temp chose the location.  Files
                              written to this location are not removed at
@@ -200,6 +215,7 @@ my (
     $opt_categorized          ,
     $opt_found                ,
     @opt_force_lang           ,
+    @opt_script_lang          ,
     $opt_html                 ,
     $opt_ignored              ,
     $opt_counted              ,
@@ -252,6 +268,8 @@ GetOptions(
            "print-filter-stages" => \$opt_print_filter_stages ,
            "report_file=s"       => \$opt_report_file         ,
            "report-file=s"       => \$opt_report_file         ,
+           "script_lang=s"       => \@opt_script_lang         ,
+           "script-lang=s"       => \@opt_script_lang         ,
            "sdir=s"              => \$opt_sdir                ,
            "strip_comments=s"    => \$opt_strip_comments      ,
            "strip-comments=s"    => \$opt_strip_comments      ,
@@ -337,13 +355,24 @@ foreach my $pair (@opt_force_lang) {
     $Forced_Extension{$extension} = $lang;
     my $lang_lc = lc $lang;
 
-    die "Unknown language '$lang' used with --force-lang option.  " .
-        "The command\n  $script --show-lang\n" .
-        "will print all recognized languages.\n" 
+    die_unknown_lang($lang, "--force-lang")
         unless $Recognized_Language_lc{$lang_lc}; 
+
     $Language_by_Extension{$extension} = $Recognized_Language_lc{$lang_lc};
 }
 
+foreach my $pair (@opt_script_lang) {
+    my ($lang, $script_name) = split(',', $pair);
+    my $lang_lc = lc $lang;
+
+    die_unknown_lang($lang, "--script-lang")
+        unless $Recognized_Language_lc{$lang_lc}; 
+
+    $Language_by_Script{$script_name} = $Recognized_Language_lc{$lang_lc};
+}
+# invert %Language_by_Script hash to get an easy-to-look-up list of known
+# scripting languages
+my %Script_Language = map { $_ => 1 } values %Language_by_Script ;
 # 1}}}
 # Step 2:  Early exits for display, summation. {{{1
 #
@@ -1449,9 +1478,18 @@ sub call_counter {                           # {{{1
         print_lines($file, "After $subroutine(@args)", \@lines) 
             if $opt_print_filter_stages;
         @lines = remove_matches(\@lines, '^\s*$'); # ...then remove blank lines
+        
         print_lines($file, "post $subroutine(@args) blanks cleanup:", \@lines) 
             if $opt_print_filter_stages;
     }
+    # Exception for scripting languages:  treat the first #! line as code.
+    # Will need to add it back in if it was removed earlier.
+    if ($Script_Language{$language} and 
+        $original_lines[0] =~ /^#!/ and
+        $lines[0] ne $original_lines[0]) {
+        unshift @lines, $original_lines[0];  # add the first line back
+    }
+
     my $comment_lines = $total_lines - $blank_lines - scalar  @lines;
     if ($opt_strip_comments) {
         my $stripped_file = basename $file . ".$opt_strip_comments";
@@ -4822,6 +4860,12 @@ sub html_header {                            # {{{1
 <pre>
 ";
     print "<- html_header\n" if $opt_v > 2;
+} # 1}}}
+sub die_unknown_lang { # {{{1
+    my ($lang, $option_name) = @_;
+    die "Unknown language '$lang' used with $option_name option.  " .
+        "The command\n  $script --show-lang\n" .
+        "will print all recognized languages.\n" ;
 } # 1}}}
 
 # subroutines copied from SLOCCount
