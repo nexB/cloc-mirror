@@ -143,16 +143,19 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              and on Windows use: 
                                --extract-with=\"\\\"c:\\Program Files\\WinZip\\WinZip32.exe\\\" -e -o >FILE< .\"
                              (if you have WinZip installed there).
-   --force-lang=<lang>,<ext> Process all files that have a <ext> extension 
+   --force-lang=<lang>[,<ext>]
+                             Process all files that have a <ext> extension 
                              with the counter for language <lang>.  For 
                              example, to count all .f files with the 
                              Fortran 90 counter (which expects files to 
                              end with .f90) instead of the default Fortran 77 
                              counter, use
                                --force-lang=\"Fortran 90\",f
-                             The language name is case insensitive.  This 
-                             option can be specified multiple times.  See
-                             also --script-lang.
+                             The language name is case insensitive.  
+                             It is possible--but dangerous--to omit <ext>
+                             in which case *every* file will be counted
+                             with the <lang> counter.  This option can be 
+                             specified multiple times.  See also --script-lang.
    --found=<file>            Save names of every file found to <file>.
    --html                    Create HTML files of each input file showing
                              comment and code lines in different colors.
@@ -350,20 +353,30 @@ foreach my $language (keys %Filters_by_Language) {
     $Recognized_Language_lc{$lang_lc} = $language;
 }
 my %Forced_Extension = (); # file name extensions which user wants to count
+my $All_One_Language = 0;  # set to !0 if --force-lang's <ext> is missing
 foreach my $pair (@opt_force_lang) {
     my ($lang, $extension) = split(',', $pair);
-    $Forced_Extension{$extension} = $lang;
     my $lang_lc = lc $lang;
+    if (defined $extension) {
+        $Forced_Extension{$extension} = $lang;
 
-    die_unknown_lang($lang, "--force-lang")
-        unless $Recognized_Language_lc{$lang_lc}; 
+        die_unknown_lang($lang, "--force-lang")
+            unless $Recognized_Language_lc{$lang_lc}; 
 
-    $Language_by_Extension{$extension} = $Recognized_Language_lc{$lang_lc};
+        $Language_by_Extension{$extension} = $Recognized_Language_lc{$lang_lc};
+    } else {
+        # the scary case--count everything as this language
+        $All_One_Language = $Recognized_Language_lc{$lang_lc};
+    }
 }
 
 foreach my $pair (@opt_script_lang) {
     my ($lang, $script_name) = split(',', $pair);
     my $lang_lc = lc $lang;
+    if (!defined $script_name) {
+        die "The --script-lang option requires a comma separated pair of ".
+            "strings.\n";
+    }
 
     die_unknown_lang($lang, "--script-lang")
         unless $Recognized_Language_lc{$lang_lc}; 
@@ -1144,10 +1157,17 @@ sub make_file_list {                         # {{{1
         }
 
         my $size_in_bytes = (stat $file)[7];
-        my $language      = classify_file($file      ,
-                                          $rh_Err    ,
-                                          $raa_errors,
-                                          $rh_ignored);
+        my $language      = "";
+        if ($All_One_Language) {
+            # user over-rode auto-language detection by using
+            # --force-lang with just a language name (no extension)
+            $language      = $All_One_Language;
+        } else {
+            $language      = classify_file($file      ,
+                                           $rh_Err    ,
+                                           $raa_errors,
+                                           $rh_ignored);
+        }
 die  "make_file_list($file) undef size" unless defined $size_in_bytes;
 die  "make_file_list($file) undef lang" unless defined $language;
         printf $fh "%d,%s,%s\n", $size_in_bytes, $language, $file;
