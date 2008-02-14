@@ -151,14 +151,12 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              end with .f90) instead of the default Fortran 77 
                              counter, use
                                --force-lang=\"Fortran 90\",f
-                             The language name is case insensitive.  
-                             It is possible--but dangerous--to omit <ext>
-                             in which case *every* file will be counted
+                             If <ext> is omitted, every file will be counted
                              with the <lang> counter.  This option can be 
-                             specified multiple times.  See also --script-lang.
+                             specified multiple times (but that is only
+                             useful when <ext> is given each time).  
+                             See also --script-lang.
    --found=<file>            Save names of every file found to <file>.
-   --html                    Create HTML files of each input file showing
-                             comment and code lines in different colors.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
    --no3                     Suppress third-generation language output.
@@ -212,6 +210,10 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --yaml                    Write the results in YAML.
 
 ";
+#  Help information for options not yet implemented:
+#  --html                    Create HTML files of each input file showing
+#                            comment and code lines in different colors.
+
 $| = 1;  # flush STDOUT
 my $start_time = time();
 my (
