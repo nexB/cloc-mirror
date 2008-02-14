@@ -175,7 +175,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              instead of the built-in filters.
    --script-lang=<lang>,<s>  Process all files that invoke <s> as a #!
                              scripting language with the counter for language
-                             <lang>.  For example, files that begins with
+                             <lang>.  For example, files that begin with
                                 #!/usr/local/bin/perl5.8.8
                              will be counted with the Perl counter by using
                                 --script-lang=Perl,perl5.8.8
