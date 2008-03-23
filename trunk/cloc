@@ -157,6 +157,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              useful when <ext> is given each time).  
                              See also --script-lang.
    --found=<file>            Save names of every file found to <file>.
+   --html                    Create HTML files of each input file showing
+                             comment and code lines in different colors.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
    --no3                     Suppress third-generation language output.
@@ -211,8 +213,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
 
 ";
 #  Help information for options not yet implemented:
-#  --html                    Create HTML files of each input file showing
-#                            comment and code lines in different colors.
 
 $| = 1;  # flush STDOUT
 my $start_time = time();
@@ -1518,9 +1518,13 @@ sub call_counter {                           # {{{1
         write_file($stripped_file, @lines);
     }
     if ($opt_html) {
-        my ($raa_diff_orig, $raa_diff_nocomment) = 
-        diff_two_arrays(\@original_lines, \@lines);   # compare original w/comment-removed
-        write_diff_to_html($file, $raa_diff_orig, $raa_diff_nocomment);
+        chomp(@original_lines);
+        chomp(@lines);
+        my @sdiffs = sdiff(\@original_lines, \@lines);
+use Data::Dumper::Simple;
+print Dumper(@original_lines, @lines, @sdiffs);
+die;
+        write_diff_to_html($file, \@sdiffs);
     }
 
     print "<- call_counter($total_lines, $blank_lines, $comment_lines)\n" 
@@ -4668,7 +4672,10 @@ sub html_colored_text {                      # {{{1
     return '<font color="' . $color . '">' . html_metachars($text) . "</font>";
 } # 1}}}
 sub html_metachars {                         # {{{1
-    # replace html metacharacters with their printable forms
+    # Replace HTML metacharacters with their printable forms.
+    # Future:  use HTML-Encoder-0.00_04/lib/HTML/Encoder.pm
+    # from Fabiano Reese Righetti's HTML::Encoder module if 
+    # this subroutine proves to be too simplistic.
     my ($string, ) = shift @_;
 
     my  @in_chars    = split(//, $string);
@@ -4833,8 +4840,7 @@ my $BB = chr(27) . "[1m";  # bold
 } # 1}}}
 sub write_diff_to_html {                     # {{{1
     my ($filename      ,
-        $raa_diff_left ,
-        $raa_diff_right,
+        $raa_sdiff     ,
        ) = @_;
 
     print "-> write_diff_to_html($filename)\n" if $opt_v > 2;
@@ -4842,46 +4848,150 @@ sub write_diff_to_html {                     # {{{1
 
     my $OUT = new IO::File $file, "w";
     if (defined $OUT) {
-        print $OUT html_header("test");
-        print $OUT "<PRE>\n";
-        foreach my $entry (@{$raa_diff_left}) {
-            if      ($entry->[0] eq 'u') {
-                # unchanged; don't color
-                print $OUT html_metachars($entry->[1]);
-            } elsif ($entry->[0] eq 'c') {
-                print $OUT html_colored_text("blue" , $entry->[1]);
-            } elsif ($entry->[0] eq '+') {
-                print $OUT html_colored_text("green", $entry->[1]);
-            } elsif ($entry->[0] eq '-') {
-                print $OUT html_colored_text("red"  , $entry->[1]);
-            } 
+        # {{{2
+
+        my $html_out = html_header($filename);
+
+        my $n = 0;
+        foreach my $triple (@{$raa_sdiff}) {
+            ++$n;
+            my $flag   = $triple->[0];
+            my $line_1 = $triple->[1];
+            my $line_2 = $triple->[2];
+            my $separator = "";
+            my $pre    = "";
+            my $post   = "</span>";
+            # highlighting removed whitespace looks ugly
+            # if ($line_1 =~ /^\s*$/) {
+            #     $pre    = '<span class="whitespace">';
+            #     $html_out .= $pre . '&nbsp; ' . $post . "\n";
+            # }
+            if      ($flag eq 'u') {  # u = unchanged
+                # entire line remains as-is
+                $separator = " ";
+                $pre    = '<span class="normal">';
+                $html_out .= $pre . html_metachars($line_1) . $post;
+            } elsif ($flag eq 'c') {  # c = changed
+
+                # need to compute within-line diff
+                $separator = "|";
+                my @chars_1 = split '', $line_1;
+                my @chars_2 = split '', $line_2;
+                my @inline_sdiffs = sdiff( \@chars_1, \@chars_2 );
+#use Data::Dumper::Simple; 
+#print Dumper(@inline_sdiffs); die;
+                my @index = ();
+                foreach my $il_triple (@inline_sdiffs) {
+                    # make an array of u|c|+|- corresponding
+                    # to each character
+                    push @index, $il_triple->[0];
+                }
+#print Dumper(@index); die;
+                # expect problems if arrays @index and $inline_sdiffs[1];
+                # (@{$inline_sdiffs->[1]} are the characters of line_1)
+                # aren't the same length
+                my $prev_type = $index[0];
+                my @strings   = ();  # blocks of consecutive code or comment
+                my @type      = ();  # u (=code) or c (=comment)
+                my $j_str     = 0;
+                $strings[$j_str] .= $chars_1[0];
+                $type[$j_str] = $prev_type;
+                for (my $i = 1; $i < scalar @chars_1; $i++) {
+                    if ($index[$i] ne $prev_type) {
+                        ++$j_str;
+#print "change at j_str=$j_str type=$index[$i]\n";
+                        $type[$j_str] = $index[$i];
+                        $prev_type    = $index[$i];
+                    }
+                    $strings[$j_str] .= $chars_1[$i];
+                }
+
+                for (my $i = 0; $i < scalar @strings; $i++) {
+                    if ($type[$i] eq 'u') {
+                        $pre = '<span class="normal">';
+                    } else {
+                        $pre = '<span class="comment">';
+                    }
+                    $html_out .= $pre . html_metachars($strings[$i]) . $post;
+                }
+# print Dumper(@strings, @type); die;
+
+            } elsif ($flag eq '+') {  # + = added
+                $separator = ">";
+                # should never get here
+                warn "write_diff_to_html: diff failure (diff says the\n";
+                warn "comment-free file has added lines).\n";
+                warn "$n  $line_1\n";
+                last;
+            } elsif ($flag eq '-') {  # - = removed
+                # entire line is a comment
+                $pre    = '<span class="comment">';
+                $html_out .= $pre . html_metachars($line_1) . $post;
+            }
+#printf "%-30s %s %-30s\n", $line_1, $separator, $line_2;
+            $html_out .= "\n";
         }
-        print $OUT "</PRE></body></html>\n";
+
+        $html_out .= html_end();
+
+        my $out_file = "$filename.html";
+        open  OUT, ">$out_file" or die "Cannot write to $out_file $!\n";
+        print OUT $html_out;
+        close OUT;
+        print "Wrote $out_file\n" unless $opt_quiet;
         $OUT->close;
+        # 2}}}
     } else {
         warn "Unable to write to $file\n";
     }
-    print "Wrote $file\n" unless $opt_quiet;
-    
+
     print "<- write_diff_to_html\n" if $opt_v > 2;
 } # 1}}}
 sub html_header {                            # {{{1
     my ($title , ) = @_;
 
     print "-> html_header\n" if $opt_v > 2;
-    return '
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html> 
-<head> 
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-</head>
+    return 
+'<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="cloc http://cloc.sourceforge.net">
 ' .
 "
 <!-- Created by $script v$VERSION -->
-<title>$title</title><body>
-<pre>
-";
+<title>$title</title>
+" .
+'
+<style TYPE="text/css">
+<!--
+    body {
+        color: black;
+        background-color: white;
+        font-family: monospace
+    }
+
+    .whitespace {
+        background-color: gray;
+    }
+
+    .comment {
+        color: gray;
+        font-style: italic;
+    }
+ -->
+</style>
+</head>
+<body>
+<pre><tt>
+';
     print "<- html_header\n" if $opt_v > 2;
+} # 1}}}
+sub html_end {                               # {{{1
+return 
+'</tt></pre>
+</body>
+</html>
+';
 } # 1}}}
 sub die_unknown_lang { # {{{1
     my ($lang, $option_name) = @_;
