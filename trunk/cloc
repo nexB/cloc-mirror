@@ -1521,9 +1521,9 @@ sub call_counter {                           # {{{1
         chomp(@original_lines);
         chomp(@lines);
         my @sdiffs = sdiff(\@original_lines, \@lines);
-use Data::Dumper::Simple;
-print Dumper(@original_lines, @lines, @sdiffs);
-die;
+#use Data::Dumper::Simple;
+#print Dumper(@original_lines, @lines, @sdiffs);
+#die;
         write_diff_to_html($file, \@sdiffs);
     }
 
