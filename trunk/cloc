@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.03;
+my $VERSION = 1.04;
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -202,6 +202,9 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              created with the --report-file option.  Makes
                              a cumulative set of results containing the
                              sum of data from the individual report files.
+   --unicode                 Check binary files to see if they contain Unicode
+                             expanded ASCII text.  This causes performance to
+                             drop noticably.
    --write-lang-def=<file>   Writes to <file> the language processing filters
                              then exits.  Useful as a first step to creating
                              custom language definitions (see --read-lang-def).
@@ -239,6 +242,7 @@ my (
     $opt_report_file          ,
     $opt_sdir                 ,
     $opt_sum_reports          ,
+    $opt_unicode              ,
     $opt_no3                  ,
     $opt_extract_with         ,
     $opt_by_file              ,
@@ -247,50 +251,36 @@ my (
     $opt_csv                  ,
    );
 GetOptions(
-           "by_file"             => \$opt_by_file             ,
-           "by-file"             => \$opt_by_file             ,
-           "categorized=s"       => \$opt_categorized         ,
-           "counted=s"           => \$opt_counted             ,
-           "exclude_lang=s"      => \$opt_exclude_lang        ,
-           "exclude-lang=s"      => \$opt_exclude_lang        ,
-           "exclude_dir=s"       => \$opt_exclude_dir         ,
-           "exclude-dir=s"       => \$opt_exclude_dir         ,
-           "extract_with=s"      => \$opt_extract_with        , 
-           "extract-with=s"      => \$opt_extract_with        , 
-           "found=s"             => \$opt_found               ,
-           "html"                => \$opt_html                ,
-           "ignored=s"           => \$opt_ignored             ,
-           "quiet"               => \$opt_quiet               ,
-           "read_lang_def=s"     => \$opt_read_lang_def       ,
-           "read-lang-def=s"     => \$opt_read_lang_def       ,
-           "show_ext:s"          => \$opt_show_ext            ,
-           "show-ext:s"          => \$opt_show_ext            ,
-           "show_lang:s"         => \$opt_show_lang           ,
-           "show-lang:s"         => \$opt_show_lang           ,
-           "progress_rate=i"     => \$opt_progress_rate       ,
-           "progress-rate=i"     => \$opt_progress_rate       ,
-           "print_filter_stages" => \$opt_print_filter_stages ,
-           "print-filter-stages" => \$opt_print_filter_stages ,
-           "report_file=s"       => \$opt_report_file         ,
-           "report-file=s"       => \$opt_report_file         ,
-           "script_lang=s"       => \@opt_script_lang         ,
-           "script-lang=s"       => \@opt_script_lang         ,
-           "sdir=s"              => \$opt_sdir                ,
-           "strip_comments=s"    => \$opt_strip_comments      ,
-           "strip-comments=s"    => \$opt_strip_comments      ,
-           "sum_reports"         => \$opt_sum_reports         ,
-           "sum-reports"         => \$opt_sum_reports         ,
-           "no3"                 => \$opt_no3                 ,
-           "v:i"                 => \$opt_v                   ,
-           "version"             => \$opt_version             ,
-           "write_lang_def=s"    => \$opt_write_lang_def      ,
-           "write-lang-def=s"    => \$opt_write_lang_def      ,
-           "xml"                 => \$opt_xml                 ,
-           "force_lang=s"        => \@opt_force_lang          ,
-           "force-lang=s"        => \@opt_force_lang          ,
-           "yaml"                => \$opt_yaml                ,
-           "csv"                 => \$opt_csv                 ,
-          );
+   "by_file|by-file"                         => \$opt_by_file             ,
+   "categorized=s"                           => \$opt_categorized         ,
+   "counted=s"                               => \$opt_counted             ,
+   "exclude_lang|exclude-lang=s"             => \$opt_exclude_lang        ,
+   "exclude_dir|exclude-dir=s"               => \$opt_exclude_dir         ,
+   "extract_with|extract-with=s"             => \$opt_extract_with        , 
+   "found=s"                                 => \$opt_found               ,
+   "html"                                    => \$opt_html                ,
+   "ignored=s"                               => \$opt_ignored             ,
+   "quiet"                                   => \$opt_quiet               ,
+   "read_lang_def|read-lang-def=s"           => \$opt_read_lang_def       ,
+   "show_ext|show-ext:s"                     => \$opt_show_ext            ,
+   "show_lang|show-lang:s"                   => \$opt_show_lang           ,
+   "progress_rate|progress-rate=i"           => \$opt_progress_rate       ,
+   "print_filter_stages|print-filter-stages" => \$opt_print_filter_stages ,
+   "report_file|report-file=s"               => \$opt_report_file         ,
+   "script_lang|script-lang=s"               => \@opt_script_lang         ,
+   "sdir=s"                                  => \$opt_sdir                ,
+   "strip_comments|strip-comments=s"         => \$opt_strip_comments      ,
+   "sum_reports|sum-reports"                 => \$opt_sum_reports         ,
+   "unicode"                                 => \$opt_unicode             ,
+   "no3"                                     => \$opt_no3                 ,
+   "v:i"                                     => \$opt_v                   ,
+   "version"                                 => \$opt_version             ,
+   "write_lang_def|write-lang-def=s"         => \$opt_write_lang_def      ,
+   "xml"                                     => \$opt_xml                 ,
+   "force_lang|force-lang=s"                 => \@opt_force_lang          ,
+   "yaml"                                    => \$opt_yaml                ,
+   "csv"                                     => \$opt_csv                 ,
+  );
 
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
@@ -1125,8 +1115,17 @@ sub make_file_list {                         # {{{1
                 $rh_ignored->{$file_or_dir} = 'zero sized file';
                 next;
             } elsif (-B $file_or_dir) { # avoid binary files
-                $rh_ignored->{$file_or_dir} = 'binary file';
-                next;
+                if ($opt_unicode) {
+                    # only ignore if not a Unicode file w/trivial 
+                    # ASCII transliteration
+                    if (!unicode_file($file_or_dir)) {
+                        $rh_ignored->{$file_or_dir} = 'binary file';
+                        next;
+                    }
+                } else {
+                    $rh_ignored->{$file_or_dir} = 'binary file';
+                    next;
+                }
             }
             push @file_list, "$file_or_dir";
         } elsif (is_dir ($file_or_dir)) {
@@ -1245,6 +1244,7 @@ sub files {                                  # {{{1
     my $is_bin = -B     $_ ;
     printf "files(%s)  size=%d is_dir=%d  -B=%d\n",
         $File::Find::name, $nBytes, $is_dir, $is_bin if $opt_v > 5;
+    $is_bin = 0 if $opt_unicode and unicode_file($_);
     return if $is_dir or $is_bin;
     ++$nFiles_Found;
     printf "%8d files\r", $nFiles_Found unless $nFiles_Found % $opt_progress_rate;
@@ -1460,9 +1460,29 @@ sub call_counter {                           # {{{1
     my @routines = @{$Filters_by_Language{$language}};
 #print "call_counter:  ", Dumper(@routines), "\n";
 
-    my $IN = new IO::File $file, "r";
-    my @lines = <$IN>;
-    $IN->close;
+    my @lines = ();
+    my $ascii = "";
+    if (-B $file and $opt_unicode) {
+        # was binary so must be unicode
+
+        $/ = undef;
+        my $IN = new IO::File $file, "r";
+        my $bin_text = <$IN>;
+        $IN->close;
+        $/ = "\n";
+
+        $ascii = unicode_to_ascii( $bin_text );
+        @lines = split("\n", $ascii );
+        foreach (@lines) { $_ = "$_\n"; }
+
+    } else {
+        # regular text file
+        my $IN = new IO::File $file, "r";
+        @lines = <$IN>;
+        $IN->close;
+        $ascii = join('', @lines);
+    }
+
     # Some files don't end with a new line.  Force this:
     $lines[$#lines] .= "\n" unless $lines[$#lines] =~ m/\n$/;
 
@@ -2012,21 +2032,29 @@ sub set_constants {                          # {{{1
             'pcl'         => 'Patran Command Language'   ,
             'sh'          => 'Bourne Shell'          ,
             'sql'         => 'SQL'                   ,
+            'SQL'         => 'SQL'                   ,
             'tcl'         => 'Tcl/Tk'                ,
             'tcsh'        => 'C Shell'               ,
             'tk'          => 'Tcl/Tk'                ,
             'vba'         => 'Visual Basic'          ,
+            'VBA'         => 'Visual Basic'          ,
          #  'vbp'         => 'Visual Basic'          , # .vbp - autogenerated
             'vb'          => 'Visual Basic'          ,
+            'VB'          => 'Visual Basic'          ,
          #  'vbw'         => 'Visual Basic'          , # .vbw - autogenerated
             'vbs'         => 'Visual Basic'          ,
+            'VBS'         => 'Visual Basic'          ,
             'webinfo'     => 'ASP.Net'               ,
             'xml'         => 'XML'                   ,
+            'XML'         => 'XML'                   ,
             'build'       => 'NAnt scripts'          ,
             'vim'         => 'vim script'            ,
             'xsd'         => 'XSD'                   ,
+            'XSD'         => 'XSD'                   ,
             'xslt'        => 'XSLT'                  ,
+            'XSLT'        => 'XSLT'                  ,
             'xsl'         => 'XSLT'                  ,
+            'XSL'         => 'XSLT'                  ,
             'y'           => 'yacc'                  ,
             'yaml'        => 'YAML'                  ,
             'yml'         => 'YAML'                  ,
@@ -4735,7 +4763,7 @@ sub diff_two_strings {                       # {{{1
     my $new_2 = join "", @chars_2;
     return ($new_1, $new_2);
 } # 1}}}
-sub diff_two_arrays { # {{{1
+sub diff_two_arrays {                        # {{{1
     my ($ra_lines_1 ,
         $ra_lines_2 )
        = @_;
@@ -4782,7 +4810,7 @@ my $BB = chr(27) . "[1m";  # bold
 
     return ($raa_diff_1, $raa_diff_2);
 } # 1}}}
-sub test_alg_diff { # {{{1
+sub test_alg_diff {                          # {{{1
     my ($file_1 ,
         $file_2 )
        = @_;
@@ -4993,11 +5021,81 @@ return
 </html>
 ';
 } # 1}}}
-sub die_unknown_lang { # {{{1
+sub die_unknown_lang {                       # {{{1
     my ($lang, $option_name) = @_;
     die "Unknown language '$lang' used with $option_name option.  " .
         "The command\n  $script --show-lang\n" .
         "will print all recognized languages.\n" ;
+} # 1}}}
+sub unicode_file {                           # {{{1
+    my $file = shift @_; 
+
+    return 0 if (-s $file > 2_000_000);  
+    # don't bother trying to test binary files bigger than 2 MB
+
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        warn "Unable to read $file; ignoring.\n";
+        return 0;
+    }
+    my @lines = <$IN>;
+    $IN->close;
+
+    if (unicode_to_ascii( join('', @lines) )) {
+        return 1;
+    } else {
+        return 0;
+    }
+
+} # 1}}}
+sub unicode_to_ascii {                       # {{{1
+    my $string = shift @_; 
+
+    # A trivial attempt to convert Microsoft Windows style Unicode
+    # files into ASCII.  These files exhibit the following byte
+    # sequence:
+    # byte   1:  255
+    # byte   2:  254
+    # byte   3:  ord of ASCII character
+    # byte   4:    0
+    # byte 3+i:  ord of ASCII character
+    # byte 4+i:    0
+
+    my @ascii              = ();
+    my $looks_like_unicode = 1;
+    my $length             = length $string;
+# print "length=$length\n";
+    if ($length <= 3) {
+        $looks_like_unicode = 0;
+        return '';
+    }
+    my @unicode            = split(//, $string);
+
+    for (my $i = 2; $i < $length; $i += 2) {
+# print "examining [$unicode[$i]]  ord ", ord($unicode[$i]), "\n";
+        if (32 <= ord($unicode[$i]) and ord($unicode[$i]) <= 127
+            or ord($unicode[$i]) == 13
+            or ord($unicode[$i]) == 10
+            or ord($unicode[$i]) ==  9
+            ) {
+            push @ascii, $unicode[$i];
+# print "adding [$unicode[$i]]\n";
+        } else {
+            $looks_like_unicode = 0;
+            last;
+        }
+        if ($i+1 < $length) {
+            if (!$unicode[$i+1]) {
+                $looks_like_unicode = 0;
+                last;
+            }
+        }
+    }
+    if ($looks_like_unicode) {
+        return join("", @ascii);
+    } else {
+        return '';
+    }
 } # 1}}}
 
 # subroutines copied from SLOCCount
