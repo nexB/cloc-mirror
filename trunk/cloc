@@ -139,10 +139,12 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              in the input files 
                                 gcc-4.2.tar.gz  perl-5.8.8.tar.gz  
                              on Unix use  
-                               --extract-with='gzip -dc >FILE< | tar xfv -'
+                               --extract-with='gzip -dc >FILE< | tar xf -'
+                             or, if you have GNU tar,
+                               --extract-with='tar zxf >FILE<' 
                              and on Windows use: 
                                --extract-with=\"\\\"c:\\Program Files\\WinZip\\WinZip32.exe\\\" -e -o >FILE< .\"
-                             (if you have WinZip installed there).
+                             (if WinZip is installed there).
    --force-lang=<lang>[,<ext>]
                              Process all files that have a <ext> extension 
                              with the counter for language <lang>.  For 
