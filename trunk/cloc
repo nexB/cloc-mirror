@@ -1745,11 +1745,11 @@ sub rm_comments {                            # {{{1
         $file     , # in (some language counters, eg Haskell, need 
                     #     access to the original file)
        ) = @_;
-    my @routines = @{$Filters_by_Language{$language}};
-    my @lines    = ();
+    my @routines       = @{$Filters_by_Language{$language}};
+    my @lines          = @{$ra_lines};
+    my @original_lines = @{$ra_lines};
 
     foreach my $call_string (@routines) {
-#print "call_counter:  call_string=", Dumper($call_string), "\n";
         my $subroutine = $call_string->[0];
         if (! defined &{$subroutine}) {
             warn "rm_comments undefined subroutine $subroutine for $file\n";
@@ -1764,19 +1764,18 @@ sub rm_comments {                            # {{{1
         }
 
         no strict 'refs';
-        @lines = &{$subroutine}($ra_lines, @args);   # apply filter...
+        @lines = &{$subroutine}(\@lines, @args);   # apply filter...
 
-        print_lines($file, "After $subroutine(@args)", $ra_lines) 
+        print_lines($file, "After $subroutine(@args)", \@lines) 
             if $opt_print_filter_stages;
-        @lines = remove_matches($ra_lines, '^\s*$'); # then remove blank lines
+        @lines = remove_matches(\@lines, '^\s*$'); # then remove blank lines
         
-        print_lines($file, "post $subroutine(@args) blank cleanup:", $ra_lines) 
+        print_lines($file, "post $subroutine(@args) blank cleanup:", \@lines) 
             if $opt_print_filter_stages;
     }
     # Exception for scripting languages:  treat the first #! line as code.
     # Will need to add it back in if it was removed earlier.
     if ($Script_Language{$language} and 
-here=  need original_lines
         $original_lines[0] =~ /^#!/ and
         $lines[0] ne $original_lines[0]) {
         unshift @lines, $original_lines[0];  # add the first line back
@@ -1823,11 +1822,13 @@ sub remove_matches {                         # {{{1
 
     my @save_lines = ();
     foreach (@{$ra_lines}) {
+#chomp; print "remove_matches [$pattern] [$_]\n";
         next if m{$pattern}i;
         push @save_lines, $_;
     }
 
     print "<- remove_matches\n" if $opt_v > 2;
+#print "remove_matches returning\n   ", join("\n   ", @save_lines), "\n";
     return @save_lines;
 } # 1}}}
 sub remove_above {                           # {{{1
