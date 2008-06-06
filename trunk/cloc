@@ -532,7 +532,7 @@ for (my $i = 0; $i < scalar @ARGV; $i++) {
 my %Language           = ();
 my %unique_source_file = ();
 my $n_set = 0;
-foreach my $FH (@fh) {
+foreach my $FH (@fh) {  # loop over each pair of file sets
     ++$n_set;
     remove_duplicate_files($FH, 
                                \%{$Language{$FH}}               , 
@@ -572,20 +572,30 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
     foreach my $pair (@changed_file_pairs) {
         my $file_L = $pair->[0];
         my $file_R = $pair->[1];
-
+#print "main step 6 file_L=$file_L    file_R=$file_R\n";
         ++$nCounted;
         printf "Counting:  %d\r", $nCounted 
             unless $nCounted % $opt_progress_rate;
         next if $Ignored{$file_L};
-        if ($Exclude_Language{$Language{$file_L}}) {
-            $Ignored{$file_L} = "--exclude_lang=$Language{$file_L}";
+
+        if ($Exclude_Language{$Language{$fh[$F  ]}{$file_L}} or
+            $Exclude_Language{$Language{$fh[$F+1]}{$file_R}}
+           ) {
+            $Ignored{$file_L} = "--exclude_lang=$Language{$fh[$F  ]}{$file_L}";
+            $Ignored{$file_R} = "--exclude_lang=$Language{$fh[$F+1]}{$file_R}";
             next;
         }
-        if (!defined @{$Filters_by_Language{$Language{$file_L}} }) {
-            if ($Language{$file_L} eq "(unknown)") {
-                $Ignored{$file_L} = "language unknown (#1)";
+        if (!defined @{$Filters_by_Language{$Language{$fh[$F  ]}{$file_L}} } or
+            !defined @{$Filters_by_Language{$Language{$fh[$F+1]}{$file_R}} }
+           ) {
+            if (($Language{$fh[$F  ]}{$file_L} eq "(unknown)") or
+                ($Language{$fh[$F+1]}{$file_R} eq "(unknown)")
+               ) {
+                $Ignored{$fh[$F  ]}{$file_L} = "language unknown (#1)";
+                $Ignored{$fh[$F+1]}{$file_R} = "language unknown (#1)";
             } else {
-                $Ignored{$file_L} = "missing Filters_by_Language{$Language{$file_L}}";
+                $Ignored{$fh[$F  ]}{$file_L} = "missing Filters_by_Language{$Language{$file_L}}";
+                $Ignored{$fh[$F+1]}{$file_R} = "missing Filters_by_Language{$Language{$file_R}}";
             }
             next;
         }
@@ -593,17 +603,32 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 print "DIFF($file_L, $file_R)\n";
         # step 1: identify comments in both files
         chomp ( my @lines_L = read_file($file_L) );
-        my @original_minus_blanks_L = rm_blanks(\@lines_L, $Language{$file_L});
-        @lines_L    = rm_blanks(  \@lines_L, $Language{$file_L});
-        @lines_L    = rm_comments(\@lines_L, $Language{$file_L}, $file_L);
+        my @original_minus_blanks_L 
+                    = rm_blanks(  \@lines_L, $Language{$fh[$F]}{$file_L});
+        @lines_L    = @original_minus_blanks_L;
+        @lines_L    = rm_comments(\@lines_L, $Language{$fh[$F]}{$file_L}, $file_L);
 
-        my (@diff_L, @diff_R, %count);
-        file_diff(\@original_minus_blanks_L    ,   # in
-                  \@lines_L                    ,   # in
-                  "comment"                    ,   # in
-                  \@diff_L, \@diff_R, \%count);    # out
+        chomp ( my @lines_R = read_file($file_R) );
+        my @original_minus_blanks_R 
+                    = rm_blanks(  \@lines_R, $Language{$fh[$F+1]}{$file_R});
+        @lines_R    = @original_minus_blanks_R;
+        @lines_R    = rm_comments(\@lines_R, $Language{$fh[$F+1]}{$file_R}, $file_R);
+
+        my (@diff_LL, @diff_LR, %count_L);
+        file_diff(\@original_minus_blanks_L       ,   # in
+                  \@lines_L                       ,   # in
+                  "comment"                       ,   # in
+                  \@diff_LL, \@diff_LR, \%count_L);   # out
+
+        my (@diff_RL, @diff_RR, %count_R);
+        file_diff(\@original_minus_blanks_R       ,   # in
+                  \@lines_R                       ,   # in
+                  "comment"                       ,   # in
+                  \@diff_RL, \@diff_RR, \%count_R);   # out
+
 #use Data::Dumper; 
-#print Dumper("diff_L", \@diff_L, "diff_R", \@diff_R, "count", \%count);
+#print Dumper("diff_LL", \@diff_LL, "diff_LR", \@diff_LR, "count", \%count_L);
+#print Dumper("diff_RL", \@diff_RL, "diff_RR", \@diff_RR, "count", \%count_R);
 
 #v#     my ($all_line_count,
 #v#         $blank_count   ,
