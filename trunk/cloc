@@ -125,10 +125,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              in addition to reporting by language.
    --categorized=<file>      Save names of categorized files to <file>.
    --counted=<file>          Save names of processed source files to <file>.
-   --diff                    Shows counts of code and comment changes between
-                             successive pairs of inputs:
-                               delta(FD_1, FD_2), delta(FD_2, FD_3), etc
-                             (FD means 'file, archive, or directory')
    --exclude-dir=<D1>[,D2,]  Exclude the given comma separated directories
                              D1, D2, D3, et cetera, from being scanned.  For
                              example  --exclude-dir=.cvs,.svn  will skip
@@ -163,8 +159,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              useful when <ext> is given each time).  
                              See also --script-lang.
    --found=<file>            Save names of every file found to <file>.
-   --html                    Create HTML files of each input file showing
-                             comment and code lines in different colors.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
    --no3                     Suppress third-generation language output.
@@ -174,7 +168,9 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --print-filter-stages     Print to STDOUT processed source code before and 
                              after each filter is applied.
    --progress-rate=<n>       Show progress update after every <n> files are
-                             processed (default <n>=100).
+                             processed (default <n>=100).  Set <n> to 0 to
+                             suppress progress output (useful when redirecting
+                             output to STDOUT).
    --quiet                   Suppress all information messages except for
                              the final report.
    --report-file=<file>      Write the results to <file> instead of STDOUT.
@@ -222,6 +218,12 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
 
 ";
 #  Help information for options not yet implemented:
+#  --diff                    Shows counts of code and comment changes between
+#                            successive pairs of inputs:
+#                              delta(FD_1, FD_2), delta(FD_2, FD_3), etc
+#                            (FD means 'file, archive, or directory')
+#  --html                    Create HTML files of each input file showing
+#                            comment and code lines in different colors.
 
 $| = 1;  # flush STDOUT
 my $start_time = time();
@@ -297,8 +299,8 @@ my %Exclude_Dir      = ();
    %Exclude_Dir      = map { $_ => 1 } split(/,/, $opt_exclude_dir ) 
         if $opt_exclude_dir ;
 # Options defaults:
-$opt_progress_rate = 100 unless $opt_progress_rate;
-$opt_v             =   0 unless $opt_v;
+$opt_progress_rate = 100 unless defined $opt_progress_rate;
+$opt_v             =   0 unless defined $opt_v;
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
@@ -575,7 +577,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #print "main step 6 file_L=$file_L    file_R=$file_R\n";
         ++$nCounted;
         printf "Counting:  %d\r", $nCounted 
-            unless $nCounted % $opt_progress_rate;
+            unless (!$opt_progress_rate or ($nCounted % $opt_progress_rate));
         next if $Ignored{$file_L};
 
         if ($Exclude_Language{$Language{$fh[$F  ]}{$file_L}} or
@@ -707,7 +709,7 @@ my $nCounted = 0;
 foreach my $file (sort keys %unique_source_file) {
     ++$nCounted;
     printf "Counting:  %d\r", $nCounted 
-        unless $nCounted % $opt_progress_rate;
+        unless (!$opt_progress_rate or ($nCounted % $opt_progress_rate));
     next if $Ignored{$file};
     if ($Exclude_Language{$Language{$file}}) {
         $Ignored{$file} = "--exclude_lang=$Language{$file}";
@@ -1354,10 +1356,11 @@ die  "make_file_list($file) undef size" unless defined $size_in_bytes;
 die  "make_file_list($file) undef lang" unless defined $language;
         printf $fh "%d,%s,%s\n", $size_in_bytes, $language, $file;
         ++$nFiles_Categorized;
-        printf "classified %d files\r", 
-            $nFiles_Categorized unless $nFiles_Categorized % $opt_progress_rate;
+        #printf "classified %d files\n", $nFiles_Categorized 
+        #    unless (!$opt_progress_rate or 
+        #            ($nFiles_Categorized % $opt_progress_rate));
     }
-    printf "classified %d files\r", $nFiles_Categorized 
+    printf "classified %d files\n", $nFiles_Categorized 
         if !$opt_quiet and $nFiles_Categorized > 1;
 
     return $fh;   # handle to the file containing the list of files to process
@@ -1384,7 +1387,7 @@ sub remove_duplicate_files {                 # {{{1
         $rh_Language->{$file} = $language;
         push @{$files_by_size{$size_in_bytes}}, $file;
     }
-    if ($n > $opt_progress_rate) {
+    if ($opt_progress_rate and ($n > $opt_progress_rate)) {
         printf "Duplicate file check %d files (%d known unique)\r", 
             $n, scalar keys %files_by_size;
     }
@@ -1392,7 +1395,7 @@ sub remove_duplicate_files {                 # {{{1
     foreach my $bytes (sort {$a <=> $b} keys %files_by_size) {
         ++$n;
         printf "Unique: %8d files                                          \r", 
-            $n unless $n % $opt_progress_rate;
+            $n unless (!$opt_progress_rate or ($n % $opt_progress_rate));
         $rh_unique_source_file->{$files_by_size{$bytes}[0]} = 1;
         next unless scalar @{$files_by_size{$bytes}} > 1;
         foreach my $F (different_files(\@{$files_by_size{$bytes}},
@@ -1428,7 +1431,8 @@ sub files {                                  # {{{1
     $is_bin = 0 if $opt_unicode and unicode_file($_);
     return if $is_dir or $is_bin;
     ++$nFiles_Found;
-    printf "%8d files\r", $nFiles_Found unless $nFiles_Found % $opt_progress_rate;
+    printf "%8d files\r", $nFiles_Found 
+        unless (!$opt_progress_rate or ($nFiles_Found % $opt_progress_rate));
     push @file_list, $File::Find::name;
 } # 1}}}
 sub archive_files {                          # {{{1
