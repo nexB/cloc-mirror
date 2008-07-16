@@ -2053,6 +2053,28 @@ sub remove_html_comments {                   # {{{1
     print "<- remove_html_comments\n" if $opt_v > 2;
     return @save_lines;
 } # 1}}}
+sub docstring_to_C {                         # {{{1
+    my ($ra_lines, ) = @_;
+    # Converts Python docstrings to C comments.
+
+    print "-> docstring_to_C()\n" if $opt_v > 2;
+
+    my $in_docstring = 0;
+    foreach (@{$ra_lines}) {
+        while (/"""/) {
+            if (!$in_docstring) {
+                s{"""}{/*};
+                $in_docstring = 1;
+            } else {
+                s{"""}{*/};
+                $in_docstring = 0;
+            }
+        }
+    }
+
+    print "<- docstring_to_C\n" if $opt_v > 2;
+    return @{$ra_lines};
+} # 1}}}
 sub determine_lit_type {                     # {{{1
   my ($file) = @_;
 
@@ -2412,7 +2434,10 @@ sub set_constants {                          # {{{1
                             ],
     'Perl'               => [   [ 'remove_below'        , '^__(END|DATA)__'],
                                 [ 'remove_matches'      , '^\s*#'  ], ], 
-    'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'docstring_to_C'                 ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                ], 
     'PHP'                => [   
                                 [ 'remove_matches'      , '^\s*#'  ],
                                 [ 'remove_matches'      , '^\s*//' ], 
