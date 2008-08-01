@@ -2188,6 +2188,7 @@ sub set_constants {                          # {{{1
             'adso'        => 'ADSO/IDSM'             ,
             'am'          => 'make'                  ,
             'ample'       => 'AMPLE'                 ,
+            'as'          => 'ActionScript'          ,
             'dofile'      => 'AMPLE'                 ,
             'startup'     => 'AMPLE'                 ,
             'asa'         => 'ASP'                   ,
@@ -2372,6 +2373,11 @@ sub set_constants {                          # {{{1
 # 1}}}
 %{$rhaa_Filters_by_Language} = (                 # {{{1
     'ABAP'               => [   [ 'remove_matches'      , '^\*'    ], ],
+    'ActionScript'       => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                            ],
+
     'ASP'                => [   [ 'remove_matches'      , '^\s*\47'], ],  # \47 = '
     'ASP.Net'            => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ada'                => [   [ 'remove_matches'      , '^\s*--' ], ],
@@ -2607,6 +2613,7 @@ sub set_constants {                          # {{{1
     'ABAP'                         =>   5.00,
     'accel'                        =>   4.21,
     'access'                       =>   2.11,
+    'ActionScript'                 =>   1.36,
     'actor'                        =>   3.81,
     'acumen'                       =>   2.86,
     'Ada'                          =>   0.52,
