@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.04;
+my $VERSION = 1.05;
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -120,18 +120,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
  Count physical lines of source code in the given files and/or
  recursively below the given directories.
 
- Options:
-   --by-file                 Report results for every source file encountered
-                             in addition to reporting by language.
-   --categorized=<file>      Save names of categorized files to <file>.
-   --counted=<file>          Save names of processed source files to <file>.
-   --exclude-dir=<D1>[,D2,]  Exclude the given comma separated directories
-                             D1, D2, D3, et cetera, from being scanned.  For
-                             example  --exclude-dir=.cvs,.svn  will skip
-                             all files that have /.cvs/ or /.svn/ as part of 
-                             their path.
-   --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
-                             L1, L2, L3, et cetera, from being counted.
+ Input Options:
    --extract-with=<cmd>      Use <cmd> to extract binary archive files (e.g.:
                              .tar.gz, .zip, .Z).  Use the literal '>FILE<' as 
                              a stand-in for the actual file(s) to be
@@ -145,6 +134,13 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              and on Windows use: 
                                --extract-with=\"\\\"c:\\Program Files\\WinZip\\WinZip32.exe\\\" -e -o >FILE< .\"
                              (if WinZip is installed there).
+   --unicode                 Check binary files to see if they contain Unicode
+                             expanded ASCII text.  This causes performance to
+                             drop noticably.
+
+ Processing Options:
+   --by-file                 Report results for every source file encountered
+                             in addition to reporting by language.
    --force-lang=<lang>[,<ext>]
                              Process all files that have a <ext> extension 
                              with the counter for language <lang>.  For 
@@ -158,22 +154,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
                              See also --script-lang.
-   --found=<file>            Save names of every file found to <file>.
-   --ignored=<file>          Save names of ignored files and the reason they
-                             were ignored to <file>.
-   --no3                     Suppress third-generation language output.
-                             This option can cause report summation to fail
-                             if some reports were produced with this option
-                             while others were produced without it.
-   --print-filter-stages     Print to STDOUT processed source code before and 
-                             after each filter is applied.
-   --progress-rate=<n>       Show progress update after every <n> files are
-                             processed (default <n>=100).  Set <n> to 0 to
-                             suppress progress output (useful when redirecting
-                             output to STDOUT).
-   --quiet                   Suppress all information messages except for
-                             the final report.
-   --report-file=<file>      Write the results to <file> instead of STDOUT.
    --read-lang-def=<file>    Load from <file> the language processing filters.
                              (see also --write-lang-def) then use these filters
                              instead of the built-in filters.
@@ -191,10 +171,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              letting File::Temp chose the location.  Files
                              written to this location are not removed at
                              the end of the run (as they are with File::Temp).
-   --show-ext[=<ext>]        Print information about all known (or just the
-                             given) file extensions and exit.
-   --show-lang[=<lang>]      Print information about all known (or just the
-                             given) languages and exit.
    --strip-comments=<ext>    For each file processed, write to the current
                              directory a version of the file which has blank
                              lines and comments removed.  The name of each
@@ -204,14 +180,54 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              created with the --report-file option.  Makes
                              a cumulative set of results containing the
                              sum of data from the individual report files.
-   --unicode                 Check binary files to see if they contain Unicode
-                             expanded ASCII text.  This causes performance to
-                             drop noticably.
+
+ Filter Options:
+   --exclude-dir=<D1>[,D2,]  Exclude the given comma separated directories
+                             D1, D2, D3, et cetera, from being scanned.  For
+                             example  --exclude-dir=.cvs,.svn  will skip
+                             all files that have /.cvs/ or /.svn/ as part of 
+                             their path.
+   --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
+                             L1, L2, L3, et cetera, from being counted.
+   --match-f=<regex>         Only count files whose names match the Perl 
+                             regex.  For example
+                               --match-f=^[Ww]idget
+                             counts files whose basename starts with
+                             Widget or widget.
+   --not-match-f=<regex>     Count all files except those whose names match 
+                             the Perl regex.
+
+ Debug Options:
+   --categorized=<file>      Save names of categorized files to <file>.
+   --counted=<file>          Save names of processed source files to <file>.
+   --found=<file>            Save names of every file found to <file>.
+   --ignored=<file>          Save names of ignored files and the reason they
+                             were ignored to <file>.
+   --print-filter-stages     Print to STDOUT processed source code before and 
+                             after each filter is applied.
+   --show-ext[=<ext>]        Print information about all known (or just the
+                             given) file extensions and exit.
+   --show-lang[=<lang>]      Print information about all known (or just the
+                             given) languages and exit.
+   -v[=<n>]                  Verbose switch (optional numeric value).
+   --version                 Print the version of this program and exit.
+
    --write-lang-def=<file>   Writes to <file> the language processing filters
                              then exits.  Useful as a first step to creating
                              custom language definitions (see --read-lang-def).
-   -v[=<n>]                  Verbose switch (optional numeric value).
-   --version                 Print the version of this program and exit.
+
+ Output Options:
+   --no3                     Suppress third-generation language output.
+                             (This option can cause report summation to fail
+                             if some reports were produced with this option
+                             while others were produced without it.)
+   --progress-rate=<n>       Show progress update after every <n> files are
+                             processed (default <n>=100).  Set <n> to 0 to
+                             suppress progress output (useful when redirecting
+                             output to STDOUT).
+   --quiet                   Suppress all information messages except for
+                             the final report.
+   --report-file=<file>      Write the results to <file> instead of STDOUT.
    --csv                     Write the results as comma separated values.
    --xml                     Write the results in XML.
    --yaml                    Write the results in YAML.
@@ -258,6 +274,8 @@ my (
     $opt_xml                  ,
     $opt_yaml                 ,
     $opt_csv                  ,
+	$opt_match_f              ,
+	$opt_not_match_f          ,
    );
 GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -290,8 +308,9 @@ GetOptions(
    "force_lang|force-lang=s"                 => \@opt_force_lang          ,
    "yaml"                                    => \$opt_yaml                ,
    "csv"                                     => \$opt_csv                 ,
+   "match_f|match-f=s"                       => \$opt_match_f             ,
+   "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
   );
-
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
         if $opt_exclude_lang;
@@ -1419,6 +1438,9 @@ sub files {                                  # {{{1
         }
         return if $return;
     }
+	if ($opt_match_f    ) {	return unless /$opt_match_f/;     }
+    if ($opt_not_match_f) {	return if     /$opt_not_match_f/; }
+		
     my $nBytes = -s     $_ ;
     if (!$nBytes and $opt_v > 5) {
         printf "files(%s)  zero size\n", $File::Find::name;
