@@ -121,7 +121,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
  recursively below the given directories.
 
  Input Options:
-   --extract-with=<cmd>      Use <cmd> to extract binary archive files (e.g.:
+   --extract-with=<cmd>      [This option is superceded by -z and -j.] 
+                             Use <cmd> to extract binary archive files (e.g.:
                              .tar.gz, .zip, .Z).  Use the literal '>FILE<' as 
                              a stand-in for the actual file(s) to be
                              extracted.  For example, to count lines of code
@@ -137,6 +138,11 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --unicode                 Check binary files to see if they contain Unicode
                              expanded ASCII text.  This causes performance to
                              drop noticably.
+   -z|--gzip|--zip           Call system commands gzip and tar (Unix) or 
+                             WinZip32 (on Windows) to expand .tar.gz, .tar.Z
+                             or .zip files.
+   -j|--bzip2                Call system commands bzip2 and tar to expand 
+                             .tar.bz2 files.
 
  Processing Options:
    --by-file                 Report results for every source file encountered
@@ -276,6 +282,9 @@ my (
     $opt_csv                  ,
 	$opt_match_f              ,
 	$opt_not_match_f          ,
+	$opt_gzip                 ,
+	$opt_bzip2                ,
+	$opt_zip                  ,
    );
 GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -310,6 +319,8 @@ GetOptions(
    "csv"                                     => \$opt_csv                 ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
+   "z|gzip|zip"                              => \$opt_gzip                ,
+   "j|bzip2"                                 => \$opt_bzip2               ,
   );
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
@@ -475,7 +486,7 @@ if ($opt_write_lang_def) {
 #  c) Determine the language for each file in the list.
 #
 my @binary_archive = ();
-if ($opt_extract_with) {
+if ($opt_extract_with or $opt_gzip or $opt_bzip2) {
     my $cwd = cwd();
 #print "cwd main = [$cwd]\n";
     my @extract_location = ();
@@ -492,8 +503,7 @@ if ($opt_extract_with) {
             $bin_file_full_path = File::Spec->catfile( $cwd, $bin_file );
 #print "bin_file_full_path (was rel) = [$bin_file_full_path]\n";
         }
-        (my $extract_cmd = $opt_extract_with ) 
-            =~ s/>FILE</$bin_file_full_path/g;
+        my     $extract_cmd = uncompress_archive_cmd($bin_file_full_path);
         print  $extract_cmd, "\n";
         system $extract_cmd;
         push @extract_location, $extract_dir;
@@ -512,10 +522,10 @@ if ($opt_extract_with) {
             find(\&archive_files, $dir);  # populates global @binary_archive
         }
         foreach my $archive (@binary_archive) {
-            (my $extract_cmd = $opt_extract_with ) 
-                =~ s/>FILE</$archive/g;
-            my $extract_dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+            my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
             chdir  $extract_dir;
+
+            my     $extract_cmd = uncompress_archive_cmd($archive);
             print  $extract_cmd, "\n";
             system $extract_cmd;
             push @extract_location, $extract_dir;
@@ -5553,6 +5563,24 @@ sub unicode_to_ascii {                       # {{{1
         return '';
     }
 } # 1}}}
+sub uncompress_archive_cmd {                 # {{{1
+    my ($archive_file,
+        $on_windows ) = @_;
+
+    my $extract_cmd = "";
+    if ($opt_extract_with) {
+        ($extract_cmd = $opt_extract_with ) 
+            =~ s/>FILE</$archive_file/g;
+    } elsif ($opt_gzip and !$on_windows)    {
+        $extract_cmd = "gzip  -dc $archive_file | tar xf -";
+    } elsif ($opt_bzip2)   {
+        $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
+    } else {
+        # zip on Windows
+        $extract_cmd = "WinZip32 -e -o $archive_file .";
+    }
+}
+# 1}}}
 
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
