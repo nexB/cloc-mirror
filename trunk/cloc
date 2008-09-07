@@ -138,11 +138,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --unicode                 Check binary files to see if they contain Unicode
                              expanded ASCII text.  This causes performance to
                              drop noticably.
-   -z|--gzip|--zip           Call system commands gzip and tar (Unix) or 
-                             WinZip32 (on Windows) to expand .tar.gz, .tar.Z
-                             or .zip files.
-   -j|--bzip2                Call system commands bzip2 and tar to expand 
-                             .tar.bz2 files.
 
  Processing Options:
    --by-file                 Report results for every source file encountered
@@ -181,7 +176,11 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              directory a version of the file which has blank
                              lines and comments removed.  The name of each
                              stripped file is the original file name with 
-                             .<ext> appended to it.
+                             .<ext> appended to it.  It is written to the
+                             current directory unless --original-dir is on.
+   --original-dir            [Only effective in combination with 
+                             --strip-comments]  Write the stripped files 
+                             to the same directory as the original files.
    --sum-reports             Input arguments are report files previously
                              created with the --report-file option.  Makes
                              a cumulative set of results containing the
@@ -269,6 +268,7 @@ my (
     $opt_read_lang_def        ,
     $opt_write_lang_def       ,
     $opt_strip_comments       ,
+    $opt_original_dir         ,
     $opt_quiet                ,
     $opt_report_file          ,
     $opt_sdir                 ,
@@ -282,9 +282,6 @@ my (
     $opt_csv                  ,
 	$opt_match_f              ,
 	$opt_not_match_f          ,
-	$opt_gzip                 ,
-	$opt_bzip2                ,
-	$opt_zip                  ,
    );
 GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -307,6 +304,7 @@ GetOptions(
    "script_lang|script-lang=s"               => \@opt_script_lang         ,
    "sdir=s"                                  => \$opt_sdir                ,
    "strip_comments|strip-comments=s"         => \$opt_strip_comments      ,
+   "original_dir|original-dir"               => \$opt_original_dir        ,
    "sum_reports|sum-reports"                 => \$opt_sum_reports         ,
    "unicode"                                 => \$opt_unicode             ,
    "no3"                                     => \$opt_no3                 ,
@@ -319,8 +317,6 @@ GetOptions(
    "csv"                                     => \$opt_csv                 ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
-   "z|gzip|zip"                              => \$opt_gzip                ,
-   "j|bzip2"                                 => \$opt_bzip2               ,
   );
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
@@ -486,7 +482,7 @@ if ($opt_write_lang_def) {
 #  c) Determine the language for each file in the list.
 #
 my @binary_archive = ();
-if ($opt_extract_with or $opt_gzip or $opt_bzip2) {
+if ($opt_extract_with) {
     my $cwd = cwd();
 #print "cwd main = [$cwd]\n";
     my @extract_location = ();
@@ -1710,7 +1706,12 @@ sub call_counter {                           # {{{1
 
     my $comment_lines = $total_lines - $blank_lines - scalar  @lines;
     if ($opt_strip_comments) {
-        my $stripped_file = basename $file . ".$opt_strip_comments";
+        my $stripped_file = "";
+        if ($opt_original_dir) {
+            $stripped_file =          $file . ".$opt_strip_comments";
+        } else {
+            $stripped_file = basename $file . ".$opt_strip_comments";
+        }
         write_file($stripped_file, @lines);
     }
     if ($opt_html) {
@@ -5578,9 +5579,10 @@ sub uncompress_archive_cmd {                 # {{{1
     if ($opt_extract_with) {
         ($extract_cmd = $opt_extract_with ) 
             =~ s/>FILE</$archive_file/g;
-    } elsif ($opt_gzip and !$on_windows)    {
+    } elsif (($archive_file =~ /\.tar\.gz$/ or 
+              $archive_file =~ /\.tgz$/) and !$on_windows)    {
         $extract_cmd = "gzip  -dc $archive_file | tar xf -";
-    } elsif ($opt_bzip2)   {
+    } elsif ($archive_file =~ /\.tar\.bz2$/ and !$on_windows)    {
         $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
     } else {
         # zip on Windows
