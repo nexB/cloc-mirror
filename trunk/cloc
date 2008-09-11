@@ -1385,7 +1385,7 @@ die  "make_file_list($file) undef lang" unless defined $language;
         #    unless (!$opt_progress_rate or 
         #            ($nFiles_Categorized % $opt_progress_rate));
     }
-    printf "classified %d files\n", $nFiles_Categorized 
+    printf "classified %d files\r", $nFiles_Categorized 
         if !$opt_quiet and $nFiles_Categorized > 1;
 
     return $fh;   # handle to the file containing the list of files to process
@@ -1419,15 +1419,19 @@ sub remove_duplicate_files {                 # {{{1
     $n = 0;
     foreach my $bytes (sort {$a <=> $b} keys %files_by_size) {
         ++$n;
-        printf "Unique: %8d files                                          \r", 
+        printf "Unique: %8d files                                          \r",
             $n unless (!$opt_progress_rate or ($n % $opt_progress_rate));
-        $rh_unique_source_file->{$files_by_size{$bytes}[0]} = 1;
-        next unless scalar @{$files_by_size{$bytes}} > 1;
-        foreach my $F (different_files(\@{$files_by_size{$bytes}},
-                                        $rh_Err     ,
-                                        $raa_errors ,
-                                        $rh_ignored ) ) {
-            $rh_unique_source_file->{$F} = 1;
+        if (scalar @{$files_by_size{$bytes}} == 1) {
+            # only one file is this big; must be unique
+            $rh_unique_source_file->{$files_by_size{$bytes}[0]} = 1;
+            next;
+        } else {
+            foreach my $F (different_files(\@{$files_by_size{$bytes}},
+                                            $rh_Err     ,
+                                            $raa_errors ,
+                                            $rh_ignored ) ) {
+                $rh_unique_source_file->{$F} = 1;
+            }
         }
     }
 } # 1}}}
