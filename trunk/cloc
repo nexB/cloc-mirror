@@ -113,6 +113,8 @@ use Text::Tabs qw { expand };
 use Cwd qw { cwd };
 # 1}}}
 # Usage information, options processing.       {{{1
+my $NN     = chr(27) . "[0m";  # normal
+my $BB     = chr(27) . "[1m";  # bold
 my $script = basename $0;
 my $usage  = "
 Usage: $script [options] <file(s)/dir(s)> | <report files>
@@ -120,9 +122,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
  Count physical lines of source code in the given files and/or
  recursively below the given directories.
 
- Input Options:
-   --extract-with=<cmd>      [This option is superceded by -z and -j.] 
-                             Use <cmd> to extract binary archive files (e.g.:
+ ${BB}Input Options${NN}
+   --extract-with=<cmd>      Use <cmd> to extract binary archive files (e.g.:
                              .tar.gz, .zip, .Z).  Use the literal '>FILE<' as 
                              a stand-in for the actual file(s) to be
                              extracted.  For example, to count lines of code
@@ -139,7 +140,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              expanded ASCII text.  This causes performance to
                              drop noticably.
 
- Processing Options:
+ ${BB}Processing Options${NN}
    --by-file                 Report results for every source file encountered
                              in addition to reporting by language.
    --force-lang=<lang>[,<ext>]
@@ -186,7 +187,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              a cumulative set of results containing the
                              sum of data from the individual report files.
 
- Filter Options:
+ ${BB}Filter Options${NN}
    --exclude-dir=<D1>[,D2,]  Exclude the given comma separated directories
                              D1, D2, D3, et cetera, from being scanned.  For
                              example  --exclude-dir=.cvs,.svn  will skip
@@ -202,7 +203,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --not-match-f=<regex>     Count all files except those whose names match 
                              the Perl regex.
 
- Debug Options:
+ ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
    --counted=<file>          Save names of processed source files to <file>.
    --found=<file>            Save names of every file found to <file>.
@@ -221,7 +222,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              then exits.  Useful as a first step to creating
                              custom language definitions (see --read-lang-def).
 
- Output Options:
+ ${BB}Output Options:${NN}
    --no3                     Suppress third-generation language output.
                              (This option can cause report summation to fail
                              if some reports were produced with this option
@@ -5094,8 +5095,6 @@ sub diff_two_arrays {                        # {{{1
     my $n_added     = 0;
     my $n_deleted   = 0;
     my @min_sdiff   = ();
-my $NN = chr(27) . "[0m";  # normal
-my $BB = chr(27) . "[1m";  # bold
 
     my @sdiffs = sdiff( $ra_lines_1, $ra_lines_2 );
     foreach my $entry (@sdiffs) {
