@@ -195,13 +195,12 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              their path.
    --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
                              L1, L2, L3, et cetera, from being counted.
-   --match-f=<regex>         Only count files whose names match the Perl 
+   --match-f=<regex>         Only count files whose basenames match the Perl 
                              regex.  For example
                                --match-f=^[Ww]idget
-                             counts files whose basename starts with
-                             Widget or widget.
-   --not-match-f=<regex>     Count all files except those whose names match 
-                             the Perl regex.
+                             only counts files that start with Widget or widget.
+   --not-match-f=<regex>     Count all files except those whose basenames
+                             match the Perl regex.
 
  ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
@@ -284,7 +283,7 @@ my (
 	$opt_match_f              ,
 	$opt_not_match_f          ,
    );
-GetOptions(
+my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
    "categorized=s"                           => \$opt_categorized         ,
    "counted=s"                               => \$opt_counted             ,
@@ -319,6 +318,7 @@ GetOptions(
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
   );
+die "\n" unless $getopt_success;
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
         if $opt_exclude_lang;
@@ -2450,7 +2450,10 @@ sub set_constants {                          # {{{1
     'IDL'                => [   [ 'remove_matches'      , '^\s*;'  ], ],
     'JSP'                => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ],
-                                [ 'remove_jsp_comments',           ], ],
+                                [ 'remove_jsp_comments' ,          ], 
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ],
+                            ],
     'Java'               => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
