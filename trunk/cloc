@@ -870,15 +870,20 @@ sub generate_report {                        # {{{1
     my $sum_code      = 0;
     my $sum_blank     = 0;
     my $sum_comment   = 0;
+    my $max_len       = 0;
     foreach my $language (keys %{$rhh_count}) {
         $sum_files   += $rhh_count->{$language}{'nFiles'} ;
         $sum_blank   += $rhh_count->{$language}{'blank'}  ;
         $sum_comment += $rhh_count->{$language}{'comment'};
         $sum_code    += $rhh_count->{$language}{'code'}   ;
+        $max_len      = length($language) if length($language) > $max_len;
     }
+    my $column_1_offset = 0;
+       $column_1_offset = $max_len - 17 if $max_len > 17;
     my $sum_lines = $sum_blank + $sum_comment + $sum_code;
     $elapsed_sec = 0.5 unless $elapsed_sec;
 
+    my $spacing_0 = 23;
     my $spacing_1 = 13;
     my $spacing_2 =  9;
     my $spacing_3 = 17;
@@ -887,9 +892,12 @@ sub generate_report {                        # {{{1
         $spacing_2 = 14;
         $spacing_3 = 28;
     }
+    $spacing_0 += $column_1_offset;
+    $spacing_1 += $column_1_offset;
+    $spacing_3 += $column_1_offset;
     my %Format = (
         '1' => { 'xml' => 'name="%s" ',
-                 'txt' => '%-23s '    ,
+                 'txt' => "\%-${spacing_0}s ",
                },
         '2' => { 'xml' => 'name="%s" ',
                  'txt' => "\%-${spacing_3}s ",
@@ -910,7 +918,9 @@ sub generate_report {                        # {{{1
        $Style = "xml" if $opt_csv ;  # not a typo; just set to anything but txt
 
     my $URL        = "http://cloc.sourceforge.net";
-    my $hyphen_line = sprintf "%s", '-' x 79;
+    my $hyphen_line = sprintf "%s", '-' x (79 + $column_1_offset);
+       $hyphen_line = sprintf "%s", '-' x (68 + $column_1_offset) 
+            if $opt_no3 and (68 + $column_1_offset) > 79;
     my $data_line  = "";
     my $first_column;
     my $BY_LANGUAGE = 0;
@@ -952,7 +962,12 @@ sub generate_report {                        # {{{1
 
     if ($Style eq "txt") {
         # column headers
-        $data_line  = sprintf "%-${spacing_1}s ", $first_column;
+        if ($opt_no3 and $BY_FILE) {
+            my $spacing_n = $spacing_1 - 11;
+            $data_line  = sprintf "%-${spacing_n}s ", $first_column;
+        } else {
+            $data_line  = sprintf "%-${spacing_1}s ", $first_column;
+        }
         if ($BY_FILE) {
             $data_line .= sprintf "%${spacing_2}s "  , " "    ;
         } else {
@@ -1109,7 +1124,7 @@ sub generate_report {                        # {{{1
     } else {
  
         if ($BY_FILE) {
-            $data_line  = sprintf "%-23s ", "SUM:"  ;
+            $data_line  = sprintf "%-${spacing_0}s ", "SUM:"  ;
         } else {
             $data_line  = sprintf "%-${spacing_1}s ", "SUM:"  ;
             $data_line .= sprintf "%${spacing_2}d ", $sum_files;
