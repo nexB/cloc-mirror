@@ -179,6 +179,10 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              letting File::Temp chose the location.  Files
                              written to this location are not removed at
                              the end of the run (as they are with File::Temp).
+   --skip-uniqueness         Skip the file uniqueness check.  This will give
+                             a performance boost at the expense of counting
+                             files with identical contents multiple times
+                             (if such duplicates exist).
    --strip-comments=<ext>    For each file processed, write to the current
                              directory a version of the file which has blank
                              lines and comments removed.  The name of each
@@ -227,7 +231,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              then exits.  Useful as a first step to creating
                              custom language definitions (see --read-lang-def).
 
- ${BB}Output Options:${NN}
+ ${BB}Output Options${NN}
    --no3                     Suppress third-generation language output.
                              (This option can cause report summation to fail
                              if some reports were produced with this option
@@ -288,6 +292,7 @@ my (
     $opt_csv                  ,
 	$opt_match_f              ,
 	$opt_not_match_f          ,
+	$opt_skip_uniqueness      ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -309,6 +314,7 @@ my $getopt_success = GetOptions(
    "report_file|report-file=s"               => \$opt_report_file         ,
    "script_lang|script-lang=s"               => \@opt_script_lang         ,
    "sdir=s"                                  => \$opt_sdir                ,
+   "skip_uniqueness|skip-uniqueness"         => \$opt_skip_uniqueness     ,
    "strip_comments|strip-comments=s"         => \$opt_strip_comments      ,
    "original_dir|original-dir"               => \$opt_original_dir        ,
    "sum_reports|sum-reports"                 => \$opt_sum_reports         ,
@@ -1429,7 +1435,11 @@ sub remove_duplicate_files {                 # {{{1
         chomp($file);
         $rh_Language->{$file} = $language;
         push @{$files_by_size{$size_in_bytes}}, $file;
+        if ($opt_skip_uniqueness) {
+            $rh_unique_source_file->{$file} = 1;
+        }
     }
+    return if $opt_skip_uniqueness;
     if ($opt_progress_rate and ($n > $opt_progress_rate)) {
         printf "Duplicate file check %d files (%d known unique)\r", 
             $n, scalar keys %files_by_size;
