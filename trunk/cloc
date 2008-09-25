@@ -113,8 +113,14 @@ use Text::Tabs qw { expand };
 use Cwd qw { cwd };
 # 1}}}
 # Usage information, options processing.       {{{1
+my $ON_WINDOWS = 0;
+   $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
+   $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
+
 my $NN     = chr(27) . "[0m";  # normal
+   $NN     = "" if $ON_WINDOWS;
 my $BB     = chr(27) . "[1m";  # bold
+   $BB     = "" if $ON_WINDOWS;
 my $script = basename $0;
 my $usage  = "
 Usage: $script [options] <file(s)/dir(s)> | <report files>
@@ -338,10 +344,6 @@ die "--diff requires at least two arguments\n"
 # 1}}}
 # Step 1:  Initialize global constants.        {{{1
 #
-my $ON_WINDOWS = 0;
-   $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
-   $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
-
 my $nFiles_Found = 0;  # updated in make_file_list
 my (%Language_by_Extension, %Language_by_Script,
     %Filters_by_Language, %Not_Code_Extension, %Not_Code_Filename,
