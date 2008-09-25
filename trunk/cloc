@@ -2106,6 +2106,19 @@ sub remove_html_comments {                   # {{{1
     print "<- remove_html_comments\n" if $opt_v > 2;
     return @save_lines;
 } # 1}}}
+sub add_newlines {                           # {{{1
+    my ($ra_lines, ) = @_;
+    print "-> add_newlines \n" if $opt_v > 2;
+
+    my @save_lines = ();
+    foreach (@{$ra_lines}) {
+
+        push @save_lines, "$_\n";
+    }
+
+    print "<- add_newlines \n" if $opt_v > 2;
+    return @save_lines;
+} # 1}}}
 sub docstring_to_C {                         # {{{1
     my ($ra_lines, ) = @_;
     # Converts Python docstrings to C comments.
@@ -2467,6 +2480,7 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'HTML'   ],
                                 [ 'remove_jsp_comments' ,          ], 
                                 [ 'remove_matches'      , '^\s*//' ],
+                                [ 'add_newlines'        ,          ],
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
     'Java'               => [   
