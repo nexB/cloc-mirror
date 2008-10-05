@@ -1,0 +1,96 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Getopt::Long;
+
+my ($opt_skip_diff, $opt_start_with );
+GetOptions("skip-diff"    => \$opt_skip_diff ,
+           "start-with=i" => \$opt_start_with, );
+
+my $CLOC       = "./cloc-0.90.pl";
+   $CLOC       = "./cloc";
+
+# options
+   $CLOC      .= " --exclude-dir .svn ";
+
+my $TESTDIR    = "./testcode";
+my $SOLN       = "./correct_outs";
+my $nPass      = 0;
+my $nFail      = 0;
+my @fail_cases = ();   # ID's of cases which failed
+my %all_cases  = ();   # to test for duplicate input case numbers
+
+# remove out.* files from previous runs
+opendir  DIR, "." or die "Cannot read current directory $!\n";
+my @outfiles = grep(/^out\.\d+/, readdir(DIR));
+close DIR;
+if (@outfiles) {
+    warn "Deleting @outfiles\n";
+    foreach (@outfiles) { unlink $_; }
+}
+
+while (<DATA>) {
+    next if /^\s*$/ or /^\s*#/;
+    chomp;
+    my ($case, $args) = split(/:/, $_, 2);
+    $case =~ s/\s+//g;
+    die "duplicate case number $case line $." if defined $all_cases{$case};
+
+    next if $opt_start_with and $case < $opt_start_with;
+
+    $args =~ s/TESTDIR/$TESTDIR/g;
+    $all_cases{$case} = 1;
+    unlink "out.$case", "out.$case", "out.$case.lang"; 
+
+    print  "$CLOC $args", "\n";
+    system "$CLOC $args";
+
+    my   @results = ();
+    push @results, "out.$case"      if -r "out.$case"     ;
+    push @results, "out.$case.lang" if -r "out.$case.lang";
+    push @results, "out.$case.file" if -r "out.$case.file";
+    die "Test $case failed to produce outputs" unless @results;
+
+    next if $opt_skip_diff;
+
+    foreach my $file (@results) {
+        die "Missing solution file [$SOLN/$file]" unless (-r "$SOLN/$file");
+        # ignore whitespace and the header line (matches /cloc.sourceforge.net/)
+        my $cmp = `diff --brief -b -I cloc.sourceforge.net $file $SOLN/$file 2>&1`;
+
+        printf "Test %3d ($file): ", $case;
+        if ($cmp) { printf "FAILED\n"; ++$nFail; push @fail_cases, $case } 
+        else      { printf "passed\n"; ++$nPass; }
+    }
+}
+exit if $opt_skip_diff;
+if (@fail_cases) {
+    printf "PASSED=%d  FAILED=%d", $nPass, $nFail;
+    printf " (", join(",", @fail_cases), ")\n";
+} else {
+    printf "All %d tests passed!\n", $nPass;
+}
+
+__END__
+     1:TESTDIR                               > out.1
+     2:-n TESTDIR                            > out.2
+     3:--report_file=out.3    TESTDIR
+     4:--report_file=out.4 -n TESTDIR
+     5:-xml --report_file=out.5    TESTDIR
+     6:-xml --report_file=out.6 -n TESTDIR
+     7:--report_file=out.7         TESTDIR/*.c*
+     8:--report_file=out.8         TESTDIR/*.f*
+     9:--report_file=out.9         TESTDIR/*.[vx]*
+    10:--report_file=out.10        TESTDIR/*.[bp]*
+      # create out.11.lang and out.1l.file:
+    11:--sum_reports --report_file=out.11  out.7  out.8
+      # create out.12.lang and out.12.file:
+    12:--sum_reports --report_file=out.12  out.9  out.10
+      # create out.13.lang and out.13.file:
+    13:--sum_reports --report_file=out.13  out.11.lang out.12.lang
+      # create out.14.lang and out.14.file:
+    14:--sum_reports --report_file=out.14  out.11.file out.12.file
+      # create out.15.lang and out.15.file:
+    15:-xml --sum_reports --report_file=out.15  out.11.lang out.12.lang
+      # create out.16.lang and out.16.file:
+    16:-xml --sum_reports --report_file=out.16  out.11.file out.12.file
