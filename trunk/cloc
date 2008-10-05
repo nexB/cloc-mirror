@@ -1005,8 +1005,12 @@ sub generate_report {                        # {{{1
         push @results, $hyphen_line;
     }
     if ($opt_csv) {
-        my $header2 = " ,";
-        $header2 = " ,files" unless $BY_FILE;
+        my $header2;
+        if ($BY_FILE) {
+            $header2 = "language,filename";
+        } else {
+            $header2 = "files,language";
+        }
         $header2 .= ",blank,comment,code";
         $header2 .= ",scale,3rd gen. equiv" unless $opt_no3;
         $header2 .= ',"' . $header_line . '"';
@@ -1091,12 +1095,18 @@ sub generate_report {                        # {{{1
         } elsif ($opt_csv) {
             my $extra_3 = "";
                $extra_3 = ",$factor,$scaled" unless $opt_no3;
-            push @results, $lang_or_file                         . "," .
-                           $rhh_count->{$lang_or_file}{'nFiles'} . "," .
-                           $rhh_count->{$lang_or_file}{'blank'}  . "," .
-                           $rhh_count->{$lang_or_file}{'comment'}. "," .
-                           $rhh_count->{$lang_or_file}{'code'}         .
-                           $extra_3;
+            my $str;
+            if ($BY_FILE) {
+                $str = $rhh_count->{$lang_or_file}{'lang'}   . ",";
+            } else {
+                $str = $rhh_count->{$lang_or_file}{'nFiles'} . ",";
+            }
+            $str .= $lang_or_file                         . "," .
+                    $rhh_count->{$lang_or_file}{'blank'}  . "," .
+                    $rhh_count->{$lang_or_file}{'comment'}. "," .
+                    $rhh_count->{$lang_or_file}{'code'}         .
+                    $extra_3;
+            push @results, $str;
         } else {
             push @results, $data_line;
         }
