@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.05;
+my $VERSION = 1.06;
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -5635,6 +5635,7 @@ sub uncompress_archive_cmd {                 # {{{1
         # zip on Windows
         $extract_cmd = "WinZip32 -e -o $archive_file .";
     }
+    return $extract_cmd;
 }
 # 1}}}
 
