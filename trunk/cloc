@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.06;
+my $VERSION = 1.07;
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -142,6 +142,9 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              and on Windows use: 
                                --extract-with=\"\\\"c:\\Program Files\\WinZip\\WinZip32.exe\\\" -e -o >FILE< .\"
                              (if WinZip is installed there).
+   --list-file=<file>        Take the list of file and/or directory names to 
+                             process from <file> which has one file/directory 
+                             name per line.
    --unicode                 Check binary files to see if they contain Unicode
                              expanded ASCII text.  This causes performance to
                              drop noticably.
@@ -293,6 +296,7 @@ my (
 	$opt_match_f              ,
 	$opt_not_match_f          ,
 	$opt_skip_uniqueness      ,
+	$opt_list_file            ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -329,6 +333,7 @@ my $getopt_success = GetOptions(
    "csv"                                     => \$opt_csv                 ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
+   "list_file|list-file=s"                   => \$opt_list_file           ,
   );
 die "\n" unless $getopt_success;
 my %Exclude_Language = ();
@@ -344,6 +349,7 @@ die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
                   defined $opt_write_lang_def  or
+                  defined $opt_list_file       or
                   scalar @ARGV >= 1;
 die "--diff requires at least two arguments\n" 
     if $opt_diff and scalar @ARGV < 2;
@@ -716,9 +722,15 @@ unless ($opt_by_file) {
 # 1}}}
 } else {
 # Step 4:  Separate code from non-code files. {{{1
-my $fh = make_file_list(\@ARGV, \%Error_Codes, \@Errors, \%Ignored);
-#        make_file_list populates global variable @file_list via call to 
-#        File::Find's find() which in turn calls files()
+my $fh = 0;
+if ($opt_list_file) {
+    my @list = read_list_file($opt_list_file);
+    $fh = make_file_list(\@list, \%Error_Codes, \@Errors, \%Ignored);
+} else {
+    $fh = make_file_list(\@ARGV, \%Error_Codes, \@Errors, \%Ignored);
+    #     make_file_list populates global variable @file_list via call to 
+    #     File::Find's find() which in turn calls files()
+}
 # 1}}}
 # Step 5:  Remove duplicate files.             {{{1
 #
@@ -5622,6 +5634,7 @@ sub uncompress_archive_cmd {                 # {{{1
     my ($archive_file,
         $on_windows ) = @_;
 
+    print "-> uncompress_archive_cmd($archive_file)\n" if $opt_v > 2;
     my $extract_cmd = "";
     if ($opt_extract_with) {
         ($extract_cmd = $opt_extract_with ) 
@@ -5635,7 +5648,29 @@ sub uncompress_archive_cmd {                 # {{{1
         # zip on Windows
         $extract_cmd = "WinZip32 -e -o $archive_file .";
     }
+    print "<- uncompress_archive_cmd\n" if $opt_v > 2;
     return $extract_cmd;
+}
+# 1}}}
+sub read_list_file {                         # {{{1
+    my ($file, ) = @_;
+
+    print "-> read_list_file($file)\n" if $opt_v > 2;
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        warn "Unable to read $file; ignoring.\n";
+        next;
+    }
+    my @entry = ();
+    while (<$IN>) {
+        next if /^\s*$/ or /^\s*#/; # skip empty or commented lines
+        chomp;
+        push @entry, $_;
+    }
+    $IN->close;
+
+    print "<- read_list_file\n" if $opt_v > 2;
+    return @entry;
 }
 # 1}}}
 
