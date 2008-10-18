@@ -497,8 +497,8 @@ if ($opt_write_lang_def) {
 #  c) Determine the language for each file in the list.
 #
 my @binary_archive = ();
+my $cwd            = cwd();
 if ($opt_extract_with) {
-    my $cwd = cwd();
 #print "cwd main = [$cwd]\n";
     my @extract_location = ();
     foreach my $bin_file (@ARGV) {
@@ -515,7 +515,7 @@ if ($opt_extract_with) {
 #print "bin_file_full_path (was rel) = [$bin_file_full_path]\n";
         }
         my     $extract_cmd = uncompress_archive_cmd($bin_file_full_path);
-        print  $extract_cmd, "\n";
+        print  $extract_cmd, "\n" unless $opt_quiet;
         system $extract_cmd;
         push @extract_location, $extract_dir;
         chdir $cwd;
@@ -534,10 +534,12 @@ if ($opt_extract_with) {
         }
         foreach my $archive (@binary_archive) {
             my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
+            print "Using temp dir [$extract_dir] to extract $archive\n" 
+                if $opt_v;
             chdir  $extract_dir;
 
             my     $extract_cmd = uncompress_archive_cmd($archive);
-            print  $extract_cmd, "\n";
+            print  $extract_cmd, "\n" unless $opt_quiet;
             system $extract_cmd;
             push @extract_location, $extract_dir;
             unlink $archive;  # otherwise will be extracting it forever 
@@ -551,6 +553,38 @@ if ($opt_extract_with) {
     chdir $cwd;
 
     @ARGV = @extract_location;
+} else {
+    # see if any of the inputs need to be auto-uncompressed &/or expanded
+    my @updated_ARGS = ();
+    foreach my $Arg (@ARGV) {
+        if (is_dir($Arg)) {
+            push @updated_ARGS, $Arg;
+            next;
+        }
+        my $full_path = "";
+        if (File::Spec->file_name_is_absolute( $Arg )) {
+            $full_path = $Arg;
+        } else {
+            $full_path = File::Spec->catfile( $cwd, $Arg );
+        }
+#print "full_path = [$full_path]\n";
+        my $extract_cmd = uncompress_archive_cmd($full_path);
+        if ($extract_cmd) {
+            my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
+            print "Using temp dir [$extract_dir] to extract $Arg\n" 
+                if $opt_v;
+            chdir  $extract_dir;
+            print  $extract_cmd, "\n" unless $opt_quiet;
+            system $extract_cmd;
+            push @updated_ARGS, $extract_dir;
+            chdir $cwd;
+        } else {
+            # this is a conventional, uncompressed, unarchived file
+            # or a directory; keep as-is
+            push @updated_ARGS, $Arg;
+        }
+    }
+    @ARGV = @updated_ARGS;
 }
 # 1}}}
 my @Errors    = ();
@@ -5647,14 +5681,15 @@ sub uncompress_archive_cmd {                 # {{{1
     print "-> uncompress_archive_cmd($archive_file)\n" if $opt_v > 2;
     my $extract_cmd = "";
     if ($opt_extract_with) {
-        ($extract_cmd = $opt_extract_with ) 
-            =~ s/>FILE</$archive_file/g;
-    } elsif (($archive_file =~ /\.tar\.gz$/ or 
-              $archive_file =~ /\.tgz$/) and !$on_windows)    {
+        ( $extract_cmd = $opt_extract_with ) =~ s/>FILE</$archive_file/g;
+    } elsif (($archive_file =~ /\.tar\.(gz|Z)$/ or 
+              $archive_file =~ /\.tgz$/       ) and !$on_windows)    {
         $extract_cmd = "gzip  -dc $archive_file | tar xf -";
     } elsif ($archive_file =~ /\.tar\.bz2$/ and !$on_windows)    {
         $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
-    } else {
+    } elsif ($archive_file =~ /\.tar$/ and !$on_windows)    {
+        $extract_cmd = "tar xf $archive_file";
+    } elsif ($on_windows and $archive_file =~ /\.zip$/i) {
         # zip on Windows
         $extract_cmd = "WinZip32 -e -o $archive_file .";
     }
