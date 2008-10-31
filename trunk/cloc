@@ -345,7 +345,7 @@ my %Exclude_Dir      = ();
         if $opt_exclude_dir ;
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
-$opt_v             =   0 unless defined $opt_v;
+$opt_v             =   1 unless defined $opt_v;
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
@@ -504,9 +504,9 @@ if ($opt_extract_with) {
     my @extract_location = ();
     foreach my $bin_file (@ARGV) {
         my $extract_dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+        print "mkdir $extract_dir\n" if defined $opt_v;
+        print "cd    $extract_dir\n" if defined $opt_v;
         chdir $extract_dir;
-        print "Using temp dir [$extract_dir] to extract $bin_file\n" 
-            if $opt_v;
         my $bin_file_full_path = "";
         if (File::Spec->file_name_is_absolute( $bin_file )) {
             $bin_file_full_path = $bin_file;
@@ -516,7 +516,7 @@ if ($opt_extract_with) {
 #print "bin_file_full_path (was rel) = [$bin_file_full_path]\n";
         }
         my     $extract_cmd = uncompress_archive_cmd($bin_file_full_path);
-        print  $extract_cmd, "\n" unless $opt_quiet;
+        print  $extract_cmd, "\n" if defined $opt_v;
         system $extract_cmd;
         push @extract_location, $extract_dir;
         chdir $cwd;
@@ -535,12 +535,12 @@ if ($opt_extract_with) {
         }
         foreach my $archive (@binary_archive) {
             my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
-            print "Using temp dir [$extract_dir] to extract $archive\n" 
-                if $opt_v;
+            print "mkdir $extract_dir\n" if defined $opt_v;
+            print "cd    $extract_dir\n" if defined $opt_v;
             chdir  $extract_dir;
 
             my     $extract_cmd = uncompress_archive_cmd($archive);
-            print  $extract_cmd, "\n" unless $opt_quiet;
+            print  $extract_cmd, "\n" if defined $opt_v;
             system $extract_cmd;
             push @extract_location, $extract_dir;
             unlink $archive;  # otherwise will be extracting it forever 
@@ -572,10 +572,10 @@ if ($opt_extract_with) {
         my $extract_cmd = uncompress_archive_cmd($full_path);
         if ($extract_cmd) {
             my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
-            print "Using temp dir [$extract_dir] to extract $Arg\n" 
-                if $opt_v;
+            print "mkdir $extract_dir\n" if defined $opt_v;
+            print "cd    $extract_dir\n" if defined $opt_v;
             chdir  $extract_dir;
-            print  $extract_cmd, "\n" unless $opt_quiet;
+            print  $extract_cmd, "\n" if defined $opt_v;
             system $extract_cmd;
             push @updated_ARGS, $extract_dir;
             chdir $cwd;
@@ -1388,7 +1388,7 @@ sub make_file_list {                         # {{{1
     } else {
         # let File::Temp create a suitable temporary file
         ($fh, $filename) = tempfile(UNLINK => 1);  # delete file on exit
-        print "Using temp file list [$filename]\n" if $opt_v;
+        print "Using temp file list [$filename]\n" if defined $opt_v;
     }
 
     my @dir_list = ();
@@ -5691,15 +5691,38 @@ sub uncompress_archive_cmd {                 # {{{1
 
     print "-> uncompress_archive_cmd($archive_file)\n" if $opt_v > 2;
     my $extract_cmd = "";
+    my $missing     = "";
     if ($opt_extract_with) {
         ( $extract_cmd = $opt_extract_with ) =~ s/>FILE</$archive_file/g;
     } elsif (($archive_file =~ /\.tar\.(gz|Z)$/ or 
               $archive_file =~ /\.tgz$/       ) and !$on_windows)    {
-        $extract_cmd = "gzip  -dc $archive_file | tar xf -";
+        if (external_utility_exists("gzip --version")) {
+            if (external_utility_exists("tar --version")) {
+                $extract_cmd = "gzip  -dc $archive_file | tar xf -";
+            } else {
+                $missing = "tar";
+            }
+        } else {
+            $missing = "gzip";
+        }
     } elsif ($archive_file =~ /\.tar\.bz2$/ and !$on_windows)    {
-        $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
+        if (external_utility_exists("bzip2 --version")) {
+            if (external_utility_exists("tar --version")) {
+                $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
+            } else {
+                $missing = "tar";
+            }
+        } else {
+            $missing = "bzip2";
+        }
     } elsif ($archive_file =~ /\.tar$/ and !$on_windows)    {
         $extract_cmd = "tar xf $archive_file";
+    } elsif ($archive_file =~ /\.zip$/i and !$on_windows)    {
+        if (external_utility_exists("unzip")) {
+            $extract_cmd = "unzip -qq -d . $archive_file";
+        } else {
+            $missing = "unzip";
+        }
     } elsif ($on_windows and $archive_file =~ /\.zip$/i) {
         # zip on Windows
         $extract_cmd = "WinZip32 -e -o $archive_file .";
@@ -5729,6 +5752,17 @@ sub read_list_file {                         # {{{1
     return @entry;
 }
 # 1}}}
+sub external_utility_exists {                # {{{1
+    my $exe = shift @_;
+
+    my $success      = 0;
+    if ($ON_WINDOWS) {
+    } else {
+        $success = 1 unless system $exe . ' >& /dev/null';
+    }
+    
+    return $success;
+} # 1}}}
 
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
