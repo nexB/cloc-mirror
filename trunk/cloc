@@ -43,6 +43,7 @@ use File::Basename;
 use File::Temp qw { tempfile tempdir };
 use File::Find;
 use File::Path;
+use File::Spec;
 use IO::File;
 
 # Digest::MD5 isn't in the standard distribution. Use it only if installed.
@@ -2306,7 +2307,7 @@ sub set_constants {                          # {{{1
             'asa'         => 'ASP'                   ,
             'asax'        => 'ASP.Net'               ,
             'ascx'        => 'ASP.Net'               ,
-            'asm'         => 'Assembler'             ,
+            'asm'         => 'Assembly'              ,
             'asmx'        => 'ASP.Net'               ,
             'asp'         => 'ASP'                   ,
             'aspx'        => 'ASP.Net'               ,
@@ -2417,8 +2418,8 @@ sub set_constants {                          # {{{1
          #  'resx'        => 'ASP.Net'               ,
             'rex'         => 'Oracle Reports'        ,
             'rexx'        => 'Rexx'                  ,
-            's'           => 'Assembler'             ,
-            'S'           => 'Assembler'             ,
+            's'           => 'Assembly'              ,
+            'S'           => 'Assembly'              ,
             'sbl'         => 'Softbridge Basic'      ,
             'SBL'         => 'Softbridge Basic'      ,
             'sc'          => 'Lisp'                  ,
@@ -2497,7 +2498,7 @@ sub set_constants {                          # {{{1
     'Ada'                => [   [ 'remove_matches'      , '^\s*--' ], ],
     'ADSO/IDSM'          => [   [ 'remove_matches'      , '^\s*\*[\+\!]' ], ],
     'AMPLE'              => [   [ 'remove_matches'      , '^\s*//' ], ],
-    'Assembler'          => [  
+    'Assembly'           => [  
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
@@ -2794,9 +2795,9 @@ sub set_constants {                          # {{{1
 'CCS'                         =>   5.33,
 
 #   'assembler (basic)'            =>   0.25,
-    'Assembler'                    =>   0.25,
+    'Assembly'                     =>   0.25,
 
-    'assembler (macro)'            =>   0.51,
+    'Assembly (macro)'             =>   0.51,
     'associative default'          =>   1.25,
     'autocoder'                    =>   0.25,
     'awk'                          =>   3.81,
