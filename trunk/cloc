@@ -5060,6 +5060,8 @@ sub matlab_or_objective_C {                  # {{{1
         return;
     }
 
+    my $DEBUG              = 0;
+
     my $matlab_points      = 0;
     my $objective_C_points = 0;
     my $mumps_points       = 0;
@@ -5070,31 +5072,44 @@ sub matlab_or_objective_C {                  # {{{1
         if      (m{^\s*/\*}) {           #   /*
             ++$objective_C_points;
             --$matlab_points;
+printf ".m:  /*     obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+        } elsif (m{\w+\s*=\s*\[}) {      # matrix assignment, very matlab
+            $matlab_points += 5;
+printf ".m:  \\w=[   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*\w+\s*=\s*}) {    # definitely not MUMPS
             --$mumps_points;
-        } elsif (m{^\s*\.?\w\s+\w}) {
+printf ".m:  \\w=    obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+        } elsif (m{^\s*\.?(\w)\s+(\w)} and $1 !~ /\d/ and $2 !~ /\d/) {
             ++$mumps_points;
+printf ".m:  \\w \\w  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*;}) {
             ++$mumps_points;
+printf ".m:  ;      obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*#include}) {
             ++$objective_C_points;
             --$matlab_points;
+printf ".m: #includ obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*@(interface|implementation|protocol|public|protected|private|end)\s}o) {
             # Objective C without a doubt
             $objective_C_points = 1;
             $matlab_points      = 0;
+printf ".m: keyword obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
             last;
         } elsif (m{^\s*\[}) {             #   line starts with [  -- very matlab
             $matlab_points += 5;
+printf ".m:  [      obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\sK(ill)?\s+}) {
             $mumps_points  += 5;
+printf ".m:  Kill   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*function}) {
             --$objective_C_points;
             ++$matlab_points;
+printf ".m:  funct  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*%}) {              #   %
             --$objective_C_points;
             ++$matlab_points;
             ++$mumps_points;
+printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         }
     }
     $IN->close;
