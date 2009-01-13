@@ -1392,7 +1392,8 @@ sub make_file_list {                         # {{{1
     } else {
         # let File::Temp create a suitable temporary file
         ($fh, $filename) = tempfile(UNLINK => 1);  # delete file on exit
-        print "Using temp file list [$filename]\n" if defined $opt_v;
+print "optv = [$opt_v]\n";
+        print "Using temp file list [$filename]\n" if $opt_v;
     }
 
     my @dir_list = ();
@@ -5725,7 +5726,7 @@ sub uncompress_archive_cmd {                 # {{{1
             $missing = "gzip";
         }
     } elsif ($archive_file =~ /\.tar\.bz2$/ and !$on_windows)    {
-        if (external_utility_exists("bzip2 --version")) {
+        if (external_utility_exists("bzip2 --help")) {
             if (external_utility_exists("tar --version")) {
                 $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
             } else {
@@ -5782,8 +5783,11 @@ sub external_utility_exists {                # {{{1
 
     my $success      = 0;
     if ($ON_WINDOWS) {
+        # don't know how
     } else {
-        $success = 1 unless system $exe . ' >& /dev/null';
+        my $cmd = $exe . ' >& /dev/null';
+        print "$cmd\n" if $opt_v;
+        $success = 1 unless system $cmd;
     }
     
     return $success;
