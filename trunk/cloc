@@ -1392,7 +1392,6 @@ sub make_file_list {                         # {{{1
     } else {
         # let File::Temp create a suitable temporary file
         ($fh, $filename) = tempfile(UNLINK => 1);  # delete file on exit
-print "optv = [$opt_v]\n";
         print "Using temp file list [$filename]\n" if $opt_v;
     }
 
@@ -5706,8 +5705,7 @@ sub unicode_to_ascii {                       # {{{1
     }
 } # 1}}}
 sub uncompress_archive_cmd {                 # {{{1
-    my ($archive_file,
-        $on_windows ) = @_;
+    my ($archive_file, ) = @_;
 
     print "-> uncompress_archive_cmd($archive_file)\n" if $opt_v > 2;
     my $extract_cmd = "";
@@ -5715,7 +5713,7 @@ sub uncompress_archive_cmd {                 # {{{1
     if ($opt_extract_with) {
         ( $extract_cmd = $opt_extract_with ) =~ s/>FILE</$archive_file/g;
     } elsif (($archive_file =~ /\.tar\.(gz|Z)$/ or 
-              $archive_file =~ /\.tgz$/       ) and !$on_windows)    {
+              $archive_file =~ /\.tgz$/       ) and !$ON_WINDOWS)    {
         if (external_utility_exists("gzip --version")) {
             if (external_utility_exists("tar --version")) {
                 $extract_cmd = "gzip  -dc $archive_file | tar xf -";
@@ -5725,7 +5723,7 @@ sub uncompress_archive_cmd {                 # {{{1
         } else {
             $missing = "gzip";
         }
-    } elsif ($archive_file =~ /\.tar\.bz2$/ and !$on_windows)    {
+    } elsif ($archive_file =~ /\.tar\.bz2$/ and !$ON_WINDOWS)    {
         if (external_utility_exists("bzip2 --help")) {
             if (external_utility_exists("tar --version")) {
                 $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
@@ -5735,17 +5733,35 @@ sub uncompress_archive_cmd {                 # {{{1
         } else {
             $missing = "bzip2";
         }
-    } elsif ($archive_file =~ /\.tar$/ and !$on_windows)    {
+    } elsif ($archive_file =~ /\.tar$/ and !$ON_WINDOWS)    {
         $extract_cmd = "tar xf $archive_file";
-    } elsif ($archive_file =~ /\.zip$/i and !$on_windows)    {
+    } elsif ($archive_file =~ /\.src\.rpm$/i and !$ON_WINDOWS) {
+        if (external_utility_exists("cpio --version")) {
+            if (external_utility_exists("rpm2cpio")) {
+                $extract_cmd = "rpm2cpio $archive_file | cpio -i";
+            } else {
+                $missing = "rpm2cpio";
+            }
+        } else {
+            $missing = "bzip2";
+        }
+    } elsif ($archive_file =~ /\.zip$/i and !$ON_WINDOWS)    {
         if (external_utility_exists("unzip")) {
             $extract_cmd = "unzip -qq -d . $archive_file";
         } else {
             $missing = "unzip";
         }
-    } elsif ($on_windows and $archive_file =~ /\.zip$/i) {
-        # zip on Windows
-        $extract_cmd = "WinZip32 -e -o $archive_file .";
+    } elsif ($ON_WINDOWS and $archive_file =~ /\.zip$/i) {
+        # zip on Windows, guess default Winzip install location
+        $extract_cmd = "";
+        my $WinZip = '"C:\\Program Files\\WinZip\\WinZip32.exe"';
+        if (external_utility_exists($WinZip)) {
+            $extract_cmd = "$WinZip -e -o $archive_file .";
+#print "trace 5 extract_cmd=[$extract_cmd]\n";
+        } else {
+#print "trace 6\n";
+            $missing = $WinZip;
+        }
     }
     print "<- uncompress_archive_cmd\n" if $opt_v > 2;
     if ($missing) {
@@ -5783,11 +5799,12 @@ sub external_utility_exists {                # {{{1
 
     my $success      = 0;
     if ($ON_WINDOWS) {
-        # don't know how
+        $success = 1 unless system $exe . ' > nul';
     } else {
-        my $cmd = $exe . ' >& /dev/null';
-        print "$cmd\n" if $opt_v;
-        $success = 1 unless system $cmd;
+        $success = 1 unless system $exe . ' >& /dev/null';
+        if (!$success) {
+            $success = 1 unless system "which" . " $exe" . ' >& /dev/null';
+        }
     }
     
     return $success;
