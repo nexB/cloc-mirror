@@ -219,6 +219,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
  ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
    --counted=<file>          Save names of processed source files to <file>.
+   --help                    Print this usage information and exit.
    --found=<file>            Save names of every file found to <file>.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
@@ -298,6 +299,7 @@ my (
 	$opt_not_match_f          ,
 	$opt_skip_uniqueness      ,
 	$opt_list_file            ,
+	$opt_help                 ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -335,8 +337,10 @@ my $getopt_success = GetOptions(
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
    "list_file|list-file=s"                   => \$opt_list_file           ,
+   "help"                                    => \$opt_help                ,
   );
 die "\n" unless $getopt_success;
+die $usage if $opt_help;
 my %Exclude_Language = ();
    %Exclude_Language = map { $_ => 1 } split(/,/, $opt_exclude_lang) 
         if $opt_exclude_lang;
