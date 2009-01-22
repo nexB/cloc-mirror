@@ -118,6 +118,8 @@ my $ON_WINDOWS = 0;
    $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
    $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
 
+my $CLOC_XSL   = "cloc.xsl"; # created with --xml --report-file=<file>
+
 my $NN     = chr(27) . "[0m";  # normal
    $NN     = "" if $ON_WINDOWS;
 my $BB     = chr(27) . "[1m";  # bold
@@ -249,7 +251,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              the final report.
    --report-file=<file>      Write the results to <file> instead of STDOUT.
    --csv                     Write the results as comma separated values.
-   --xml                     Write the results in XML.
+   --xml                     Write the results in XML.  Additionally create
+                             $CLOC_XSL if the --report-file is also given.
    --yaml                    Write the results in YAML.
 
 ";
@@ -1005,6 +1008,8 @@ sub generate_report {                        # {{{1
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
     if      ($opt_xml) {
         push @results, "<?xml version=\"1.0\"?>";
+        push @results, '<?xml-stylesheet type="text/xsl" href="' .
+                        $CLOC_XSL . '"?>' if $opt_report_file;
         push @results, "<results>";
         push @results, "<header>$header_line</header>";
         if ($BY_FILE) {
@@ -1213,6 +1218,7 @@ sub generate_report {                        # {{{1
         push @results, $data_line   if $sum_files > 1;
         push @results, $hyphen_line;
     }
+    write_xsl_file() if $opt_xml and $opt_report_file;
     return @results;
 } # 1}}}
 sub print_errors {                           # {{{1
@@ -1866,7 +1872,9 @@ sub write_file {                             # {{{1
     } else {
         warn "Unable to write to $file\n";
     }
-    print "Wrote $file\n";
+    print "Wrote $file";
+    print ", $CLOC_XSL" if $opt_xml and $opt_report_file;
+    print "\n";
     
     print "<- write_file\n" if $opt_v > 2;
 } # 1}}}
@@ -5813,7 +5821,89 @@ sub external_utility_exists {                # {{{1
     
     return $success;
 } # 1}}}
+sub write_xsl_file {                         # {{{1
+    my $OUT = new IO::File $CLOC_XSL, "w";
+    if (!defined $OUT) {
+        warn "Unable to write $CLOC_XSL  $!\n";
+        return;
+    }
+my $XSL = <<'EOCommon'; # {{{2
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- XLS file by Paul Schwann, January 2009 -->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="html"/>
+  <xsl:template match="/">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <title>CLOC Results</title>
+      </head>
+      <style type="text/css">
+        table {
+          table-layout: auto;
+          border-collapse: collapse;
+          empty-cells: show;
+        }
+        td, th {
+          padding: 4px;
+        }
+        th {
+          background-color: #CCCCCC;
+        }
+        td {
+          text-align: center;
+        }
+        table, td, tr, th {
+          border: thin solid #999999;
+        }
+      </style>
+      <body>
+        <h3><xsl:value-of select="results/header"/></h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Files</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>
+              <th>Scale</th>
+              <th>3<sup>rd</sup> Generation Equivalent</th>
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="results/languages/language">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@files_count"/></td>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>
+              <td><xsl:value-of select="@factor"/></td>
+              <td><xsl:value-of select="@scaled"/></td>
+            </tr>
+          </xsl:for-each>
+            <tr>
+              <th>Total</th>
+              <th><xsl:value-of select="results/languages/total/@sum_files"/></th>
+              <th><xsl:value-of select="results/languages/total/@blank"/></th>
+              <th><xsl:value-of select="results/languages/total/@comment"/></th>
+              <th><xsl:value-of select="results/languages/total/@code"/></th>
+              <th><xsl:value-of select="results/languages/total/@factor"/></th>
+              <th><xsl:value-of select="results/languages/total/@scaled"/></th>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>
 
+ 	  	 
+EOCommon
+# 2}}}
+    print $OUT $XSL;
+    $OUT->close();
+} # 1}}}
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
 my %expect_files = ();  # really_is_expect()
