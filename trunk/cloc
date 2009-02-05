@@ -118,7 +118,7 @@ my $ON_WINDOWS = 0;
    $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
    $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
 
-my $CLOC_XSL   = "cloc.xsl"; # created with --xml --report-file=<file>
+my $CLOC_XSL   = "cloc.xsl"; # created with --xsl
 
 my $NN     = chr(27) . "[0m";  # normal
    $NN     = "" if $ON_WINDOWS;
@@ -250,9 +250,13 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --quiet                   Suppress all information messages except for
                              the final report.
    --report-file=<file>      Write the results to <file> instead of STDOUT.
+   --out=<file>              Synonym for --report-file=<file>.
    --csv                     Write the results as comma separated values.
-   --xml                     Write the results in XML.  Additionally create
-                             $CLOC_XSL if the --report-file is also given.
+   --xml                     Write the results in XML.
+   --xsl[=<file>]            Reference <file> as an XSL stylesheet within
+                             the XML output.  If <file> is not given, writes
+                             a default stylesheet, $CLOC_XSL.  This switch
+                             forces --xml to be on.
    --yaml                    Write the results in YAML.
 
 ";
@@ -296,6 +300,7 @@ my (
     $opt_extract_with         ,
     $opt_by_file              ,
     $opt_xml                  ,
+    $opt_xsl                  ,
     $opt_yaml                 ,
     $opt_csv                  ,
 	$opt_match_f              ,
@@ -322,6 +327,7 @@ my $getopt_success = GetOptions(
    "progress_rate|progress-rate=i"           => \$opt_progress_rate       ,
    "print_filter_stages|print-filter-stages" => \$opt_print_filter_stages ,
    "report_file|report-file=s"               => \$opt_report_file         ,
+   "out=s"                                   => \$opt_report_file         ,
    "script_lang|script-lang=s"               => \@opt_script_lang         ,
    "sdir=s"                                  => \$opt_sdir                ,
    "skip_uniqueness|skip-uniqueness"         => \$opt_skip_uniqueness     ,
@@ -334,6 +340,7 @@ my $getopt_success = GetOptions(
    "version"                                 => \$opt_version             ,
    "write_lang_def|write-lang-def=s"         => \$opt_write_lang_def      ,
    "xml"                                     => \$opt_xml                 ,
+   "xsl:s"                                   => \$opt_xsl                 ,
    "force_lang|force-lang=s"                 => \@opt_force_lang          ,
    "yaml"                                    => \$opt_yaml                ,
    "csv"                                     => \$opt_csv                 ,
@@ -356,6 +363,10 @@ if (!defined $opt_v) {
     $opt_v  = 0;
 } elsif (!$opt_v) {
     $opt_v  = 1;
+}
+if (defined $opt_xsl) {
+    $opt_xml  = 1;
+    $opt_xsl  = $CLOC_XSL unless $opt_xsl;
 }
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
@@ -1009,7 +1020,7 @@ sub generate_report {                        # {{{1
     if      ($opt_xml) {
         push @results, "<?xml version=\"1.0\"?>";
         push @results, '<?xml-stylesheet type="text/xsl" href="' .
-                        $CLOC_XSL . '"?>' if $opt_report_file;
+                        $opt_xsl . '"?>' if $opt_xsl;
         push @results, "<results>";
         push @results, "<header>$header_line</header>";
         if ($BY_FILE) {
@@ -1218,7 +1229,7 @@ sub generate_report {                        # {{{1
         push @results, $data_line   if $sum_files > 1;
         push @results, $hyphen_line;
     }
-    write_xsl_file() if $opt_xml and $opt_report_file;
+    write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
     return @results;
 } # 1}}}
 sub print_errors {                           # {{{1
@@ -1873,7 +1884,7 @@ sub write_file {                             # {{{1
         warn "Unable to write to $file\n";
     }
     print "Wrote $file";
-    print ", $CLOC_XSL" if $opt_xml and $opt_report_file;
+    print ", $CLOC_XSL" if $opt_xsl and $opt_xsl eq $CLOC_XSL;
     print "\n";
     
     print "<- write_file\n" if $opt_v > 2;
