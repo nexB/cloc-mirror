@@ -2170,7 +2170,8 @@ sub rm_comments {                            # {{{1
     # Will need to add it back in if it was removed earlier.
     if ($Script_Language{$language} and 
         $original_lines[0] =~ /^#!/ and
-        $lines[0] ne $original_lines[0]) {
+        (scalar(@lines) == 0 or 
+         $lines[0] ne $original_lines[0])) {
         unshift @lines, $original_lines[0];  # add the first line back
     }
     return @lines;
