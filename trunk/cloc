@@ -148,7 +148,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              (if WinZip is installed there).
    --list-file=<file>        Take the list of file and/or directory names to 
                              process from <file> which has one file/directory 
-                             name per line.
+                             name per line.  See also --exclude-list-file.
    --unicode                 Check binary files to see if they contain Unicode
                              expanded ASCII text.  This causes performance to
                              drop noticably.
@@ -212,6 +212,11 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              their path.
    --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
                              L1, L2, L3, et cetera, from being counted.
+   --exclude-list-file=<file>  Ignore files whose names appear in <file>.
+                             <file> should have one entry per line.  Relative
+                             path names will be resolved starting from the
+                             directory where cloc is invoked.  See also
+                             --list-file.
    --match-f=<regex>         Only count files whose basenames match the Perl 
                              regex.  For example
                                --match-f=^[Ww]idget
@@ -287,6 +292,7 @@ my (
     $opt_v                    ,
     $opt_version              ,
     $opt_exclude_lang         ,
+    $opt_exclude_list_file    ,
     $opt_exclude_dir          ,
     $opt_read_lang_def        ,
     $opt_write_lang_def       ,
@@ -316,6 +322,7 @@ my $getopt_success = GetOptions(
    "counted=s"                               => \$opt_counted             ,
    "exclude_lang|exclude-lang=s"             => \$opt_exclude_lang        ,
    "exclude_dir|exclude-dir=s"               => \$opt_exclude_dir         ,
+   "exclude_list_file|exclude-list-file=s"   => \$opt_exclude_list_file   ,
    "extract_with|extract-with=s"             => \$opt_extract_with        , 
    "found=s"                                 => \$opt_found               ,
    "diff"                                    => \$opt_diff                ,
@@ -877,6 +884,23 @@ if ($opt_list_file) {
     #     make_file_list populates global variable @file_list via call to 
     #     File::Find's find() which in turn calls files()
 }
+if ($opt_exclude_list_file) {
+    # now reject a specific set of files
+    my @reject_list   = read_list_file($opt_exclude_list_file);
+    my %original_hash = map { $_ => 1 } @file_list  ;
+    my %reject_hash   = map { $_ => 1 } @reject_list;
+    my @file_list     = ();
+    foreach my $F (keys %original_hash) {
+        if ($reject_hash{$F}) {
+            $Ignored{$F} = "listed in exclusion file $opt_exclude_list_file";
+            print "Ignoring $F because it appears in $opt_exclude_list_file\n" 
+                if $opt_v > 1;
+        } else {
+            push @file_list, $F;
+        }
+    }
+}
+# die print ": ", join("\n: ", @file_list), "\n";
 # 1}}}
 # Step 5:  Remove duplicate files.             {{{1
 #
