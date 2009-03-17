@@ -5479,51 +5479,6 @@ sub html_metachars {                         # {{{1
 #x#    my $new_2 = join "", @chars_2;
 #x#    return ($new_1, $new_2);
 #x#} # 1}}}
-sub diff_two_arrays {                        # {{{1
-    my ($ra_lines_1 ,
-        $ra_lines_2 )
-       = @_;
-    # returns $raa_diff_1[0..n] = [ u | c | + | - , text ]
-    #         $raa_diff_2[0..n] = [ u | c | + | - , text ]
-    # u = unchanged
-    # c = changed
-    # + = added
-    # - = removed
-    my ($raa_diff_1, $raa_diff_2);
-
-    my $n_no_change = 0;
-    my $n_modified  = 0;
-    my $n_added     = 0;
-    my $n_deleted   = 0;
-    my @min_sdiff   = ();
-
-    my @sdiffs = sdiff( $ra_lines_1, $ra_lines_2 );
-    foreach my $entry (@sdiffs) {
-        my ($out_1, $out_2) = ('', '');
-        if ($entry->[0] eq 'u') { 
-            ++$n_no_change; 
-            push @{$raa_diff_1}, [ 'u', $entry->[1]];
-            push @{$raa_diff_2}, [ 'u', $entry->[1]];
-            next; 
-        }
-        if      ($entry->[0] eq 'c') { 
-            ++$n_modified;
-            push @{$raa_diff_1}, [ 'c', $entry->[1]];
-            push @{$raa_diff_2}, [ 'c', $entry->[2]];
-        } elsif ($entry->[0] eq '+') { 
-            ++$n_added;
-            push @{$raa_diff_1}, [ '+', $entry->[1]];
-            push @{$raa_diff_2}, [ '+', $entry->[2]];
-        } elsif ($entry->[0] eq '-') { 
-            ++$n_deleted;
-            push @{$raa_diff_1}, [ '-', $entry->[1]];
-            push @{$raa_diff_2}, [ '-', $entry->[2]];
-        } elsif ($entry->[0] eq 'u') { 
-        } else { die "diff_two_arrays unknown entry->[0]=[$entry->[0]]\n"; }
-    }
-
-    return ($raa_diff_1, $raa_diff_2);
-} # 1}}}
 sub test_alg_diff {                          # {{{1
     my ($file_1 ,
         $file_2 )
