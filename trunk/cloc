@@ -154,7 +154,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              drop noticably.
 
  ${BB}Processing Options${NN}
-   --by-file                 Report results for every source file encountered
+   --by-file                 Report results for every source file encountered.
+   --by-file-by-lang         Report results for every source file encountered
                              in addition to reporting by language.
    --force-lang=<lang>[,<ext>]
                              Process all files that have a <ext> extension 
@@ -308,6 +309,7 @@ my (
     $opt_no3                  ,
     $opt_extract_with         ,
     $opt_by_file              ,
+    $opt_by_file_by_lang      ,
     $opt_xml                  ,
     $opt_xsl                  ,
     $opt_yaml                 ,
@@ -320,6 +322,7 @@ my (
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
+   "by_file_by_lang|by-file-by-lang"         => \$opt_by_file_by_lang     ,
    "categorized=s"                           => \$opt_categorized         ,
    "counted=s"                               => \$opt_counted             ,
    "exclude_lang|exclude-lang=s"             => \$opt_exclude_lang        ,
@@ -359,6 +362,7 @@ my $getopt_success = GetOptions(
    "list_file|list-file=s"                   => \$opt_list_file           ,
    "help"                                    => \$opt_help                ,
   );
+$opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
 die $usage if $opt_help;
 my %Exclude_Language = ();
@@ -400,6 +404,7 @@ my (%Language_by_Extension, %Language_by_Script,
     %Filters_by_Language, %Not_Code_Extension, %Not_Code_Filename,
     %Language_by_File, %Scale_Factor, %Known_Binary_Archives,
    );
+my $ALREADY_SHOWED_HEADER = 0;
 my %Error_Codes = ( 'Unable to read'              => -1,
                     'Neither file nor directory'  => -2, );
 if ($opt_read_lang_def) {
@@ -978,14 +983,21 @@ printf "%8d file%s ignored.\n", plural_form(scalar keys %Ignored)
 print_errors(\%Error_Codes, \@Errors) if @Errors;
 exit unless %Results_by_Language;
 
-if ($opt_by_file) {
-    @Lines_Out = generate_report( $VERSION, $end_time - $start_time,
-                                 "by file",
-                                 \%Results_by_File,    \%Scale_Factor);
+if      ($opt_by_file_by_lang) {
+    push @Lines_Out, generate_report( $VERSION, $end_time - $start_time,
+                                      "by file",
+                                      \%Results_by_File,    \%Scale_Factor);
+    push @Lines_Out, generate_report( $VERSION, $end_time - $start_time,
+                                      "by language",
+                                      \%Results_by_Language, \%Scale_Factor);
+} elsif ($opt_by_file) {
+    push @Lines_Out, generate_report( $VERSION, $end_time - $start_time,
+                                      "by file",
+                                      \%Results_by_File,    \%Scale_Factor);
 } else {
-    @Lines_Out = generate_report( $VERSION, $end_time - $start_time,
-                                 "by language",
-                                 \%Results_by_Language, \%Scale_Factor);
+    push @Lines_Out, generate_report( $VERSION, $end_time - $start_time,
+                                      "by language",
+                                      \%Results_by_Language, \%Scale_Factor);
 }
 # 1}}}
 }
@@ -1134,7 +1146,12 @@ my $sum_lines=1;
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
-    push @results, $header_line;
+    if ($ALREADY_SHOWED_HEADER) {
+        push @results, "";
+    } else {
+        push @results, $header_line;
+        $ALREADY_SHOWED_HEADER = 1;
+    }
     push @results, $hyphen_line;
 
     # column headers
@@ -1282,7 +1299,12 @@ sub generate_report {                        # {{{1
         # to keep the output a bit cleaner from a spreadsheet
         # perspective
     } else {
-        push @results, $header_line;
+        if ($ALREADY_SHOWED_HEADER) {
+            push @results, "";
+        } else {
+            push @results, $header_line;
+            $ALREADY_SHOWED_HEADER = 1;
+        }
         push @results, $hyphen_line;
     }
 
