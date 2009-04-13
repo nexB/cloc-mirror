@@ -2330,6 +2330,31 @@ sub remove_below {                           # {{{1
     print "<- remove_below\n" if $opt_v > 2;
     return @save_lines;
 } # 1}}}
+sub remove_below_above {                     # {{{1
+    my ($ra_lines, $marker_below, $marker_above, ) = @_;
+    # delete lines delimited by start and end line markers such
+    # as Perl POD documentation
+    print "-> remove_below_above(markerB=$marker_below, A=$marker_above)\n" 
+        if $opt_v > 2;
+
+    my @save_lines = ();
+    my $between    = 0;
+    foreach (@{$ra_lines}) {
+        if (!$between and m{$marker_below}) {
+            $between    = 1;
+            next;
+        }
+        if ($between and m{$marker_above}) {
+            $between    = 0;
+            next;
+        }
+        next if $between;
+        push @save_lines, $_;
+    }
+
+    print "<- remove_below_above\n" if $opt_v > 2;
+    return @save_lines;
+} # 1}}}
 sub remove_between {                         # {{{1
     my ($ra_lines, $marker, ) = @_;
     # $marker must contain one of the balanced pairs understood
@@ -2885,7 +2910,9 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'       ],
                             ],
     'Perl'               => [   [ 'remove_below'        , '^__(END|DATA)__'],
-                                [ 'remove_matches'      , '^\s*#'  ], ], 
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_below_above'  , '^\s*=head1', '^\s*=cut'  ], 
+                            ], 
     'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'docstring_to_C'                 ], 
                                 [ 'call_regexp_common'  , 'C'      ],
