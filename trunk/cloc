@@ -2911,7 +2911,7 @@ sub set_constants {                          # {{{1
                             ],
     'Perl'               => [   [ 'remove_below'        , '^__(END|DATA)__'],
                                 [ 'remove_matches'      , '^\s*#'  ], 
-                                [ 'remove_below_above'  , '^\s*=head1', '^\s*=cut'  ], 
+                                [ 'remove_below_above'  , '^=head1', '^=cut'  ], 
                             ], 
     'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'docstring_to_C'                 ], 
