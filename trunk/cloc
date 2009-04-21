@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use Data::Dumper; # ::Simple;
 # cloc -- Count Lines of Code {{{1
-# Copyright (C) 2006-2008 Northrop Grumman Corporation
+# Copyright (C) 2006-2009 Northrop Grumman Corporation
 # Author:  Al Danial <al.danial@gmail.com>
 #          First release August 2006
 #
