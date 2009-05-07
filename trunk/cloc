@@ -2137,6 +2137,9 @@ sub write_file {                             # {{{1
         @lines , # in
        ) = @_;
 
+    # Do ~ expansion (by Tim LaBerge, fixes bug 2787984)
+    $file = glob($file);
+
     print "-> write_file($file)\n" if $opt_v > 2;
 
     # Create the destination directory if it doesn't already exist.
