@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-use Data::Dumper; # ::Simple;
 # cloc -- Count Lines of Code {{{1
 # Copyright (C) 2006-2009 Northrop Grumman Corporation
 # Author:  Al Danial <al.danial@gmail.com>
@@ -1023,7 +1022,8 @@ sub combine_results {                        # {{{1
         }
         while (<$IN>) {
             next if /^(http|Language|SUM|-----)/;
-            if (m{^(.*?)\s+         # language
+            if (!$opt_by_file  and
+                m{^(.*?)\s+         # language
                    (\d+)\s+         # files
                    (\d+)\s+         # blank
                    (\d+)\s+         # comments
@@ -1051,6 +1051,35 @@ sub combine_results {                        # {{{1
                     $rhh_count->{$file}{'comment'} += $4;
                     $rhh_count->{$file}{'code'   } += $5;
                     $rhh_count->{$file}{'scaled' } += $7 unless $opt_no3;
+                }
+            } elsif ($opt_by_file  and
+                m{^(.*?)\s+         # language
+                   (\d+)\s+         # blank
+                   (\d+)\s+         # comments
+                   (\d+)\s+         # code
+                   (                #    next four entries missing with -nno3
+                   x\s+             # x
+                   \d+\.\d+\s+      # scale
+                   =\s+             # =
+                   (\d+\.\d+)\s*    # scaled code
+                   )?
+                   $}x) {
+                if ($report_type eq "by language") {
+                    next unless defined %{$rhaa_Filters_by_Language->{$1}};
+                    # above test necessary to avoid trying to sum reports
+                    # of reports (which have no language breakdown).
+                    $found_language = 1;
+                    $rhh_count->{$1   }{'nFiles' } +=  1;
+                    $rhh_count->{$1   }{'blank'  } += $2;
+                    $rhh_count->{$1   }{'comment'} += $3;
+                    $rhh_count->{$1   }{'code'   } += $4;
+                    $rhh_count->{$1   }{'scaled' } += $6 unless $opt_no3;
+                } else {
+                    $rhh_count->{$file}{'nFiles' } +=  1;
+                    $rhh_count->{$file}{'blank'  } += $2;
+                    $rhh_count->{$file}{'comment'} += $3;
+                    $rhh_count->{$file}{'code'   } += $4;
+                    $rhh_count->{$file}{'scaled' } += $6 unless $opt_no3;
                 }
             }
         }
