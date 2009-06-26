@@ -2772,6 +2772,7 @@ sub set_constants {                          # {{{1
          #  'resx'        => 'ASP.Net'               ,
             'rex'         => 'Oracle Reports'        ,
             'rexx'        => 'Rexx'                  ,
+            'rhtml'       => 'Ruby HTML'             ,
             's'           => 'Assembly'              ,
             'S'           => 'Assembly'              ,
             'sbl'         => 'Softbridge Basic'      ,
@@ -2956,6 +2957,8 @@ sub set_constants {                          # {{{1
                             ],
     'Rexx'               => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ruby'               => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Ruby HTML'          => [   [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], ],
     'SKILL'              => [   
                                 [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
