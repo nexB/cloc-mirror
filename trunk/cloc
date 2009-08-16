@@ -318,6 +318,7 @@ my (
 	$opt_skip_uniqueness      ,
 	$opt_list_file            ,
 	$opt_help                 ,
+	$opt_skip_win_hidden      ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -360,6 +361,7 @@ my $getopt_success = GetOptions(
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
    "list_file|list-file=s"                   => \$opt_list_file           ,
    "help"                                    => \$opt_help                ,
+   "skip_win_hidden|skip-win-hidden"         => \$opt_skip_win_hidden     ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -912,6 +914,28 @@ if ($opt_exclude_list_file) {
         }
     }
 }
+if ($opt_skip_win_hidden and $ON_WINDOWS) {
+    eval "use Win32::File;";  # eval allows code to pass Unix warnings check
+    my @file_list_minus_hidded = ();
+    foreach my $F (@file_list) {
+        my $attr = undef;
+        Win32::File::GetAttributes($F, $attr);
+        # next line only to suppress
+        #   'Name "Win32::File::HIDDEN" used only once: possible typo'
+        $Win32::File::HIDDEN = undef if !$ON_WINDOWS;
+        if ($attr & $Win32::File::HIDDEN) {
+            $Ignored{$F} = "Windows hidden file";
+            print "Ignoring $F since it is a Windows hidden file\n" 
+                if $opt_v > 1;
+        } else {
+            push @file_list_minus_hidded, $F;
+        }
+    }
+    @file_list = @file_list_minus_hidded;
+}
+#printf "%8d file%s excluded.                     \n", 
+#   plural_form(scalar keys %Ignored) 
+#   unless $opt_quiet;
 # die print ": ", join("\n: ", @file_list), "\n";
 # 1}}}
 # Step 5:  Remove duplicate files.             {{{1
@@ -3073,24 +3097,30 @@ sub set_constants {                          # {{{1
 ); # 1}}}
 %{$rh_Not_Code_Filename}     = (                 # {{{1
    'AUTHORS'     => 1,
-   'README'      => 1,
-   'Readme'      => 1,
-   'readme'      => 1,
-   'README.tk'   => 1, # used in kdemultimedia, it's confusing.
+   'BUGS'        => 1,
+   'BUGS'        => 1,
    'Changelog'   => 1,
    'ChangeLog'   => 1,
-   'Repository'  => 1,
-   'CHANGES'     => 1,
+   'ChangeLog'   => 1,
    'Changes'     => 1,
-   '.cvsignore'  => 1,
-   'Root'        => 1, # CVS
-   'BUGS'        => 1,
-   'TODO'        => 1,
+   'CHANGES'     => 1,
    'COPYING'     => 1,
-   'MAINTAINERS' => 1,
+   'COPYING'     => 1,
+   '.cvsignore'  => 1,
    'Entries'     => 1,
-   'iconfig.h'   => 1, # Skip "iconfig.h" files; they're used in Imakefiles
-                       # (used in xlockmore):
+   'FAQ'         => 1,
+   'iconfig.h'   => 1, # Skip "iconfig.h" files; they're used in Imakefiles.
+   'INSTALL'     => 1,
+   'MAINTAINERS' => 1,
+   'MD5SUMS'     => 1,
+   'NEWS'        => 1,
+   'readme'      => 1,
+   'Readme'      => 1,
+   'README'      => 1,
+   'README.tk'   => 1, # used in kdemultimedia, it's confusing.
+   'Repository'  => 1,
+   'Root'        => 1, # CVS
+   'TODO'        => 1,
 );
 # 1}}}
 %{$rh_Scale_Factor}          = (                 # {{{1
