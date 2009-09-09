@@ -915,22 +915,22 @@ if ($opt_exclude_list_file) {
     }
 }
 if ($opt_skip_win_hidden and $ON_WINDOWS) {
-    eval "use Win32::File;";  # eval allows code to pass Unix warnings check
     my @file_list_minus_hidded = ();
-    foreach my $F (@file_list) {
-        my $attr = undef;
-        Win32::File::GetAttributes($F, $attr);
-        # next line only to suppress
-        #   'Name "Win32::File::HIDDEN" used only once: possible typo'
-        $Win32::File::HIDDEN = undef if !$ON_WINDOWS;
-        if ($attr & $Win32::File::HIDDEN) {
-            $Ignored{$F} = "Windows hidden file";
-            print "Ignoring $F since it is a Windows hidden file\n" 
-                if $opt_v > 1;
-        } else {
-            push @file_list_minus_hidded, $F;
-        }
-    }
+    # eval code to run on Unix without 'missing Win32::File module' error.
+    my $win32_file_invocation = 
+        '"use Win32::File;";  # eval allows code to pass Unix warnings check
+        foreach my $F (@file_list) {
+            my $attr = undef;
+            Win32::File::GetAttributes($F, $attr);
+            if ($attr & HIDDEN) {
+                $Ignored{$F} = "Windows hidden file";
+                print "Ignoring $F since it is a Windows hidden file\n" 
+                    if $opt_v > 1;
+            } else {
+                push @file_list_minus_hidded, $F;
+            }
+        }';
+    eval $win32_file_invocation;
     @file_list = @file_list_minus_hidded;
 }
 #printf "%8d file%s excluded.                     \n", 
