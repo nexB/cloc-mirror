@@ -169,6 +169,10 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
                              See also --script-lang.
+   --read-binary-files       Process binary files in addition to text files.
+                             This is usually a bad idea and should only be
+                             attempted with text files that have embedded 
+                             binary data.
    --read-lang-def=<file>    Load from <file> the language processing filters.
                              (see also --write-lang-def) then use these filters
                              instead of the built-in filters.
@@ -225,6 +229,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              only counts files that start with Widget or widget.
    --not-match-f=<regex>     Count all files except those whose basenames
                              match the Perl regex.
+   --skip-win-hidden         On Windows, ignore hidden files.
 
  ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
@@ -319,6 +324,7 @@ my (
 	$opt_list_file            ,
 	$opt_help                 ,
 	$opt_skip_win_hidden      ,
+	$opt_read_binary_files    ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -362,6 +368,7 @@ my $getopt_success = GetOptions(
    "list_file|list-file=s"                   => \$opt_list_file           ,
    "help"                                    => \$opt_help                ,
    "skip_win_hidden|skip-win-hidden"         => \$opt_skip_win_hidden     ,
+   "read_binary_files|read-binary-files"     => \$opt_read_binary_files   ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -1750,7 +1757,8 @@ sub make_file_list {                         # {{{1
             if (!(-s $file_or_dir)) {   # 0 sized file, named pipe, socket 
                 $rh_ignored->{$file_or_dir} = 'zero sized file';
                 next;
-            } elsif (-B $file_or_dir) { # avoid binary files
+            } elsif (-B $file_or_dir and !$opt_read_binary_files) { 
+                # avoid binary files unless user insists on reading them
                 if ($opt_unicode) {
                     # only ignore if not a Unicode file w/trivial 
                     # ASCII transliteration
@@ -1893,6 +1901,7 @@ sub files {                                  # {{{1
     printf "files(%s)  size=%d is_dir=%d  -B=%d\n",
         $File::Find::name, $nBytes, $is_dir, $is_bin if $opt_v > 5;
     $is_bin = 0 if $opt_unicode and unicode_file($_);
+    $is_bin = 0 if $opt_read_binary_files;
     return if $is_dir or $is_bin;
     ++$nFiles_Found;
     printf "%8d files\r", $nFiles_Found 
