@@ -917,8 +917,8 @@ if ($opt_exclude_list_file) {
 if ($opt_skip_win_hidden and $ON_WINDOWS) {
     my @file_list_minus_hidded = ();
     # eval code to run on Unix without 'missing Win32::File module' error.
-    my $win32_file_invocation = 
-        '"use Win32::File;";  # eval allows code to pass Unix warnings check
+    my $win32_file_invocation = '
+        use Win32::File;
         foreach my $F (@file_list) {
             my $attr = undef;
             Win32::File::GetAttributes($F, $attr);
