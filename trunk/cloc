@@ -1067,7 +1067,7 @@ sub combine_results {                        # {{{1
                    )?
                    $}x) {
                 if ($report_type eq "by language") {
-                    next unless defined %{$rhaa_Filters_by_Language->{$1}};
+                    next unless defined @{$rhaa_Filters_by_Language->{$1}};
                     # above test necessary to avoid trying to sum reports
                     # of reports (which have no language breakdown).
                     $found_language = 1;
