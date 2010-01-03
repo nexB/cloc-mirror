@@ -2763,6 +2763,7 @@ sub set_constants {                          # {{{1
             'jl'          => 'Lisp'                  ,
             'js'          => 'Javascript'            ,
             'jsp'         => 'JSP'                   , # Java server pages
+            'ksc'         => 'Kermit'                ,
             'ksh'         => 'Korn Shell'            ,
             'lhs'         => 'Haskell'               ,
             'l'           => 'lex'                   ,
@@ -2856,6 +2857,7 @@ sub set_constants {                          # {{{1
             'csh'      => 'C Shell'               ,
             'dmd'      => 'D'                     ,
             'idl'      => 'IDL'                   ,
+            'kermit'   => 'Kermit'                ,
             'ksh'      => 'Korn Shell'            ,
             'lua'      => 'Lua'                   ,
             'make'     => 'make'                  ,
@@ -3009,6 +3011,10 @@ sub set_constants {                          # {{{1
     'Bourne Shell'       => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'm4'                 => [   [ 'remove_matches'      , '^dnl '  ], ], 
     'C Shell'            => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Kermit'             => [  
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_matches'      , '^\s*;'  ], 
+                            ], 
     'Korn Shell'         => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'Tcl/Tk'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'Teamcenter def'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
@@ -3420,6 +3426,7 @@ sub set_constants {                          # {{{1
     'klo'                          =>   1.25,
     'knowol'                       =>   1.63,
     'krl'                          =>   1.38,
+    'Kermit'                       =>   2.00,
     'Korn Shell'                   =>   3.81,
     'ladder logic'                 =>   2.22,
     'lambit/l'                     =>   1.25,
@@ -3710,6 +3717,7 @@ sub set_constants {                          # {{{1
 'PHP'     => 3.50,
 'Python'  => 4.20,
 'Ruby'    => 4.20,
+'Ruby HTML' => 4.00,
 'sed'     => 4.00,
 'Lua'     => 4.00,
 );
