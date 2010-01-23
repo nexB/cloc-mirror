@@ -33,7 +33,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = 1.08;
+my $VERSION = 1.10;
+my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
 use warnings;
@@ -45,6 +46,7 @@ use File::Find;
 use File::Path;
 use File::Spec;
 use IO::File;
+use POSIX "strftime";
 
 # Digest::MD5 isn't in the standard distribution. Use it only if installed.
 my $HAVE_Digest_MD5 = 0;
@@ -128,11 +130,15 @@ my $script = basename $0;
 my $usage  = "
 Usage: $script [options] <file(s)/dir(s)> | <report files>
 
- Count physical lines of source code in the given files and/or
+ Count physical lines of source code in the given files (may be
+ archives such as compressed tarballs or zip files) and/or
  recursively below the given directories.
 
  ${BB}Input Options${NN}
-   --extract-with=<cmd>      Use <cmd> to extract binary archive files (e.g.:
+   --extract-with=<cmd>      This option is only needed if cloc is unable
+                             to figure out how to extract the contents of
+                             the input file(s) by itself.
+                             Use <cmd> to extract binary archive files (e.g.:
                              .tar.gz, .zip, .Z).  Use the literal '>FILE<' as 
                              a stand-in for the actual file(s) to be
                              extracted.  For example, to count lines of code
@@ -265,6 +271,14 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --report-file=<file>      Write the results to <file> instead of STDOUT.
    --out=<file>              Synonym for --report-file=<file>.
    --csv                     Write the results as comma separated values.
+   --sql=<file>              Write results as SQL create and insert statements
+                             which can be read by a database program such as
+                             SQLite.  If <file> is 1, output is sent to STDOUT.
+   --sql-project=<name>      Use <name> as the project identifier for the 
+                             current run.  Only valid with the --sql option.
+   --sql-append              Append SQL insert statements to the file specified
+                             by --sql and do not generate table creation 
+                             statements.  Only valid with the --sql option.
    --xml                     Write the results in XML.
    --xsl[=<file>]            Reference <file> as an XSL stylesheet within
                              the XML output.  If <file> is not given, writes
@@ -325,6 +339,9 @@ my (
 	$opt_help                 ,
 	$opt_skip_win_hidden      ,
 	$opt_read_binary_files    ,
+	$opt_sql                  ,
+	$opt_sql_append           ,
+	$opt_sql_project          ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -369,6 +386,9 @@ my $getopt_success = GetOptions(
    "help"                                    => \$opt_help                ,
    "skip_win_hidden|skip-win-hidden"         => \$opt_skip_win_hidden     ,
    "read_binary_files|read-binary-files"     => \$opt_read_binary_files   ,
+   "sql=s"                                   => \$opt_sql                 ,
+   "sql_project|sql-project=s"               => \$opt_sql_project         ,
+   "sql_append|sql-append"                   => \$opt_sql_append          ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -396,10 +416,24 @@ if (defined $opt_xsl) {
     $opt_xml  = 1;
     $opt_xsl  = $CLOC_XSL unless $opt_xsl;
 }
+my $skip_generate_report = 0;
+$opt_sql = 0 unless defined $opt_sql;
+if ($opt_sql eq "1") { # stream SQL output to STDOUT
+    $opt_quiet            = 1;
+    $skip_generate_report = 1;
+    $opt_by_file          = 1;
+    $opt_sum_reports      = 0;
+    $opt_progress_rate    = 0;
+} elsif ($opt_sql)  { # write SQL output to a file
+    $opt_by_file          = 1;
+    $skip_generate_report = 1;
+    $opt_sum_reports      = 0;
+}
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
                   defined $opt_write_lang_def  or
+                  defined $opt_list_file       or
                   defined $opt_list_file       or
                   scalar @ARGV >= 1;
 die "--diff requires at least two arguments\n" 
@@ -908,16 +942,17 @@ if ($opt_list_file) {
 if ($opt_exclude_list_file) {
     # now reject a specific set of files
     my @reject_list   = read_list_file($opt_exclude_list_file);
-    my %original_hash = map { $_ => 1 } @file_list  ;
-    my %reject_hash   = map { $_ => 1 } @reject_list;
-    my @file_list     = ();
-    foreach my $F (keys %original_hash) {
-        if ($reject_hash{$F}) {
-            $Ignored{$F} = "listed in exclusion file $opt_exclude_list_file";
-            print "Ignoring $F because it appears in $opt_exclude_list_file\n" 
+
+    # Normalize file names for better comparison.
+    my %normalized_input  = normalize_file_names(@file_list);
+    my %normalized_reject = normalize_file_names(@reject_list);
+
+    foreach my $F (keys %normalized_input) {
+        if ($normalized_reject{$F}) {
+            my $orig_F = $normalized_input{$F};
+            $Ignored{$orig_F} = "listed in exclusion file $opt_exclude_list_file";
+            print "Ignoring $orig_F because it appears in $opt_exclude_list_file\n" 
                 if $opt_v > 1;
-        } else {
-            push @file_list, $F;
         }
     }
 }
@@ -1013,6 +1048,10 @@ printf "%8d file%s ignored.\n", plural_form(scalar keys %Ignored)
 print_errors(\%Error_Codes, \@Errors) if @Errors;
 exit unless %Results_by_Language;
 
+generate_sql($VERSION, $end_time - $start_time,
+            \%Results_by_File, \%Scale_Factor) if $opt_sql;
+
+exit if $skip_generate_report;
 if      ($opt_by_file_by_lang) {
     push @Lines_Out, generate_report( $VERSION, $end_time - $start_time,
                                       "by file",
@@ -1181,7 +1220,6 @@ sub diff_report     {                        # {{{1
        $Style = "xml" if $opt_yaml;  # not a typo; just set to anything but txt
        $Style = "xml" if $opt_csv ;  # not a typo; just set to anything but txt
 
-    my $URL        = "http://cloc.sourceforge.net";
     my $hyphen_line = sprintf "%s", '-' x (79 + $column_1_offset);
        $hyphen_line = sprintf "%s", '-' x (68 + $column_1_offset) 
             if $opt_no3 and (68 + $column_1_offset) > 79;
@@ -1253,6 +1291,78 @@ my $sum_lines=1;
     }
 
     return @results;
+} # 1}}}
+sub generate_sql    {                        # {{{1
+    my ($version    , # in
+        $elapsed_sec, # in
+        $rhh_count  , # in  count{TYPE}{lang|code|blank|comment|scaled}
+        $rh_scale   , # in
+       ) = @_;
+    print "-> generate_sql\n" if $opt_v > 2;
+
+    $opt_sql_project = cwd() unless defined $opt_sql_project;
+
+    my $schema = "
+create table metadata (timestamp text,
+                       url       text,
+                       cloc_ver  real,
+                       elapsed_s real);
+create table t (Project  text   ,
+                Language text   ,
+                File     text   ,
+                nBlank   integer,
+                nComment integer,
+                nCode    integer,
+                nScaled  real   );
+";
+    $opt_sql = "-" if $opt_sql eq "1";
+
+    my $open_mode = ">";
+       $open_mode = ">>" if $opt_sql_append;
+
+    my $fh = new IO::File; # $opt_sql, "w";
+    if (!$fh->open("${open_mode}${opt_sql}")) {
+        die "Unable to write to $opt_sql  $!\n";
+    }
+    print $fh $schema unless defined $opt_sql_append;
+
+    print $fh "begin transaction;\n";
+    printf $fh "insert into metadata values('%s', '%s', '%f', %f);\n",
+                strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
+                $URL, $version, $elapsed_sec;
+
+    my $nIns = 0;
+    foreach my $file (keys %{$rhh_count}) {
+        my $language = $rhh_count->{$file}{'lang'};
+        printf $fh "insert into t values('%s', '%s', '%s', %d, %d, %d, %f);\n",
+                    $opt_sql_project           ,
+                    $language                  ,
+                    $file                      ,
+                    $rhh_count->{$file}{'blank'},
+                    $rhh_count->{$file}{'comment'},
+                    $rhh_count->{$file}{'code'}   ,
+                    $rhh_count->{$file}{'code'}*$rh_scale->{$language};
+        ++$nIns;
+        if (!($nIns % 10_000)) {
+            print $fh "commit;\n";
+            print $fh "begin transaction;\n";
+        }
+    }
+    print $fh "commit;\n";
+
+    $fh->close unless $opt_sql eq "-"; # don't try to close STDOUT
+    print "<- generate_sql\n" if $opt_v > 2;
+
+    # sample query:
+    #
+    #   select project, language, 
+    #          sum(nCode)     as Code, 
+    #          sum(nComment)  as Comments, 
+    #          sum(nBlank)    as Blank,  
+    #          sum(nCode)+sum(nComment)+sum(nBlank) as All_Lines,
+    #          100.0*sum(nComment)/(sum(nCode)+sum(nComment)) as Comment_Pct
+    #          from t group by Project, Language order by Project, Code desc;
+    #
 } # 1}}}
 sub generate_report {                        # {{{1
     # returns an array of lines containing the results
@@ -1568,13 +1678,12 @@ sub print_errors {                           # {{{1
 
     my %error_string = reverse(%{$rh_Error_Codes});
     my $nErrors      = scalar @{$raa_errors};
-    printf "\n%d error%s:\n", plural_form(scalar @Errors);
+    warn sprintf "\n%d error%s:\n", plural_form(scalar @Errors);
     for (my $i = 0; $i < $nErrors; $i++) {
-        printf "%s:  %s\n", 
-            $error_string{ $raa_errors->[$i][0] },
-            $raa_errors->[$i][1] ;
+        warn sprintf "%s:  %s\n", 
+                     $error_string{ $raa_errors->[$i][0] },
+                     $raa_errors->[$i][1] ;
     }
-    print "\n";
 
 } # 1}}}
 sub write_lang_def {                         # {{{1
@@ -6236,6 +6345,36 @@ EOCommon
 # 2}}}
     print $OUT $XSL;
     $OUT->close();
+} # 1}}}
+sub normalize_file_names {                   # {{{1 
+    my (@files, ) = @_;
+
+    # Returns a hash of file names reduced to a canonical form
+    # (fully qualified file names, all path separators changed to /,
+    # Windows file names lowercased).  Hash values are the original
+    # file name.
+
+    my %normalized = ();
+    foreach my $F (@files) {
+        my $F_norm = $F;
+        if ($ON_WINDOWS) {
+            $F_norm = lc $F_norm; # for case insensitive file name comparisons
+            $F_norm =~ s{\\}{/}g; # Windows directory separators to Unix
+            $F_norm =~ s{^\./}{}g;  # remove leading ./
+            if (($F_norm !~ m{^/}) and ($F_norm !~ m{^\w:/})) {
+                # looks like a relative path; prefix with cwd
+                $F_norm = lc "$cwd/$F_norm";
+            }
+        } else {
+            $F_norm =~ s{^\./}{}g;  # remove leading ./
+            if ($F_norm !~ m{^/}) {
+                # looks like a relative path; prefix with cwd
+                $F_norm = lc "$cwd/$F_norm";
+            }
+        }
+        $normalized{ $F_norm } = $F;
+    }
+    return %normalized;
 } # 1}}}
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
