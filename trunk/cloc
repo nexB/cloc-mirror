@@ -2309,7 +2309,9 @@ sub write_file {                             # {{{1
        ) = @_;
 
     # Do ~ expansion (by Tim LaBerge, fixes bug 2787984)
-    $file = glob($file);
+    if (glob($file)) {
+        $file = glob($file);
+    }
 
     print "-> write_file($file)\n" if $opt_v > 2;
 
