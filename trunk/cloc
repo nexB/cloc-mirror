@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.10);
+my $VERSION = sprintf("%.2f", 1.09);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -1602,12 +1602,12 @@ sub generate_report {                        # {{{1
                 push @results, "<language " . $data_line . "/>";
             }
         } elsif ($opt_yaml) {
-            push @results, $lang_or_file . ":";
-            push @results, "  nFiles: " .$rhh_count->{$lang_or_file}{'nFiles'} ;
-            push @results, "  blank: "  .$rhh_count->{$lang_or_file}{'blank'}  ;
-            push @results, "  comment: ".$rhh_count->{$lang_or_file}{'comment'};
-            push @results, "  code: "   .$rhh_count->{$lang_or_file}{'code'} 
-                unless $BY_FILE;
+            push @results,$lang_or_file . ":";
+            push @results,"  nFiles: "  .$rhh_count->{$lang_or_file}{'nFiles'} ;
+            push @results,"  blank: "   .$rhh_count->{$lang_or_file}{'blank'}  ;
+            push @results,"  comment: " .$rhh_count->{$lang_or_file}{'comment'};
+            push @results,"  code: "    .$rhh_count->{$lang_or_file}{'code'}   ;
+            push @results,"  language: ".$rhh_count->{$lang_or_file}{'lang'}   ;
             if (!$opt_no3) {
                 push @results, "  scaled: " . $scaled;
                 push @results, "  factor: " . $factor;
