@@ -1607,7 +1607,8 @@ sub generate_report {                        # {{{1
             push @results,"  blank: "   .$rhh_count->{$lang_or_file}{'blank'}  ;
             push @results,"  comment: " .$rhh_count->{$lang_or_file}{'comment'};
             push @results,"  code: "    .$rhh_count->{$lang_or_file}{'code'}   ;
-            push @results,"  language: ".$rhh_count->{$lang_or_file}{'lang'}   ;
+            push @results,"  language: ".$rhh_count->{$lang_or_file}{'lang'} 
+                if $BY_FILE;
             if (!$opt_no3) {
                 push @results, "  scaled: " . $scaled;
                 push @results, "  factor: " . $factor;
