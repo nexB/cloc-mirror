@@ -1611,7 +1611,8 @@ sub generate_report {                        # {{{1
             }
         } elsif ($opt_yaml) {
             push @results,$lang_or_file . ":";
-            push @results,"  nFiles: "  .$rhh_count->{$lang_or_file}{'nFiles'} ;
+            push @results,"  nFiles: "  .$rhh_count->{$lang_or_file}{'nFiles'} 
+                unless $BY_FILE;
             push @results,"  blank: "   .$rhh_count->{$lang_or_file}{'blank'}  ;
             push @results,"  comment: " .$rhh_count->{$lang_or_file}{'comment'};
             push @results,"  code: "    .$rhh_count->{$lang_or_file}{'code'}   ;
@@ -1673,7 +1674,7 @@ sub generate_report {                        # {{{1
         push @results, "  blank: "  . $sum_blank  ;
         push @results, "  code: "   . $sum_code   ;
         push @results, "  comment: ". $sum_comment;
-        push @results, "  nFiles: " . $sum_files unless $BY_FILE;
+        push @results, "  nFiles: " . $sum_files  ;
         if (!$opt_no3) {
             push @results, "  scaled: " . $sum_scaled;
             push @results, "  factor: " . $avg_scale ;
