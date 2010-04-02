@@ -1869,6 +1869,7 @@ sub make_file_list {                         # {{{1
         $raa_errors ,  # out  errors encountered
         $rh_ignored ,  # out  files not recognized as computer languages
         ) = @_;
+    print "-> make_file_list(@{$ra_arg_list})\n" if $opt_v > 2;
 
     my ($fh, $filename);
     if ($opt_categorized) {
@@ -1964,6 +1965,8 @@ die  "make_file_list($file) undef lang" unless defined $language;
     }
     printf "classified %d files\r", $nFiles_Categorized 
         if !$opt_quiet and $nFiles_Categorized > 1;
+
+    print "<- make_file_list()\n" if $opt_v > 2;
 
     return $fh;   # handle to the file containing the list of files to process
 }  # 1}}}
@@ -6055,6 +6058,72 @@ sub array_diff {                             # {{{1
 
     print "<- array_diff\n" if $opt_v > 2;
 } # 1}}}
+sub remove_leading_dir {                     # {{{1 
+    my @filenames = @_;
+    #
+    #  Input should be a list of file names
+    #  with the same leading directory such as
+    # 
+    #      dir1/dir2/a.txt
+    #      dir1/dir2/b.txt
+    #      dir1/dir2/dir3/c.txt
+    #
+    #  Output is the same list minus the common
+    #  directory path:
+    # 
+    #      a.txt
+    #      b.txt
+    #      dir3/c.txt
+    #
+    my @D = (); # a matrix:   [ [ dir1, dir2 ],         # dir1/dir2/a.txt
+                #               [ dir1, dir2 ],         # dir1/dir2/b.txt
+                #               [ dir1, dir2 , dir3] ]  # dir1/dir2/dir3/c.txt
+    foreach my $F (@filenames) {
+        my ($Vol, $Dir, $File) = File::Spec->splitpath($F);
+        my @x = File::Spec->splitdir( $Dir );
+        pop @x unless $x[$#x]; # last entry usually null, remove it
+#print "F=$F, Dir=$Dir  x=[", join("][", @x), "]\n";
+        push @D, [ @x ];
+    }
+    
+    # now loop over columns until either they are all
+    # eliminated or a unique column is found
+
+#use Data::Dumper::Simple;
+#print Dumper("remove_leading_dir after ", @D);
+
+    my @common   = ();  # to contain the common leading directories
+    my $mismatch = 0;
+    while (!$mismatch) {
+        for (my $row = 1; $row < scalar @D; $row++) {
+# print "comparing $D[$row][0] to $D[0][0]\n";
+            if (!defined $D[$row][0] or ($D[$row][0] ne $D[0][0])) {
+                $mismatch = 1;
+                last;
+            }
+        }
+#print "mismatch=$mismatch\n";
+        if (!$mismatch) {
+            push @common, $D[0][0];
+            # all terms in the leading match; unshift the batch
+            foreach my $ra (@D) {
+                shift @{$ra};
+            }
+        }
+    }
+
+    push @common, " ";  # so that $leading will end with "/ "
+    my $leading = File::Spec->catdir( @common );
+       $leading =~ s{ $}{};  # now take back the bogus appended space
+#print "remove_leading_dir leading=[$leading]\n";
+#die;
+    foreach my $F (@filenames) {
+        $F =~ s{^$leading}{};
+    }
+
+    return @filenames;
+
+} # 1}}}
 sub align_by_pairs {                         # {{{1 
     my ($rh_file_list_L        , # in
         $rh_file_list_R        , # in
@@ -6066,16 +6135,35 @@ sub align_by_pairs {                         # {{{1
         ) = @_;
     @{$ra_modified_file_list} = ();
 
+    my @files_L = sort keys %{$rh_file_list_L};
+    my @files_R = sort keys %{$rh_file_list_R};
+    return () unless @files_L and @files_R;
 #use Data::Dumper::Simple;
-#print Dumper("align_by_pairs", $rh_file_list_L, $rh_file_list_R);
+#print Dumper("align_by_pairs", @files_L, @files_R);
 #die;
-
-    my @files_L = keys %{$rh_file_list_L};
-    my @files_R = keys %{$rh_file_list_R};
-    if (scalar @files_L > 1 or scalar @files_R > 1) {
-        warn "align_by_pairs:  can only process two input files at the moment";
+    if (scalar @files_L == 1 or scalar @files_R == 1) {
+        # The easy case:  compare two files.
+        push @{$ra_modified_file_list}, [ $files_L[0],  $files_R[0] ]; 
+        return;
     }
-    push @{$ra_modified_file_list}, [ $files_L[0],  $files_R[0] ]; 
+
+    # The harder case:  compare groups of files.  This only works
+    # if the groups are in different directories so the first step
+    # is to strip the leading directory names from file lists to
+    # make it possible to align by file names.
+#use Data::Dumper::Simple;
+#print Dumper("align_by_pairs", @files_L, @files_R);
+    my @files_L_minus_dir = remove_leading_dir(@files_L);
+    my @files_R_minus_dir = remove_leading_dir(@files_R);
+    
+    # first cut:  zip together the cleaned up arrays (assumes same lenght)
+    for (my $i = 0; $i < scalar @files_L_minus_dir; $i++) {
+        push @{$ra_modified_file_list}, [ $files_L[$i],  
+                                          $files_R[$i] ]; 
+    }
+
+#print Dumper("align_by_pairs", @files_L_minus_dir, @files_R_minus_dir);
+#die;
 } # 1}}}
 sub html_header {                            # {{{1
     my ($title , ) = @_;
@@ -6140,6 +6228,7 @@ sub die_unknown_lang {                       # {{{1
 sub unicode_file {                           # {{{1
     my $file = shift @_; 
 
+    print "-> unicode_file($file)\n" if $opt_v > 2;
     return 0 if (-s $file > 2_000_000);  
     # don't bother trying to test binary files bigger than 2 MB
 
@@ -6152,8 +6241,10 @@ sub unicode_file {                           # {{{1
     $IN->close;
 
     if (unicode_to_ascii( join('', @lines) )) {
+        print "<- unicode_file()\n" if $opt_v > 2;
         return 1;
     } else {
+        print "<- unicode_file()\n" if $opt_v > 2;
         return 0;
     }
 
