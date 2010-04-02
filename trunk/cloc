@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.09);
+my $VERSION = sprintf("%.2f", 1.10);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -5938,6 +5938,9 @@ sub array_diff {                             # {{{1
 #print Dumper("block right:", $ra_lines_R);
 
     my @sdiffs = sdiff($ra_lines_L, $ra_lines_R);
+#use Data::Dumper::Simple;
+#print Dumper($ra_lines_L, $ra_lines_R, @sdiffs);
+#die;
 
     my $n_L        = 0;
     my $n_R        = 0;
@@ -5963,6 +5966,7 @@ sub array_diff {                             # {{{1
             $rah_diff_L->[$n_sdiff]{lnum} = $n_L;
             $rah_diff_R->[$n_sdiff]{lnum} = $n_R;
         } elsif ($flag eq 'c') {  # c = changed
+# warn "per line sdiff() commented out\n"; if (0) {
             ++$n_L;
             ++$n_R;
 
@@ -5975,46 +5979,49 @@ sub array_diff {                             # {{{1
 
             my @chars_L = split '', $line_L;
             my @chars_R = split '', $line_R;
-            my @inline_sdiffs = sdiff( \@chars_L, \@chars_R );
+
+#XX         my @inline_sdiffs = sdiff( \@chars_L, \@chars_R );
+
 #use Data::Dumper::Simple; 
 #if ($n_R == 6 or $n_R == 1 or $n_R == 2) {
 #print "L=[$line_L]\n";
 #print "R=[$line_R]\n";
 #print Dumper(@chars_L, @chars_R, @inline_sdiffs);
 #}
-            my @index = ();
-            foreach my $il_triple (@inline_sdiffs) {
-                # make an array of u|c|+|- corresponding
-                # to each character
-                push @index, $il_triple->[0];
-            }
-#print Dumper(@index); die;
-            # expect problems if arrays @index and $inline_sdiffs[1];
-            # (@{$inline_sdiffs->[1]} are the characters of line_L)
-            # aren't the same length
-            my $prev_type = $index[0];
-            my @strings   = ();  # blocks of consecutive code or comment
-            my @type      = ();  # u (=code) or c (=comment)
-            my $j_str     = 0;
-            $strings[$j_str] .= $chars_L[0];
-            $type[$j_str] = $prev_type;
-            for (my $i = 1; $i < scalar @chars_L; $i++) {
-                if ($index[$i] ne $prev_type) {
-                    ++$j_str;
-#print "change at j_str=$j_str type=$index[$i]\n";
-                    $type[$j_str] = $index[$i];
-                    $prev_type    = $index[$i];
-                }
-                $strings[$j_str] .= $chars_L[$i];
-            }
+#XX         my @index = ();
+#XX         foreach my $il_triple (@inline_sdiffs) {
+#XX             # make an array of u|c|+|- corresponding
+#XX             # to each character
+#XX             push @index, $il_triple->[0];
+#XX         }
+#XX#print Dumper(@index); die;
+#XX          # expect problems if arrays @index and $inline_sdiffs[1];
+#XX          # (@{$inline_sdiffs->[1]} are the characters of line_L)
+#XX          # aren't the same length
+#XX          my $prev_type = $index[0];
+#XX          my @strings   = ();  # blocks of consecutive code or comment
+#XX          my @type      = ();  # u (=code) or c (=comment)
+#XX          my $j_str     = 0;
+#XX          $strings[$j_str] .= $chars_L[0];
+#XX          $type[$j_str] = $prev_type;
+#XX          for (my $i = 1; $i < scalar @chars_L; $i++) {
+#XX              if ($index[$i] ne $prev_type) {
+#XX                  ++$j_str;
+#XX#print "change at j_str=$j_str type=$index[$i]\n";
+#XX                  $type[$j_str] = $index[$i];
+#XX                  $prev_type    = $index[$i];
+#XX              }
+#XX              $strings[$j_str] .= $chars_L[$i];
+#XX          }
 # print Dumper(@strings, @type); die;
-            delete $rah_diff_R->[$n_sdiff]{char};
-            @{$rah_diff_R->[$n_sdiff]{char}{strings}} = @strings;
-            @{$rah_diff_R->[$n_sdiff]{char}{type}}    = @type;
+#XX         delete $rah_diff_R->[$n_sdiff]{char};
+#XX         @{$rah_diff_R->[$n_sdiff]{char}{strings}} = @strings;
+#XX         @{$rah_diff_R->[$n_sdiff]{char}{type}}    = @type;
             $rah_diff_L->[$n_sdiff]{desc} = "modified";
             $rah_diff_R->[$n_sdiff]{desc} = "modified";
             $rah_diff_L->[$n_sdiff]{lnum} = $n_L;
             $rah_diff_R->[$n_sdiff]{lnum} = $n_R;
+#}
 
         } elsif ($flag eq '+') {  # + = added
             ++$n_R;
@@ -6043,6 +6050,8 @@ sub array_diff {                             # {{{1
 #printf "%-30s %s %-30s\n", $line_L, $separator, $line_R;
         ++$n_sdiff;
     }
+#use Data::Dumper::Simple;
+#print Dumper($rah_diff_L, $rah_diff_R);
 
     print "<- array_diff\n" if $opt_v > 2;
 } # 1}}}
@@ -6056,6 +6065,10 @@ sub align_by_pairs {                         # {{{1
         $ra_modified_file_list , # out
         ) = @_;
     @{$ra_modified_file_list} = ();
+
+#use Data::Dumper::Simple;
+#print Dumper("align_by_pairs", $rh_file_list_L, $rh_file_list_R);
+#die;
 
     my @files_L = keys %{$rh_file_list_L};
     my @files_R = keys %{$rh_file_list_R};
