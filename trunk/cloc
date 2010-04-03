@@ -726,25 +726,26 @@ my %Results_by_Language = ();
 my %Results_by_File     = ();
 my %Delta_by_Language   = ();
 my %Delta_by_File       = ();
+my $nFiles_added        = 0;
+my $nFiles_removed      = 0;
+my $nFiles_modified     = 0;
+my $nFiles_same         = 0;
 
 foreach (my $F = 0; $F < scalar @fh - 1; $F++) { 
     # loop over file sets; do diff between set $F to $F+1
 
     my $nCounted = 0;
 
-    my @changed_file_pairs  = ();
+    my @file_pairs  = ();
 
-    my ($nFiles_same, $nFiles_added, $nFiles_removed, $nFiles_modified);
-    align_by_pairs(\%{$unique_source_file{$fh[$F  ]}}                 , # in
-                   \%{$unique_source_file{$fh[$F+1]}}                 , # in
-                   \$nFiles_same                                      , # out
-                   \$nFiles_added                                     , # out
-                   \$nFiles_removed                                   , # out
-                   \$nFiles_modified                                  , # out
-                   \@changed_file_pairs                               , # out
+    align_by_pairs(\%{$unique_source_file{$fh[$F  ]}}    , # in
+                   \%{$unique_source_file{$fh[$F+1]}}    , # in
+                   \$nFiles_added                        , # out
+                   \$nFiles_removed                      , # out
+                   \@file_pairs                          , # out
                    );
 
-    foreach my $pair (@changed_file_pairs) {
+    foreach my $pair (@file_pairs) {
         my $file_L = $pair->[0];
         my $file_R = $pair->[1];
         my $Lang_L = $Language{$fh[$F  ]}{$file_L};
@@ -6127,10 +6128,8 @@ sub remove_leading_dir {                     # {{{1
 sub align_by_pairs {                         # {{{1 
     my ($rh_file_list_L        , # in
         $rh_file_list_R        , # in
-        $rs_nFiles_same        , # out
         $rs_nFiles_added       , # out
         $rs_nFiles_removed     , # out
-        $rs_nFiles_modified    , # out
         $ra_modified_file_list , # out
         ) = @_;
     @{$ra_modified_file_list} = ();
@@ -6144,6 +6143,8 @@ sub align_by_pairs {                         # {{{1
     if (scalar @files_L == 1 or scalar @files_R == 1) {
         # The easy case:  compare two files.
         push @{$ra_modified_file_list}, [ $files_L[0],  $files_R[0] ]; 
+        ${$rs_nFiles_added   } = 0;
+        ${$rs_nFiles_removed } = 0;
         return;
     }
 
@@ -6151,17 +6152,45 @@ sub align_by_pairs {                         # {{{1
     # if the groups are in different directories so the first step
     # is to strip the leading directory names from file lists to
     # make it possible to align by file names.
-#use Data::Dumper::Simple;
-#print Dumper("align_by_pairs", @files_L, @files_R);
     my @files_L_minus_dir = remove_leading_dir(@files_L);
     my @files_R_minus_dir = remove_leading_dir(@files_R);
-    
-    # first cut:  zip together the cleaned up arrays (assumes same lenght)
-    for (my $i = 0; $i < scalar @files_L_minus_dir; $i++) {
-        push @{$ra_modified_file_list}, [ $files_L[$i],  
-                                          $files_R[$i] ]; 
+
+    # Keys of the stripped_X arrays are canonical file names;
+    # should overlap mostly.  Keys in stripped_L but not in
+    # stripped_R are files that have been deleted.  Keys in
+    # stripped_R but not in stripped_L have been added.
+    my %stripped_L = ();
+       @stripped_L{ @files_L_minus_dir } = @files_L;
+    my %stripped_R = ();
+       @stripped_R{ @files_R_minus_dir } = @files_R;
+
+    my %common = ();
+    foreach my $f (keys %stripped_L) {
+        $common{$f}  = 1 if     defined $stripped_R{$f};
     }
 
+    my %deleted = ();
+    foreach my $f (keys %stripped_L) {
+        $deleted{$f} = 1 unless defined $stripped_R{$f};
+    }
+
+    my %added = ();
+    foreach my $f (keys %stripped_R) {
+        $added{$f}   = 1 unless defined $stripped_L{$f};
+    }
+
+#use Data::Dumper::Simple;
+#print Dumper("align_by_pairs", %stripped_L, %stripped_R);
+#print Dumper("align_by_pairs", %common, %added, %deleted);
+    
+    foreach my $f (keys %common) {
+        push @{$ra_modified_file_list}, [ $stripped_L{$f},  
+                                          $stripped_R{$f} ]; 
+    }
+    ${$rs_nFiles_added   } += scalar keys %added  ;
+    ${$rs_nFiles_removed } += scalar keys %deleted;
+
+    return;
 #print Dumper("align_by_pairs", @files_L_minus_dir, @files_R_minus_dir);
 #die;
 } # 1}}}
