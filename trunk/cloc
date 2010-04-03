@@ -5865,22 +5865,22 @@ die "undef rah_diff_R[$i]{type} " unless defined $rah_diff_R->[$i]{type};
             $html_out .= $line_num;  
             $html_out .= $pre . 
                          html_metachars($rah_diff_R->[$i]{char}) . $post;
-        } elsif ($rah_diff_R->[$i]{type} eq 'code') { # code+comments
-
-            $line_num = '<span class="linenum">' .
-                         $rah_diff_R->[$i]{lnum} . $post;
-            $html_out .= $line_num;  
-
-            my @strings = @{$rah_diff_R->[$i]{char}{strings}}; 
-            my @type    = @{$rah_diff_R->[$i]{char}{type}}; 
-            for (my $i = 0; $i < scalar @strings; $i++) {
-                if ($type[$i] eq 'u') {
-                    $pre = '<span class="normal">';
-                } else {
-                    $pre = '<span class="comment">';
-                }
-                $html_out .= $pre .  html_metachars($strings[$i]) . $post;
-            }
+#XX     } elsif ($rah_diff_R->[$i]{type} eq 'code') { # code+comments
+#XX
+#XX         $line_num = '<span class="linenum">' .
+#XX                      $rah_diff_R->[$i]{lnum} . $post;
+#XX         $html_out .= $line_num;  
+#XX
+#XX         my @strings = @{$rah_diff_R->[$i]{char}{strings}}; 
+#XX         my @type    = @{$rah_diff_R->[$i]{char}{type}}; 
+#XX         for (my $i = 0; $i < scalar @strings; $i++) {
+#XX             if ($type[$i] eq 'u') {
+#XX                 $pre = '<span class="normal">';
+#XX             } else {
+#XX                 $pre = '<span class="comment">';
+#XX             }
+#XX             $html_out .= $pre .  html_metachars($strings[$i]) . $post;
+#XX         }
 # print Dumper(@strings, @type); die;
 
         } elsif ($rah_diff_R->[$i]{type} eq 'comment') {
