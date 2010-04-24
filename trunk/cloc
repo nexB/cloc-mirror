@@ -10,13 +10,13 @@
 #     by David Wheeler.
 #   - Regexp::Common v2.120
 #     http://search.cpan.org/~abigail/Regexp-Common-2.120/lib/Regexp/Common.pm
-#     by Damian Conway and Abigail
+#     by Damian Conway and Abigail.
 #   - Win32::Autoglob 
 #     http://search.cpan.org/~sburke/Win32-Autoglob-1.01/Autoglob.pm
-#     by Sean M. Burke 
+#     by Sean M. Burke.
 #   - Algorithm::Diff
 #     http://search.cpan.org/~tyemq/Algorithm-Diff-1.1902/lib/Algorithm/Diff.pm
-#     by Tye McQueen
+#     by Tye McQueen.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.10);
+my $VERSION = sprintf("%.2f", 1.9);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -258,7 +258,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              custom language definitions (see --read-lang-def).
 
  ${BB}Output Options${NN}
-   --no3                     Suppress third-generation language output.
+   --3                       Print third-generation language output.
                              (This option can cause report summation to fail
                              if some reports were produced with this option
                              while others were produced without it.)
@@ -324,7 +324,8 @@ my (
     $opt_sdir                 ,
     $opt_sum_reports          ,
     $opt_unicode              ,
-    $opt_no3                  ,
+    $opt_no3                  ,   # accept it but don't use it
+    $opt_3                    ,
     $opt_extract_with         ,
     $opt_by_file              ,
     $opt_by_file_by_lang      ,
@@ -371,7 +372,8 @@ my $getopt_success = GetOptions(
    "original_dir|original-dir"               => \$opt_original_dir        ,
    "sum_reports|sum-reports"                 => \$opt_sum_reports         ,
    "unicode"                                 => \$opt_unicode             ,
-   "no3"                                     => \$opt_no3                 ,
+   "no3"                                     => \$opt_no3                 ,  # ignored
+   "3"                                       => \$opt_3                   ,
    "v:i"                                     => \$opt_v                   ,
    "version"                                 => \$opt_version             ,
    "write_lang_def|write-lang-def=s"         => \$opt_write_lang_def      ,
@@ -736,15 +738,28 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 
     my $nCounted = 0;
 
-    my @file_pairs  = ();
+    my @file_pairs    = ();
+    my @files_added   = ();
+    my @files_removed = ();
 
     align_by_pairs(\%{$unique_source_file{$fh[$F  ]}}    , # in
                    \%{$unique_source_file{$fh[$F+1]}}    , # in
-                   \$nFiles_added                        , # out
-                   \$nFiles_removed                      , # out
+                   \@files_added                         , # out
+                   \@files_removed                       , # out
                    \@file_pairs                          , # out
                    );
-
+#print "after align_by_pairs:\n";
+#print "added:\n";
+    foreach my $f (@files_added) {
+#printf "%10s -> %s\n", $f, $Language{$fh[$F+1]}{$f};
+        ++$Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'nFiles'}{'added'};
+    }
+#print "removed:\n";
+    foreach my $f (@files_removed) {
+        ++$Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'nFiles'}{'removed'};
+#printf "%10s -> %s\n", $f, $Language{$fh[$F  ]}{$f};
+    }
+#print "Language=\n", Dumper(\%Language);
     foreach my $pair (@file_pairs) {
         my $file_L = $pair->[0];
         my $file_R = $pair->[1];
@@ -776,8 +791,36 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         }
 
 #print "DIFF($file_L, $file_R)\n";
-        # step 1: identify comments in both files
+        # step 0: compare the two files' contents 
         chomp ( my @lines_L = read_file($file_L) );
+        chomp ( my @lines_R = read_file($file_R) );
+        my $language_file_L = "";
+        if (defined $Language{$fh[$F]}{$file_L}) {
+            $language_file_L = $Language{$fh[$F]}{$file_L};
+        } else {
+            # files $file_L and $file_R do not contain known language
+            next;
+        }
+        if (scalar @lines_L == scalar @lines_R) {
+            # same size, must compare line-by-line
+            my $contents_are_same = 1;
+            for (my $i = 0; $i < scalar @lines_L; $i++) {
+                if ($lines_L[$i] ne $lines_R[$i]) {
+                    $contents_are_same = 0;
+                    last;
+                }
+            }
+            if ($contents_are_same) {
+                ++$Delta_by_Language{$language_file_L}{'nFiles'}{'same'};
+            } else {
+                ++$Delta_by_Language{$language_file_L}{'nFiles'}{'modified'};
+            }
+        } else {
+            # different sizes, contents have changed
+            ++$Delta_by_Language{$language_file_L}{'nFiles'}{'modified'};
+        }
+
+        # step 1: identify comments in both files
 #print "Diff blank removal L language= $Lang_L";
 #print " scalar(lines_L)=", scalar @lines_L, "\n";
         my @original_minus_blanks_L 
@@ -790,7 +833,6 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #print "3: scalar(lines_L)=", scalar @lines_L, "\n";
 
 #print "Diff blank removal R language= $Lang_R\n";
-        chomp ( my @lines_R = read_file($file_R) );
         my @original_minus_blanks_R 
                     = rm_blanks(  \@lines_R, $Lang_R);
         @lines_R    = @original_minus_blanks_R;
@@ -914,7 +956,9 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         $Results_by_Language{$Lang_L}{'blank'}   += $blank_count_L  ;
         $Results_by_Language{$Lang_L}{'comment'} += $comment_count_L;
     }
+
 }
+#use Data::Dumper;
 #print Dumper("Delta_by_Language:", \%Delta_by_Language);
 
 my @ignored_reasons = map { "$_: $Ignored{$_}" } sort keys %Ignored;
@@ -996,12 +1040,12 @@ if ($opt_skip_win_hidden and $ON_WINDOWS) {
 #
 my %Language           = ();
 my %unique_source_file = ();
-remove_duplicate_files($fh, 
-                           \%Language               , 
-                           \%unique_source_file     , 
-                      \%Error_Codes                 , 
-                           \@Errors                 , 
-                           \%Ignored                );
+remove_duplicate_files($fh                          ,   # in 
+                           \%Language               ,   # out
+                           \%unique_source_file     ,   # out
+                      \%Error_Codes                 ,   # in
+                           \@Errors                 ,   # out
+                           \%Ignored                );  # out
 printf "%8d unique file%s.                              \n", 
     plural_form(scalar keys %unique_source_file) 
     unless $opt_quiet;
@@ -1126,13 +1170,13 @@ sub combine_results {                        # {{{1
                     $rhh_count->{$1   }{'blank'  } += $3;
                     $rhh_count->{$1   }{'comment'} += $4;
                     $rhh_count->{$1   }{'code'   } += $5;
-                    $rhh_count->{$1   }{'scaled' } += $7 unless $opt_no3;
+                    $rhh_count->{$1   }{'scaled' } += $7 if $opt_3;
                 } else {
                     $rhh_count->{$file}{'nFiles' } += $2;
                     $rhh_count->{$file}{'blank'  } += $3;
                     $rhh_count->{$file}{'comment'} += $4;
                     $rhh_count->{$file}{'code'   } += $5;
-                    $rhh_count->{$file}{'scaled' } += $7 unless $opt_no3;
+                    $rhh_count->{$file}{'scaled' } += $7 if $opt_3;
                 }
             } elsif ($opt_by_file  and
                 m{^(.*?)\s+         # language
@@ -1155,13 +1199,13 @@ sub combine_results {                        # {{{1
                     $rhh_count->{$1   }{'blank'  } += $2;
                     $rhh_count->{$1   }{'comment'} += $3;
                     $rhh_count->{$1   }{'code'   } += $4;
-                    $rhh_count->{$1   }{'scaled' } += $6 unless $opt_no3;
+                    $rhh_count->{$1   }{'scaled' } += $6 if $opt_3;
                 } else {
                     $rhh_count->{$file}{'nFiles' } +=  1;
                     $rhh_count->{$file}{'blank'  } += $2;
                     $rhh_count->{$file}{'comment'} += $3;
                     $rhh_count->{$file}{'code'   } += $4;
-                    $rhh_count->{$file}{'scaled' } += $6 unless $opt_no3;
+                    $rhh_count->{$file}{'scaled' } += $6 if $opt_3;
                 }
             }
         }
@@ -1202,7 +1246,7 @@ sub diff_report     {                        # {{{1
     my $spacing_1 = 13;
     my $spacing_2 =  9;
     my $spacing_3 = 17;
-    if ($opt_no3) {
+    if (!$opt_3) {
         $spacing_1 = 19;
         $spacing_2 = 14;
         $spacing_3 = 28;
@@ -1234,7 +1278,7 @@ sub diff_report     {                        # {{{1
 
     my $hyphen_line = sprintf "%s", '-' x (79 + $column_1_offset);
        $hyphen_line = sprintf "%s", '-' x (68 + $column_1_offset) 
-            if $opt_no3 and (68 + $column_1_offset) > 79;
+            if (!$opt_3) and (68 + $column_1_offset) > 79;
     my $data_line  = "";
     my $first_column;
     my $BY_LANGUAGE = 0;
@@ -1265,7 +1309,7 @@ my $sum_lines=1;
     push @results, $hyphen_line;
 
     # column headers
-    if ($opt_no3 and $BY_FILE) {
+    if (!$opt_3 and $BY_FILE) {
         my $spacing_n = $spacing_1 - 11;
         $data_line  = sprintf "%-${spacing_n}s ", $first_column;
     } else {
@@ -1429,7 +1473,7 @@ sub generate_report {                        # {{{1
     my $spacing_1 = 13;
     my $spacing_2 =  9;
     my $spacing_3 = 17;
-    if ($opt_no3) {
+    if (!$opt_3) {
         $spacing_1 = 19;
         $spacing_2 = 14;
         $spacing_3 = 28;
@@ -1462,7 +1506,7 @@ sub generate_report {                        # {{{1
     my $URL        = "http://cloc.sourceforge.net";
     my $hyphen_line = sprintf "%s", '-' x (79 + $column_1_offset);
        $hyphen_line = sprintf "%s", '-' x (68 + $column_1_offset) 
-            if $opt_no3 and (68 + $column_1_offset) > 79;
+            if (!$opt_3) and (68 + $column_1_offset) > 79;
     my $data_line  = "";
     my $first_column;
     my $BY_LANGUAGE = 0;
@@ -1511,7 +1555,7 @@ sub generate_report {                        # {{{1
 
     if ($Style eq "txt") {
         # column headers
-        if ($opt_no3 and $BY_FILE) {
+        if (!$opt_3 and $BY_FILE) {
             my $spacing_n = $spacing_1 - 11;
             $data_line  = sprintf "%-${spacing_n}s ", $first_column;
         } else {
@@ -1529,7 +1573,7 @@ sub generate_report {                        # {{{1
         $data_line .= sprintf " %8s   %14s",
             "scale"         ,
             "3rd gen. equiv"
-              unless $opt_no3;
+              if $opt_3;
         push @results, $data_line;
         push @results, $hyphen_line;
     }
@@ -1541,7 +1585,7 @@ sub generate_report {                        # {{{1
             $header2 = "files,language";
         }
         $header2 .= ",blank,comment,code";
-        $header2 .= ",scale,3rd gen. equiv" unless $opt_no3;
+        $header2 .= ",scale,3rd gen. equiv" if $opt_3;
         $header2 .= ',"' . $header_line . '"';
         push @results, $header2;
     }
@@ -1567,7 +1611,7 @@ sub generate_report {                        # {{{1
             $scaled = $factor*$rhh_count->{$lang_or_file}{'code'};
         } else {
             if (!defined $rhh_count->{$lang_or_file}{'scaled'}) {
-                $opt_no3 = 1;
+                $opt_3 = 0;
                 # If we're summing together files previously generated
                 # with --no3 then rhh_count->{$lang_or_file}{'scaled'}
                 # this variable will be undefined.  That should only
@@ -1575,7 +1619,7 @@ sub generate_report {                        # {{{1
             } elsif ($BY_LANGUAGE) {
                 warn "Missing scaled language info for $lang_or_file\n";
             }
-            unless ($opt_no3) {
+            if ($opt_3) {
                 $scaled =         $rhh_count->{$lang_or_file}{'scaled'};
                 $factor = $scaled/$rhh_count->{$lang_or_file}{'code'};
             }
@@ -1594,8 +1638,8 @@ sub generate_report {                        # {{{1
             $rhh_count->{$lang_or_file}{'code'}   ;
         $data_line .= sprintf $Format{5}{$Style}  ,
             $factor                               ,
-            $scaled unless $opt_no3;
-        $sum_scaled  += $scaled unless $opt_no3;
+            $scaled if $opt_3;
+        $sum_scaled  += $scaled if $opt_3;
 
         if ($opt_xml) {
             if (defined $rhh_count->{$lang_or_file}{'lang'}) {
@@ -1619,13 +1663,13 @@ sub generate_report {                        # {{{1
             push @results,"  code: "    .$rhh_count->{$lang_or_file}{'code'}   ;
             push @results,"  language: ".$rhh_count->{$lang_or_file}{'lang'} 
                 if $BY_FILE;
-            if (!$opt_no3) {
+            if ($opt_3) {
                 push @results, "  scaled: " . $scaled;
                 push @results, "  factor: " . $factor;
             }
         } elsif ($opt_csv) {
             my $extra_3 = "";
-               $extra_3 = ",$factor,$scaled" unless $opt_no3;
+               $extra_3 = ",$factor,$scaled" if $opt_3;
             my $str;
             if ($BY_FILE) {
                 $str = $rhh_count->{$lang_or_file}{'lang'}   . ",";
@@ -1644,7 +1688,7 @@ sub generate_report {                        # {{{1
     }
     my $avg_scale = 1;  # weighted average of scale factors
        $avg_scale = sprintf("%.2f", $sum_scaled / $sum_code) 
-            if $sum_code and !$opt_no3;
+            if $sum_code and $opt_3;
 
     if ($opt_xml) {
         $data_line = "";
@@ -1657,7 +1701,7 @@ sub generate_report {                        # {{{1
             $sum_code    ;
         $data_line .= sprintf $Format{'5'}{$Style},
             $avg_scale   ,
-            $sum_scaled  unless $opt_no3;
+            $sum_scaled  if $opt_3;
         push @results, "<total " . $data_line . "/>";
         
         if ($BY_FILE) {
@@ -1676,7 +1720,7 @@ sub generate_report {                        # {{{1
         push @results, "  code: "   . $sum_code   ;
         push @results, "  comment: ". $sum_comment;
         push @results, "  nFiles: " . $sum_files  ;
-        if (!$opt_no3) {
+        if ($opt_3) {
             push @results, "  scaled: " . $sum_scaled;
             push @results, "  factor: " . $avg_scale ;
         }
@@ -1696,7 +1740,7 @@ sub generate_report {                        # {{{1
             $sum_code    ;
         $data_line .= sprintf $Format{'5'}{$Style},
             $avg_scale   ,
-            $sum_scaled unless $opt_no3;
+            $sum_scaled if $opt_3;
         push @results, $hyphen_line if $sum_files > 1;
         push @results, $data_line   if $sum_files > 1;
         push @results, $hyphen_line;
@@ -6128,11 +6172,11 @@ sub remove_leading_dir {                     # {{{1
 sub align_by_pairs {                         # {{{1 
     my ($rh_file_list_L        , # in
         $rh_file_list_R        , # in
-        $rs_nFiles_added       , # out
-        $rs_nFiles_removed     , # out
-        $ra_modified_file_list , # out
+        $ra_added              , # out
+        $ra_removed            , # out
+        $ra_compare_list       , # out
         ) = @_;
-    @{$ra_modified_file_list} = ();
+    @{$ra_compare_list} = ();
 
     my @files_L = sort keys %{$rh_file_list_L};
     my @files_R = sort keys %{$rh_file_list_R};
@@ -6142,9 +6186,9 @@ sub align_by_pairs {                         # {{{1
 #die;
     if (scalar @files_L == 1 or scalar @files_R == 1) {
         # The easy case:  compare two files.
-        push @{$ra_modified_file_list}, [ $files_L[0],  $files_R[0] ]; 
-        ${$rs_nFiles_added   } = 0;
-        ${$rs_nFiles_removed } = 0;
+        push @{$ra_compare_list}, [ $files_L[0],  $files_R[0] ]; 
+        @{$ra_added  } = ();
+        @{$ra_removed} = ();
         return;
     }
 
@@ -6171,12 +6215,12 @@ sub align_by_pairs {                         # {{{1
 
     my %deleted = ();
     foreach my $f (keys %stripped_L) {
-        $deleted{$f} = 1 unless defined $stripped_R{$f};
+        $deleted{$stripped_L{$f}} = $f unless defined $stripped_R{$f};
     }
 
     my %added = ();
     foreach my $f (keys %stripped_R) {
-        $added{$f}   = 1 unless defined $stripped_L{$f};
+        $added{$stripped_R{$f}}   = $f unless defined $stripped_L{$f};
     }
 
 #use Data::Dumper::Simple;
@@ -6184,11 +6228,11 @@ sub align_by_pairs {                         # {{{1
 #print Dumper("align_by_pairs", %common, %added, %deleted);
     
     foreach my $f (keys %common) {
-        push @{$ra_modified_file_list}, [ $stripped_L{$f},  
-                                          $stripped_R{$f} ]; 
+        push @{$ra_compare_list}, [ $stripped_L{$f},  
+                                    $stripped_R{$f} ]; 
     }
-    ${$rs_nFiles_added   } += scalar keys %added  ;
-    ${$rs_nFiles_removed } += scalar keys %deleted;
+    @{$ra_added   } = keys %added  ;
+    @{$ra_removed } = keys %deleted;
 
     return;
 #print Dumper("align_by_pairs", @files_L_minus_dir, @files_R_minus_dir);
