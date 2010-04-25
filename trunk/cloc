@@ -175,6 +175,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
                              See also --script-lang.
+   --no-inline               Do not process comments that appear at the end
+                             of lines containing code.
    --read-binary-files       Process binary files in addition to text files.
                              This is usually a bad idea and should only be
                              attempted with text files that have embedded 
@@ -343,6 +345,7 @@ my (
 	$opt_sql                  ,
 	$opt_sql_append           ,
 	$opt_sql_project          ,
+	$opt_no_inline            ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -391,6 +394,7 @@ my $getopt_success = GetOptions(
    "sql=s"                                   => \$opt_sql                 ,
    "sql_project|sql-project=s"               => \$opt_sql_project         ,
    "sql_append|sql-append"                   => \$opt_sql_append          ,
+   "no_inline|no-inline"                     => \$opt_no_inline           ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -2535,6 +2539,30 @@ sub remove_matches {                         # {{{1
 #print "remove_matches returning\n   ", join("\n   ", @save_lines), "\n";
     return @save_lines;
 } # 1}}}
+sub remove_inline {                          # {{{1
+    my ($ra_lines, # in
+        $pattern , # in   Perl regular expression (case insensitive)
+       ) = @_;
+    print "-> remove_inline(pattern=$pattern)\n" if $opt_v > 2;
+
+    my @save_lines = ();
+    if ($opt_no_inline) {
+        return @{$ra_lines};
+    }
+    my $nLines_affected = 0;
+    foreach (@{$ra_lines}) {
+#chomp; print "remove_inline [$pattern] [$_]\n";
+        if (m{$pattern}i) {
+            ++$nLines_affected;
+            s{$pattern}{}i;
+        }
+        push @save_lines, $_;
+    }
+
+    print "<- remove_inline\n" if $opt_v > 2;
+#print "remove_inline returning\n   ", join("\n   ", @save_lines), "\n";
+    return @save_lines;
+} # 1}}}
 sub remove_above {                           # {{{1
     my ($ra_lines, $marker, ) = @_;
     print "-> remove_above(marker=$marker)\n" if $opt_v > 2;
@@ -3087,26 +3115,41 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'remove_inline'       , ';.*$'   ],
                             ],
-    'awk'                => [   [ 'remove_matches'      , '^\s*#'  ], ], 
-    'bc'                 => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'awk'                => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'bc'                 => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'C'                  => [   
                                 [ 'remove_matches'      , '^\s*//' ], # C99
-                                [ 'call_regexp_common'  , 'C'      ], ], 
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], # C99
+                            ], 
     'C++'                => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
     'C/C++ Header'       => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
-                                [ 'call_regexp_common'  , 'C'      ], ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                            ],
     'C#'                 => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'D'                  => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'CCS'                => [   [ 'call_regexp_common'  , 'C'      ], ],
     'CSS'                => [   [ 'call_regexp_common'  , 'C'      ], ],
@@ -3115,17 +3158,32 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'Crystal Reports'    => [   [ 'remove_matches'      , '^\s*//' ], ],
     'DAL'                => [   [ 'remove_between'      , '[]',    ], ],
-    'NASTRAN DMAP'       => [   [ 'remove_matches'      , '^\s*\$' ], ],
+    'NASTRAN DMAP'       => [   
+                                [ 'remove_matches'      , '^\s*\$' ], 
+                                [ 'remove_inline'       , '\$.*$'  ], 
+                            ],
     'DOS Batch'          => [   [ 'remove_matches'      , '^\s*rem', ], ],
     'DTD'                => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
-    'Expect'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Expect'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'Focus'              => [   [ 'remove_matches'      , '^\s*\-\*'  ], ],
-    'Fortran 77'         => [   [ 'remove_f77_comments' ,          ], ],
-    'Fortran 90'         => [   [ 'remove_f77_comments' ,          ],
-                                [ 'remove_f90_comments' ,          ], ],
-    'Fortran 95'         => [   [ 'remove_f77_comments' ,          ],
-                                [ 'remove_f90_comments' ,          ], ],
+    'Fortran 77'         => [   
+                                [ 'remove_f77_comments' ,          ], 
+                                [ 'remove_inline'       , '\!.*$'  ],
+                            ],
+    'Fortran 90'         => [   
+                                [ 'remove_f77_comments' ,          ],
+                                [ 'remove_f90_comments' ,          ], 
+                                [ 'remove_inline'       , '\!.*$'  ],
+                            ],
+    'Fortran 95'         => [   
+                                [ 'remove_f77_comments' ,          ],
+                                [ 'remove_f90_comments' ,          ], 
+                                [ 'remove_inline'       , '\!.*$'  ],
+                            ],
     'HTML'               => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'Haskell'            => [   [ 'remove_haskell_comments', '>filename<' ], ],
@@ -3140,26 +3198,40 @@ sub set_constants {                          # {{{1
     'Java'               => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Javascript'         => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'JCL'                => [   [ 'remove_jcl_comments' ,          ], ],
     'Lisp'               => [   [ 'remove_matches'      , '^\s*;'  ], ],
     'LiveLink OScript'   => [   [ 'remove_matches'      , '^\s*//' ], ],
 #   'Lua'                => [   [ 'call_regexp_common'  , 'lua'    ], ],
     'Lua'                => [   [ 'remove_matches'      , '^\s*\-\-' ], ],
-    'make'               => [   [ 'remove_matches'      , '^\s*#'  ], ], 
-    'MATLAB'             => [   [ 'remove_matches'      , '^\s*%'  ], ], 
+    'make'               => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'MATLAB'             => [   
+                                [ 'remove_matches'      , '^\s*%'  ], 
+                                [ 'remove_inline'       , '%.*$'   ],
+                            ], 
     'Modula3'            => [   [ 'call_regexp_common'  , 'Pascal' ], ],
         # Modula 3 comments are (* ... *) so applying the Pascal filter
         # which also treats { ... } as a comment is not really correct.
-    'Objective C'        => [   [ 'remove_matches'      , '^\s*//' ],
-                                [ 'call_regexp_common'  , 'C'      ], ], 
+    'Objective C'        => [   
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                            ], 
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
-    'Octave'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Octave'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'Oracle Forms'       => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Oracle Reports'     => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Pascal'             => [   [ 'call_regexp_common'  , 'Pascal' ], ],
@@ -3171,43 +3243,70 @@ sub set_constants {                          # {{{1
     'Perl'               => [   [ 'remove_below'        , '^__(END|DATA)__'],
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_below_above'  , '^=head1', '^=cut'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
                             ], 
     'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'docstring_to_C'                 ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '#.*$'   ],
                                 ], 
     'PHP'                => [   
                                 [ 'remove_matches'      , '^\s*#'  ],
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                                [ 'remove_inline'       , '//.*$'  ],
                             ],
     'Rexx'               => [   [ 'call_regexp_common'  , 'C'      ], ],
-    'Ruby'               => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Ruby'               => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'Ruby HTML'          => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'SKILL'              => [   
-                                [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_matches'      , '^\s*;'  ],
                             ],
     'SKILL++'            => [   
-                                [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_matches'      , '^\s*;'  ],
                             ],
     'SQL'                => [   
-                                [ 'remove_matches'      , '^\s*--' ],
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_matches'      , '^\s*--' ],
+                                [ 'remove_inline'       , '--.*$'  ],
                             ],
-    'sed'                => [   [ 'remove_matches'      , '^\s*#'  ], ], 
-    'Bourne Again Shell' => [   [ 'remove_matches'      , '^\s*#'  ], ], 
-    'Bourne Shell'       => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'sed'                => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Bourne Again Shell' => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Bourne Shell'       => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'm4'                 => [   [ 'remove_matches'      , '^dnl '  ], ], 
-    'C Shell'            => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'C Shell'            => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'Kermit'             => [  
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_matches'      , '^\s*;'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
                             ], 
-    'Korn Shell'         => [   [ 'remove_matches'      , '^\s*#'  ], ], 
-    'Tcl/Tk'             => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Korn Shell'         => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Tcl/Tk'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'Teamcenter def'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'Teamcenter met'     => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Teamcenter mth'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
@@ -3219,13 +3318,21 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '--.*$'  ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
-    'vim script'         => [   [ 'remove_matches'      , '^\s*"'  ], ],
+    'vim script'         => [   
+                                [ 'remove_matches'      , '^\s*"'  ], 
+                                [ 'remove_inline'       , '".*$'   ], 
+                            ],
     'Visual Basic'       => [   [ 'remove_above'        , '^\s*Attribute\s+VB_Name\s+=' ],               
                                 [ 'remove_matches'      , '^\s*Attribute\s+'],
                                 [ 'remove_matches'      , '^\s*\47'], ],  # \47 = '
     'yacc'               => [   [ 'call_regexp_common'  , 'C'      ], ],
-    'YAML'               => [   [ 'remove_matches'      , '^\s*#'  ], ],
+    'YAML'               => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ], 
+                            ],
     'lex'                => [   [ 'call_regexp_common'  , 'C'      ], ],
     'XML'                => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
