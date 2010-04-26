@@ -720,7 +720,7 @@ foreach my $FH (@fh) {  # loop over each pair of file sets
                           \%Error_Codes                         , 
                                \@Errors                         , 
                                \%Ignored                        );
-    printf "%2d: %8d unique file%s.                          \n", 
+    printf "%2d: %8d unique file%s.                          \r", 
         $n_set,
         plural_form(scalar keys %unique_source_file) 
         unless $opt_quiet;
@@ -860,7 +860,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #use Data::Dumper; 
 #print Dumper("diff_LL", \@diff_LL, "diff_LR", \@diff_LR, );
 #print Dumper("diff_RL", \@diff_RL, "diff_RR", \@diff_RR, );
-
+#die;
         # step 2: separate code from comments for L and R files
         my @code_L = ();
         my @code_R = ();
@@ -972,8 +972,8 @@ write_file($opt_counted, sort keys %Language) if $opt_counted;
 # Step 7:  Assemble results.                      {{{1
 #
 my $end_time = time();
-printf "%8d file%s ignored.\n", plural_form(scalar keys %Ignored) 
-    unless $opt_quiet;
+printf "%8d file%s ignored.                           \n", 
+    plural_form(scalar keys %Ignored) unless $opt_quiet;
 print_errors(\%Error_Codes, \@Errors) if @Errors;
 exit unless %Results_by_Language;
 
@@ -1230,7 +1230,7 @@ sub diff_report     {                        # {{{1
     my @results       = ();
     
     my $languages     = ();
-    my %sum           = ();
+    my %sum           = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
     my $max_len       = 0;
     foreach my $language (keys %{$rhhh_count}) {
         foreach my $V (qw(nFiles blank comment code)) {
@@ -1331,8 +1331,6 @@ my $sum_lines=1;
     push @results, $data_line;
     push @results, $hyphen_line;
 
-    my %sum = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
-
     foreach my $lang_or_file (sort {
                                  $rhhh_count->{$b}{'code'} <=>
                                  $rhhh_count->{$a}{'code'}
@@ -1348,10 +1346,6 @@ my $sum_lines=1;
                 $rhhh_count->{$lang_or_file}{'blank'}{$S}   ,
                 $rhhh_count->{$lang_or_file}{'comment'}{$S} ,
                 $rhhh_count->{$lang_or_file}{'code'}{$S}    ;
-            $sum{'nFiles'}{$S}  += $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
-            $sum{'blank'}{$S}   += $rhhh_count->{$lang_or_file}{'blank'}{$S};
-            $sum{'comment'}{$S} += $rhhh_count->{$lang_or_file}{'comment'}{$S};
-            $sum{'code'}{$S}    += $rhhh_count->{$lang_or_file}{'code'}{$S};
             push @results, $line;
         }
     }
@@ -2049,6 +2043,7 @@ sub remove_duplicate_files {                 # {{{1
 
     # Check for duplicate files by comparing file sizes.
     # Where files are equally sized, compare their MD5 checksums.
+    print "-> remove_duplicate_files\n" if $opt_v > 2;
 
     my $n = 0;
     my %files_by_size = (); # files_by_size{ # bytes } = [ list of files ]
@@ -2086,6 +2081,7 @@ sub remove_duplicate_files {                 # {{{1
             }
         }
     }
+    print "<- remove_duplicate_files\n" if $opt_v > 2;
 } # 1}}}
 sub files {                                  # {{{1
     # invoked by File::Find's find()   Populates global variable @file_list
@@ -6201,9 +6197,11 @@ sub array_diff {                             # {{{1
             ++$n_R;
             if ($COMMENT_MODE) {
                 # should never get here
-                warn "array_diff: diff failure (diff says the\n";
-                warn "comment-free file has added lines).\n";
-                warn "$n_sdiff  $line_L\n";
+                if ($opt_v) {
+                  warn "array_diff: diff failure (diff says the\n";
+                  warn "comment-free file has added lines).\n";
+                  warn "$n_sdiff  $line_L\n";
+                }
                 last;
             }
             $rah_diff_L->[$n_sdiff]{type} = "nonexist";
