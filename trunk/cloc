@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.9);
+my $VERSION = sprintf("%.2f", 1.5);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -175,7 +175,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
                              See also --script-lang.
-   --no-inline               Do not process comments that appear at the end
+   --inline                  Process comments that appear at the end
                              of lines containing code.
    --read-binary-files       Process binary files in addition to text files.
                              This is usually a bad idea and should only be
@@ -345,7 +345,7 @@ my (
 	$opt_sql                  ,
 	$opt_sql_append           ,
 	$opt_sql_project          ,
-	$opt_no_inline            ,
+	$opt_inline               ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -394,7 +394,7 @@ my $getopt_success = GetOptions(
    "sql=s"                                   => \$opt_sql                 ,
    "sql_project|sql-project=s"               => \$opt_sql_project         ,
    "sql_append|sql-append"                   => \$opt_sql_append          ,
-   "no_inline|no-inline"                     => \$opt_no_inline           ,
+   "inline"                                  => \$opt_inline              ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -1331,6 +1331,8 @@ my $sum_lines=1;
     push @results, $data_line;
     push @results, $hyphen_line;
 
+    my %sum = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
+
     foreach my $lang_or_file (sort {
                                  $rhhh_count->{$b}{'code'} <=>
                                  $rhhh_count->{$a}{'code'}
@@ -1346,9 +1348,26 @@ my $sum_lines=1;
                 $rhhh_count->{$lang_or_file}{'blank'}{$S}   ,
                 $rhhh_count->{$lang_or_file}{'comment'}{$S} ,
                 $rhhh_count->{$lang_or_file}{'code'}{$S}    ;
+            $sum{'nFiles'}{$S}  += $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+            $sum{'blank'}{$S}   += $rhhh_count->{$lang_or_file}{'blank'}{$S};
+            $sum{'comment'}{$S} += $rhhh_count->{$lang_or_file}{'comment'}{$S};
+            $sum{'code'}{$S}    += $rhhh_count->{$lang_or_file}{'code'}{$S};
             push @results, $line;
         }
     }
+    push @results, "-" x 79;
+    push @results, "SUM:";
+    foreach my $S (qw(same modified added removed)) {
+        my $indent = $spacing_1 - 2;
+        my $line .= sprintf "  %-${indent}s %${spacing_2}s %${spacing_2}s %${spacing_2}s %${spacing_2}s",
+            $S                  ,
+            $sum{'nFiles'}{$S}  ,
+            $sum{'blank'}{$S}   ,
+            $sum{'comment'}{$S} ,
+            $sum{'code'}{$S}    ;
+        push @results, $line;
+    }
+    push @results, "-" x 79;
 
     return @results;
 } # 1}}}
@@ -2546,7 +2565,7 @@ sub remove_inline {                          # {{{1
     print "-> remove_inline(pattern=$pattern)\n" if $opt_v > 2;
 
     my @save_lines = ();
-    if ($opt_no_inline) {
+    unless ($opt_inline) {
         return @{$ra_lines};
     }
     my $nLines_affected = 0;
