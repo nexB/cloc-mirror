@@ -453,8 +453,10 @@ my (%Language_by_Extension, %Language_by_Script,
     %Language_by_File, %Scale_Factor, %Known_Binary_Archives,
    );
 my $ALREADY_SHOWED_HEADER = 0;
-my %Error_Codes = ( 'Unable to read'              => -1,
-                    'Neither file nor directory'  => -2, );
+my %Error_Codes = ( 'Unable to read'                => -1,
+                    'Neither file nor directory'    => -2, 
+                    'Diff error (quoted comments?)' => -3, 
+                  );
 if ($opt_read_lang_def) {
     read_lang_def(
         $opt_read_lang_def     , #        Sample values:
@@ -844,16 +846,20 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         @lines_R    = rm_comments( \@lines_R, $Lang_R, $file_R);
 
         my (@diff_LL, @diff_LR, );
-        array_diff(\@original_minus_blanks_L ,   # in
+        array_diff( $file_L                  ,   # in
+                   \@original_minus_blanks_L ,   # in
                    \@lines_L                 ,   # in
                    "comment"                 ,   # in
-                   \@diff_LL, \@diff_LR, );      # out
+                   \@diff_LL, \@diff_LR      ,   # out
+                   \@Errors);                    # in/out
 
         my (@diff_RL, @diff_RR, );
-        array_diff(\@original_minus_blanks_R ,   # in
+        array_diff( $file_R                  ,   # in
+                   \@original_minus_blanks_R ,   # in
                    \@lines_R                 ,   # in
                    "comment"                 ,   # in
-                   \@diff_RL, \@diff_RR, );      # out
+                   \@diff_RL, \@diff_RR      ,   # out
+                   \@Errors);                    # in/out
         # each line of each file is now classified as
         # code or comment
 
@@ -890,10 +896,12 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         }
 
         # step 3: compute code diffs
-        array_diff(\@code_L               ,   # in
+        array_diff("$file_L v. $file_R"   ,   # in
+                   \@code_L               ,   # in
                    \@code_R               ,   # in
                    "revision"             ,   # in
-                   \@diff_LL, \@diff_LR, );   # out
+                   \@diff_LL, \@diff_LR   ,   # out
+                   \@Errors);                 # in/out
 #print Dumper("diff_LL", \@diff_LL, "diff_LR", \@diff_LR, );
 #print Dumper("diff_LR", \@diff_LR);
         foreach my $line_info (@diff_LR) {
@@ -905,10 +913,12 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         }
 
         # step 4: compute comment diffs
-        array_diff(\@comm_L               ,   # in
+        array_diff("$file_L v. $file_R"   ,   # in
+                   \@comm_L               ,   # in
                    \@comm_R               ,   # in
                    "revision"             ,   # in
-                   \@diff_LL, \@diff_LR, );   # out
+                   \@diff_LL, \@diff_LR   ,   # out
+                   \@Errors);                 # in/out
 #print Dumper("comment diff_LR", \@diff_LR);
         foreach my $line_info (@diff_LR) {
             my $status = $line_info->{'desc'}; # same|added|removed|modified
@@ -922,12 +932,12 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         my ($all_line_count_L,
             $blank_count_L   ,
             $comment_count_L ,
-           ) = call_counter($file_L, $Lang_L);
+           ) = call_counter($file_L, $Lang_L, \@Errors);
 
         my ($all_line_count_R,
             $blank_count_R   ,
             $comment_count_R ,
-           ) = call_counter($file_R, $Lang_R);
+           ) = call_counter($file_R, $Lang_R, \@Errors);
 
         if ($blank_count_L <  $blank_count_R) {
             my $D = $blank_count_R - $blank_count_L;
@@ -1081,7 +1091,7 @@ foreach my $file (sort keys %unique_source_file) {
     my ($all_line_count,
         $blank_count   ,
         $comment_count ,
-       ) = call_counter($file, $Language{$file});
+       ) = call_counter($file, $Language{$file}, \@Errors);
     my $code_count = $all_line_count - $blank_count - $comment_count;
     if ($opt_by_file) {
         $Results_by_File{$file}{'code'   } = $code_count     ;
@@ -2309,8 +2319,9 @@ sub different_files {                        # {{{1
     return @unique;
 } # 1}}}
 sub call_counter {                           # {{{1
-    my ($file    , # in
-        $language, # in
+    my ($file     , # in
+        $language , # in
+        $ra_Errors, # out
        ) = @_;
 
     # Logic:  pass the file through the following filters:
@@ -2390,10 +2401,12 @@ sub call_counter {                           # {{{1
             }
         }
 
-        array_diff(\@original_lines_minus_white ,   # in
+        array_diff( $file                       ,   # in
+                   \@original_lines_minus_white ,   # in
                    \@lines                      ,   # in
                    "comment"                    ,   # in
-                   \@diff_L, \@diff_R, \%count);    # out
+                   \@diff_L, \@diff_R,          ,   # out
+                    $ra_Errors);                    # in/out
         write_comments_to_html($file, \@diff_L, \@diff_R, \%blank_line);
 #print Dumper("count", \%count);
     }
@@ -6072,11 +6085,13 @@ die "undef rah_diff_R[$i]{type} " unless defined $rah_diff_R->[$i]{type};
     print "<- write_comments_to_html\n" if $opt_v > 2;
 } # 1}}}
 sub array_diff {                             # {{{1
-    my ($ra_lines_L    , # in  array of lines in Left  file (no blank lines)
+    my ($file          , # in  only used for error reporting
+        $ra_lines_L    , # in  array of lines in Left  file (no blank lines)
         $ra_lines_R    , # in  array of lines in Right file (no blank lines)
         $mode          , # in  "comment" | "revision"
         $rah_diff_L    , # out
         $rah_diff_R    , # out
+        $raa_Errors    , # in/out
        ) = @_;
 
     # This routine operates in two ways:
@@ -6197,6 +6212,10 @@ sub array_diff {                             # {{{1
             ++$n_R;
             if ($COMMENT_MODE) {
                 # should never get here
+                @{$rah_diff_L} = ();
+                @{$rah_diff_R} = ();
+                push @{$raa_Errors}, 
+                     [ $Error_Codes{'Diff error (quoted comments?)'}, $file ];
                 if ($opt_v) {
                   warn "array_diff: diff failure (diff says the\n";
                   warn "comment-free file has added lines).\n";
