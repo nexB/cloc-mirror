@@ -6285,7 +6285,9 @@ sub remove_leading_dir {                     # {{{1
     while (!$mismatch) {
         for (my $row = 1; $row < scalar @D; $row++) {
 # print "comparing $D[$row][0] to $D[0][0]\n";
-            if (!defined $D[$row][0] or ($D[$row][0] ne $D[0][0])) {
+
+            if (!defined $D[$row][0] or !defined $D[0][0] or
+                ($D[$row][0] ne $D[0][0])) {
                 $mismatch = 1;
                 last;
             }
