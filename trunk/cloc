@@ -162,6 +162,11 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --by-file                 Report results for every source file encountered.
    --by-file-by-lang         Report results for every source file encountered
                              in addition to reporting by language.
+   --diff <set1> <set2>      Compute differences in code and comments between
+                             source file(s) of <set1> and <set2>.  The inputs
+                             may be pairs of files, directories, or archives.
+                             Use --diff-alignment to generate a list showing
+                             which file pairs where compared.
    --force-lang=<lang>[,<ext>]
                              Process all files that have a <ext> extension 
                              with the counter for language <lang>.  For 
@@ -242,6 +247,10 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
  ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
    --counted=<file>          Save names of processed source files to <file>.
+   --diff-alignment=<file>   Write to <file> a list of files and file pairs 
+                             showing which files were added, removed, and/or
+                             compared during a run with --diff.  This switch
+                             forces the --diff mode on.
    --help                    Print this usage information and exit.
    --found=<file>            Save names of every file found to <file>.
    --ignored=<file>          Save names of ignored files and the reason they
@@ -305,6 +314,7 @@ my (
     @opt_force_lang           ,
     @opt_script_lang          ,
     $opt_diff                 ,
+    $opt_diff_alignment       ,
     $opt_html                 ,
     $opt_ignored              ,
     $opt_counted              ,
@@ -358,6 +368,7 @@ my $getopt_success = GetOptions(
    "extract_with|extract-with=s"             => \$opt_extract_with        , 
    "found=s"                                 => \$opt_found               ,
    "diff"                                    => \$opt_diff                ,
+   "diff-alignment|diff_alignment=s"         => \$opt_diff_alignment      ,
    "html"                                    => \$opt_html                ,
    "ignored=s"                               => \$opt_ignored             ,
    "quiet"                                   => \$opt_quiet               ,
@@ -410,6 +421,7 @@ my %Exclude_Dir      = ();
 $opt_exclude_dir     = 1;
 $Exclude_Dir{".svn"} = 1;
 $Exclude_Dir{".cvs"} = 1;
+$opt_diff            = 1 if $opt_diff_alignment;
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -754,17 +766,29 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                    \@files_removed                       , # out
                    \@file_pairs                          , # out
                    );
+    my @alignment = (); # only  used if --diff-alignment
 #print "after align_by_pairs:\n";
+
 #print "added:\n";
+    push @alignment, sprintf "%5d files added\n", scalar @files_added
+        if $opt_diff_alignment;
     foreach my $f (@files_added) {
 #printf "%10s -> %s\n", $f, $Language{$fh[$F+1]}{$f};
+        push @alignment, sprintf "  + %s\n", $f if $opt_diff_alignment;
         ++$Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'nFiles'}{'added'};
     }
+
 #print "removed:\n";
+    push @alignment, sprintf "%5d files removed\n", scalar @files_removed
+        if $opt_diff_alignment;
     foreach my $f (@files_removed) {
         ++$Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'nFiles'}{'removed'};
+        push @alignment, sprintf "  - %s\n", $f if $opt_diff_alignment;
 #printf "%10s -> %s\n", $f, $Language{$fh[$F  ]}{$f};
     }
+
+    push @alignment, sprintf "%5d file pairs compared\n", scalar @file_pairs
+        if $opt_diff_alignment;
 #print "Language=\n", Dumper(\%Language);
     foreach my $pair (@file_pairs) {
         my $file_L = $pair->[0];
@@ -807,9 +831,9 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             # files $file_L and $file_R do not contain known language
             next;
         }
+        my $contents_are_same = 1;
         if (scalar @lines_L == scalar @lines_R) {
             # same size, must compare line-by-line
-            my $contents_are_same = 1;
             for (my $i = 0; $i < scalar @lines_L; $i++) {
                 if ($lines_L[$i] ne $lines_R[$i]) {
                     $contents_are_same = 0;
@@ -822,8 +846,14 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                 ++$Delta_by_Language{$language_file_L}{'nFiles'}{'modified'};
             }
         } else {
+            $contents_are_same = 0;
             # different sizes, contents have changed
             ++$Delta_by_Language{$language_file_L}{'nFiles'}{'modified'};
+        }
+        if ($opt_diff_alignment) {
+            my $status = "(same)";
+               $status = "(modified)" if $contents_are_same;
+            push @alignment, "  $file_L <=> $file_R; $language_file_L ; $status";
         }
 
         # step 1: identify comments in both files
@@ -970,6 +1000,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         $Results_by_Language{$Lang_L}{'blank'}   += $blank_count_L  ;
         $Results_by_Language{$Lang_L}{'comment'} += $comment_count_L;
     }
+    write_file($opt_diff_alignment, @alignment) if $opt_diff_alignment;
 
 }
 #use Data::Dumper;
@@ -5896,48 +5927,6 @@ sub html_metachars {                         # {{{1
     }
     return join "", @out_chars; 
 } # 1}}}
-#x#sub diff_two_strings {                       # {{{1
-#x#    # Compute the difference between two strings and return
-#x#    # the strings with special markers prefixing characters
-#x#    # that differ.
-#x#    my ($text_1, 
-#x#        $text_2,
-#x#       ) = @_;
-#x#    my $MARKER  = "\cA";
-#x#
-#x#    my @chars_1 = split '', $text_1;
-#x#    my @chars_2 = split '', $text_2;
-#x#    my %changed_1 = ();
-#x#    my %changed_2 = ();
-#x#    my $diff = Algorithm::Diff->new ( \@chars_1, \@chars_2 );
-#x#    while(  $diff->Next()  ) {
-#x#        next if $diff->Same();
-#x#        my $sep = "";
-#x#        if      ( ! $diff->Items(2) ) {
-#x#            my ($a, $b, $c ) = $diff->Get(qw( Min1 Max1 Max2 ));
-#x#            foreach ($a..$b) { $changed_1{$_} = 1; }
-#x#            $changed_2{$c} = 1;
-#x#        } elsif ( ! $diff->Items(1) ) {
-#x#            my ($a, $b, $c ) = $diff->Get(qw( Max1 Min2 Max2 ));
-#x#            $changed_1{$a} = 1;
-#x#            foreach ($b..$c) { $changed_2{$_} = 1; }
-#x#        } else {
-#x#            $sep = "---\n";
-#x#            my ($a, $b, $c, $d ) = $diff->Get(qw( Min1 Max1 Min2 Max2 ));
-#x#            foreach ($a..$b) { $changed_1{$_} = 1; }
-#x#            foreach ($c..$d) { $changed_2{$_} = 1; }
-#x#        }
-#x#    }
-#x#    for (my $i = 0; $i < scalar @chars_1; $i++) {
-#x#        $chars_1[$i] = $MARKER . $chars_1[$i];
-#x#    }
-#x#    for (my $i = 0; $i < scalar @chars_2; $i++) {
-#x#        $chars_2[$i] = $MARKER . $chars_2[$i];
-#x#    }
-#x#    my $new_1 = join "", @chars_1;
-#x#    my $new_2 = join "", @chars_2;
-#x#    return ($new_1, $new_2);
-#x#} # 1}}}
 sub test_alg_diff {                          # {{{1
     my ($file_1 ,
         $file_2 )
