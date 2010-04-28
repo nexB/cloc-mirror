@@ -770,24 +770,28 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #print "after align_by_pairs:\n";
 
 #print "added:\n";
-    push @alignment, sprintf "%5d files added\n", scalar @files_added
+    push @alignment, sprintf "Files added: %d\n", scalar @files_added
         if $opt_diff_alignment;
     foreach my $f (@files_added) {
 #printf "%10s -> %s\n", $f, $Language{$fh[$F+1]}{$f};
-        push @alignment, sprintf "  + %s\n", $f if $opt_diff_alignment;
+        push @alignment, sprintf "  + %s ; %s\n", $f, $Language{$fh[$F+1]}{$f}
+            if $opt_diff_alignment;
         ++$Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'nFiles'}{'added'};
     }
+    push @alignment, "\n";
 
 #print "removed:\n";
-    push @alignment, sprintf "%5d files removed\n", scalar @files_removed
+    push @alignment, sprintf "Files removed: %d\n", scalar @files_removed
         if $opt_diff_alignment;
     foreach my $f (@files_removed) {
         ++$Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'nFiles'}{'removed'};
-        push @alignment, sprintf "  - %s\n", $f if $opt_diff_alignment;
+        push @alignment, sprintf "  - %s ; %s\n", $f, $Language{$fh[$F]}{$f}
+            if $opt_diff_alignment;
 #printf "%10s -> %s\n", $f, $Language{$fh[$F  ]}{$f};
     }
+    push @alignment, "\n";
 
-    push @alignment, sprintf "%5d file pairs compared\n", scalar @file_pairs
+    push @alignment, sprintf "File pairs compared: %d\n", scalar @file_pairs
         if $opt_diff_alignment;
 #print "Language=\n", Dumper(\%Language);
     foreach my $pair (@file_pairs) {
@@ -851,9 +855,12 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             ++$Delta_by_Language{$language_file_L}{'nFiles'}{'modified'};
         }
         if ($opt_diff_alignment) {
-            my $status = "(same)";
-               $status = "(modified)" if $contents_are_same;
-            push @alignment, "  $file_L <=> $file_R; $language_file_L ; $status";
+            my $str =  "$file_L | $file_R ; $language_file_L";
+            if ($contents_are_same) {
+                push @alignment, "  == $str";
+            } else {
+                push @alignment, "  != $str";
+            }
         }
 
         # step 1: identify comments in both files
