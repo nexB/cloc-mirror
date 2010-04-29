@@ -180,8 +180,6 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
                              See also --script-lang.
-   --inline                  Process comments that appear at the end
-                             of lines containing code.
    --read-binary-files       Process binary files in addition to text files.
                              This is usually a bad idea and should only be
                              attempted with text files that have embedded 
@@ -299,10 +297,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
 
 ";
 #  Help information for options not yet implemented:
-#  --diff                    Shows counts of code and comment changes between
-#                            successive pairs of inputs:
-#                              delta(FD_1, FD_2), delta(FD_2, FD_3), etc
-#                            (FD means 'file, archive, or directory')
+#  --inline                  Process comments that appear at the end
+#                            of lines containing code.
 #  --html                    Create HTML files of each input file showing
 #                            comment and code lines in different colors.
 
