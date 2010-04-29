@@ -6307,8 +6307,10 @@ sub remove_leading_dir {                     # {{{1
     push @common, " ";  # so that $leading will end with "/ "
     my $leading = File::Spec->catdir( @common );
        $leading =~ s{ $}{};  # now take back the bogus appended space
-#print "remove_leading_dir leading=[$leading]\n";
-#die;
+#print "remove_leading_dir leading=[$leading]\n"; die;
+    if ($ON_WINDOWS) {
+       $leading =~ s{\\}{/}g;
+    }
     foreach my $F (@filenames) {
         $F =~ s{^$leading}{};
     }
