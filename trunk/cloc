@@ -2455,9 +2455,9 @@ sub write_file {                             # {{{1
        ) = @_;
 
     # Do ~ expansion (by Tim LaBerge, fixes bug 2787984)
-    if (glob($file)) {
-        $file = glob($file);
-    }
+    my $preglob_filename = $file;
+    $file = glob($file);  # sometimes returns null string
+    $file = $preglob_filename unless $file;
 
     print "-> write_file($file)\n" if $opt_v > 2;
 
