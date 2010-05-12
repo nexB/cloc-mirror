@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.5);
+my $VERSION = sprintf("%.2f", 1.51);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -452,6 +452,10 @@ die $usage unless defined $opt_version         or
                   scalar @ARGV >= 1;
 die "--diff requires at least two arguments\n" 
     if $opt_diff and scalar @ARGV < 2;
+if ($opt_version) {
+    printf "$VERSION\n";
+    exit;
+}
 # 1}}}
 # Step 1:  Initialize global constants.        {{{1
 #
@@ -543,21 +547,12 @@ my %Script_Language = map { $_ => 1 } values %Language_by_Script ;
 # 1}}}
 # Step 2:  Early exits for display, summation. {{{1
 #
-if ($opt_version) {
-    printf "$VERSION\n";
-    exit;
-}
 print_extension_info($opt_show_ext ) if defined $opt_show_ext ;
 print_language_info( $opt_show_lang) if defined $opt_show_lang;
 exit if (defined $opt_show_ext) or (defined $opt_show_lang);
 
-# Windows doesn't expand wildcards.  Use code from Sean M. Burke's 
-# Win32::Autoglob module to do this.
 #print "Before glob have [", join(",", @ARGV), "]\n";
-@ARGV = map {;
-    ( defined($_) and m/[\*\?]/ ) ? sort(glob($_)) : $_
-      } @ARGV if $ON_WINDOWS; 
-;
+@ARGV = windows_glob(@ARGV) if $ON_WINDOWS;
 #print "after  glob have [", join(",", @ARGV), "]\n";
 
 if ($opt_sum_reports) {
@@ -2449,15 +2444,30 @@ sub call_counter {                           # {{{1
         if $opt_v > 2;
     return ($total_lines, $blank_lines, $comment_lines);
 } # 1}}}
+sub windows_glob {                           # {{{1
+    # Windows doesn't expand wildcards.  Use code from Sean M. Burke's 
+    # Win32::Autoglob module to do this.
+    return map {;
+        ( defined($_) and m/[\*\?]/ ) ? sort(glob($_)) : $_
+          } @_; 
+} # 1}}}
 sub write_file {                             # {{{1
     my ($file  , # in
         @lines , # in
        ) = @_;
 
+#print "write_file 1 [$file]\n";
     # Do ~ expansion (by Tim LaBerge, fixes bug 2787984)
     my $preglob_filename = $file;
-    $file = glob($file);  # sometimes returns null string
+#print "write_file 2 [$preglob_filename]\n";
+    if ($ON_WINDOWS) {
+        $file = (windows_glob($file))[0];
+    } else {
+        $file = glob($file);  # sometimes returns null string
+    }
+#print "write_file 3 [$file]\n";
     $file = $preglob_filename unless $file;
+#print "write_file 4 [$file]\n";
 
     print "-> write_file($file)\n" if $opt_v > 2;
 
