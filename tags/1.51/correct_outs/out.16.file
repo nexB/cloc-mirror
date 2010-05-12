@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<results>
+<header>http://cloc.sourceforge.net v 1.03</header>
+<languages>
+<language name="out.11.file" files_count="14" blank="20" comment="32" code="85" factor="1.20" scaled="102.13" />
+<language name="out.12.file" files_count="9" blank="14" comment="26" code="60" factor="2.09" scaled="125.32" />
+<total sum_files="23" blank="34" comment="58" code="145" factor="1.57" scaled="227.45" />
+</languages>
+</results>
