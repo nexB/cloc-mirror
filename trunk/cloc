@@ -6021,6 +6021,9 @@ sub write_comments_to_html {                 # {{{1
         return;
     }
 
+    my $approx_line_count = scalar @{$rah_diff_L};
+    my $n_digits = 1 + int(log($approx_line_count)/2.30258509299405); # log_10
+
     my $html_out = html_header($filename);
 
     my $comment_line_number = 0;
@@ -6032,11 +6035,12 @@ sub write_comments_to_html {                 # {{{1
         }
         my $line_num = "";
         my $pre      = "";
-        my $post     = "</span>";
-die "undef rah_diff_R[$i]{type} " unless defined $rah_diff_R->[$i]{type};
+        my $post     = '</span> &nbsp;';
+warn "undef rah_diff_R[$i]{type} " unless defined $rah_diff_R->[$i]{type};
         if ($rah_diff_R->[$i]{type} eq 'nonexist') {
             ++$comment_line_number;
-            $line_num = '<span class="clinenum">' . $comment_line_number . $post;
+            $line_num = sprintf "\&nbsp; <span class=\"clinenum\"> %0${n_digits}d %s",
+                            $comment_line_number, $post;
             $pre = '<span class="comment">';
             $html_out .= $line_num;  
             $html_out .= $pre .  
@@ -6047,8 +6051,8 @@ die "undef rah_diff_R[$i]{type} " unless defined $rah_diff_R->[$i]{type};
         if      ($rah_diff_R->[$i]{type} eq 'code' and
                  $rah_diff_R->[$i]{desc} eq 'same') {
             # entire line remains as-is
-            $line_num = '<span class="linenum">' .
-                         $rah_diff_R->[$i]{lnum} . $post;
+            $line_num = sprintf "\&nbsp; <span class=\"linenum\"> %0${n_digits}d %s",
+                            $rah_diff_R->[$i]{lnum}, $post;
             $pre    = '<span class="normal">';
             $html_out .= $line_num;  
             $html_out .= $pre . 
