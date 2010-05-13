@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.51);
+my $VERSION = sprintf("%.2f", 1.52);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -2569,6 +2569,7 @@ sub remove_f77_comments {                    # {{{1
     my @save_lines = ();
     foreach (@{$ra_lines}) {
         next if m{^[*cC]};
+        next if m{^\s*!};
         push @save_lines, $_;
     }
 
