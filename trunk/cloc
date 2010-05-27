@@ -939,6 +939,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                 ++$Delta_by_File{$file_L}{'code'}{$status};
             }
         }
+#use Data::Dumper;
+#print Dumper("code diffs:", \@diff_LL, \@diff_LR);
 
         # step 4: compute comment diffs
         array_diff("$file_L v. $file_R"   ,   # in
@@ -955,6 +957,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                 ++$Delta_by_File{$file_L}{'comment'}{$status};
             }
         }
+#print Dumper("comment diffs:", \@diff_LL, \@diff_LR);
+#die; here=  need to save original line number in diff result for html display
 
         # step 5: compute difference in blank lines (kind of pointless)
         my ($all_line_count_L,
@@ -2407,7 +2411,7 @@ sub call_counter {                           # {{{1
         }
         write_file($stripped_file, @lines);
     }
-    if ($opt_html) {
+    if ($opt_html and !$opt_diff) {
         chomp(@original_lines);  # includes blank lines, comments
         chomp(@lines);           # no blank lines, no comments
 
@@ -2754,8 +2758,15 @@ sub remove_cobol_blanks {                    # {{{1
         if ($free_format) {
             push @save_lines, $_;
         } else {
-            push @save_lines, $_ unless m/^\d{6}\s*$/ or
-                              ($line =~ m/^\d{6}\s{66}/);
+            # Greg Toth:
+            #  (1) Treat lines with any alphanum in cols 1-6 and 
+            #      blanks in cols 7 through 71 as blank line, and
+            #  (2) Treat lines with any alphanum in cols 1-6 and 
+            #      slash (/) in col 7 as blank line (this is a 
+            #      page eject directive). 
+            push @save_lines, $_ unless m/^\d{6}\s*$/             or 
+                                        ($line =~ m/^.{6}\s{66}/) or 
+                                        ($line =~ m/^......\//);
         }
     }
     return @save_lines;
