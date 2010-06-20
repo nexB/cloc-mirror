@@ -975,7 +975,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             my $D = $blank_count_R - $blank_count_L;
             $Delta_by_Language{$Lang_L}{'blank'}{'added'}   += $D;
         } else {
-            my $D = $blank_count_R - $blank_count_L;
+            my $D = $blank_count_L - $blank_count_R;
             $Delta_by_Language{$Lang_L}{'blank'}{'removed'} += $D;
         }
         if ($opt_by_file) {
@@ -983,7 +983,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                 my $D = $blank_count_R - $blank_count_L;
                 $Delta_by_File{$file_L}{'blank'}{'added'}   += $D;
             } else {
-                my $D = $blank_count_R - $blank_count_L;
+                my $D = $blank_count_L - $blank_count_R;
                 $Delta_by_File{$file_L}{'blank'}{'removed'} += $D;
             }
         }
@@ -1358,12 +1358,12 @@ my $sum_lines=1;
     # column headers
     if (!$opt_3 and $BY_FILE) {
         my $spacing_n = $spacing_1 - 11;
-        $data_line  = sprintf "%-${spacing_n}s ", $first_column;
+        $data_line  = sprintf "%-${spacing_n}s" , $first_column;
     } else {
         $data_line  = sprintf "%-${spacing_1}s ", $first_column;
     }
     if ($BY_FILE) {
-        $data_line .= sprintf "%${spacing_2}s "  , " "    ;
+        $data_line .= sprintf "%${spacing_2}s"   , ""     ;
     } else {
         $data_line .= sprintf "%${spacing_2}s "  , "files";
     }
@@ -1383,9 +1383,13 @@ my $sum_lines=1;
         push @results, "$lang_or_file";
         foreach my $S (qw(same modified added removed)) {
             my $indent = $spacing_1 - 2;
-            my $line .= sprintf "  %-${indent}s %${spacing_2}s %${spacing_2}s %${spacing_2}s %${spacing_2}s",
-                $S                                          ,
-                $rhhh_count->{$lang_or_file}{'nFiles'}{$S}  ,
+            my $line .= sprintf " %-${indent}s", $S;
+            if ($BY_FILE) {
+                $line .= sprintf "   ";
+            } else {
+                $line .= sprintf "  %${spacing_2}s", $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+            }
+            $line .= sprintf " %${spacing_2}s %${spacing_2}s %${spacing_2}s",
                 $rhhh_count->{$lang_or_file}{'blank'}{$S}   ,
                 $rhhh_count->{$lang_or_file}{'comment'}{$S} ,
                 $rhhh_count->{$lang_or_file}{'code'}{$S}    ;
@@ -1396,9 +1400,13 @@ my $sum_lines=1;
     push @results, "SUM:";
     foreach my $S (qw(same modified added removed)) {
         my $indent = $spacing_1 - 2;
-        my $line .= sprintf "  %-${indent}s %${spacing_2}s %${spacing_2}s %${spacing_2}s %${spacing_2}s",
-            $S                  ,
-            $sum{'nFiles'}{$S}  ,
+        my $line .= sprintf " %-${indent}s", $S;
+            if ($BY_FILE) {
+                $line .= sprintf "   ";
+            } else {
+                $line .= sprintf "  %${spacing_2}s", $sum{'nFiles'}{$S};
+            }
+        $line .= sprintf " %${spacing_2}s %${spacing_2}s %${spacing_2}s",
             $sum{'blank'}{$S}   ,
             $sum{'comment'}{$S} ,
             $sum{'code'}{$S}    ;
