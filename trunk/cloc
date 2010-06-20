@@ -1347,13 +1347,7 @@ my $sum_lines=1;
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
-    if ($ALREADY_SHOWED_HEADER) {
-        push @results, "";
-    } else {
-        push @results, $header_line;
-        $ALREADY_SHOWED_HEADER = 1;
-    }
-    push @results, $hyphen_line;
+    push @results, output_header($header_line, $hyphen_line, $BY_FILE);
 
     # column headers
     if (!$opt_3 and $BY_FILE) {
@@ -1507,6 +1501,39 @@ create table t        (
     #          from t group by Project, Language order by Project, Code desc;
     #
 } # 1}}}
+sub output_header   {                        # {{{1
+    my ($header_line, 
+        $hyphen_line,
+        $BY_FILE    ,)    = @_;
+    my @R = ();
+    if      ($opt_xml) {
+        push @R, "<?xml version=\"1.0\"?>";
+        push @R, '<?xml-stylesheet type="text/xsl" href="' .
+                        $opt_xsl . '"?>' if $opt_xsl;
+        push @R, "<results>";
+        push @R, "<header>$header_line</header>";
+        if ($BY_FILE) {
+            push @R, "<files>";
+        } else {
+            push @R, "<languages>";
+        }
+    } elsif ($opt_yaml) {
+        push @R, "---\n# $header_line";
+    } elsif ($opt_csv) {
+        # append the header to the end of the column headers
+        # to keep the output a bit cleaner from a spreadsheet
+        # perspective
+    } else {
+        if ($ALREADY_SHOWED_HEADER) {
+            push @R, "";
+        } else {
+            push @R, $header_line;
+            $ALREADY_SHOWED_HEADER = 1;
+        }
+        push @R, $hyphen_line;
+    }
+    return @R;
+} # 1}}}
 sub generate_report {                        # {{{1
     # returns an array of lines containing the results
     my ($version    , # in
@@ -1571,7 +1598,6 @@ sub generate_report {                        # {{{1
        $Style = "xml" if $opt_yaml;  # not a typo; just set to anything but txt
        $Style = "xml" if $opt_csv ;  # not a typo; just set to anything but txt
 
-    my $URL        = "http://cloc.sourceforge.net";
     my $hyphen_line = sprintf "%s", '-' x (79 + $column_1_offset);
        $hyphen_line = sprintf "%s", '-' x (68 + $column_1_offset) 
             if (!$opt_3) and (68 + $column_1_offset) > 79;
@@ -1594,32 +1620,7 @@ sub generate_report {                        # {{{1
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
-    if      ($opt_xml) {
-        push @results, "<?xml version=\"1.0\"?>";
-        push @results, '<?xml-stylesheet type="text/xsl" href="' .
-                        $opt_xsl . '"?>' if $opt_xsl;
-        push @results, "<results>";
-        push @results, "<header>$header_line</header>";
-        if ($BY_FILE) {
-            push @results, "<files>";
-        } else {
-            push @results, "<languages>";
-        }
-    } elsif ($opt_yaml) {
-        push @results, "---\n# $header_line";
-    } elsif ($opt_csv) {
-        # append the header to the end of the column headers
-        # to keep the output a bit cleaner from a spreadsheet
-        # perspective
-    } else {
-        if ($ALREADY_SHOWED_HEADER) {
-            push @results, "";
-        } else {
-            push @results, $header_line;
-            $ALREADY_SHOWED_HEADER = 1;
-        }
-        push @results, $hyphen_line;
-    }
+    push @results, output_header($header_line, $hyphen_line, $BY_FILE);
 
     if ($Style eq "txt") {
         # column headers
@@ -2220,6 +2221,9 @@ sub classify_file {                          # {{{1
     if ($file =~ /\.(\w+)$/) { # has an extension
         print "$full_file extension=[$1]\n" if $opt_v > 2;
         my $extension = $1;
+           # Windows file names are case insensitive so map 
+           # all extensions to lowercase there.
+           $extension = lc $extension if $ON_WINDOWS;  
         if ($Not_Code_Extension{$extension} and 
            !$Forced_Extension{$extension}) {
            # If .1 (for example) is an extention that would ordinarily be
