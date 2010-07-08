@@ -232,11 +232,11 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              extensions.
    --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
                              L1, L2, L3, et cetera, from being counted.
-   --exclude-list-file=<file>  Ignore files whose names appear in <file>.
-                             <file> should have one entry per line.  Relative
-                             path names will be resolved starting from the
-                             directory where cloc is invoked.  See also
-                             --list-file.
+   --exclude-list-file=<file>  Ignore files and/or directories whose names 
+                             appear in <file>.  <file> should have one entry 
+                             per line.  Relative path names will be resolved 
+                             starting from the directory where cloc is 
+                             invoked.  See also --list-file.
    --match-f=<regex>         Only count files whose basenames match the Perl 
                              regex.  For example
                                --match-f=^[Ww]idget
@@ -423,6 +423,7 @@ $opt_exclude_dir     = 1;
 $Exclude_Dir{".svn"} = 1;
 $Exclude_Dir{".cvs"} = 1;
 $opt_diff            = 1 if $opt_diff_alignment;
+$opt_exclude_ext     = "";
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -1055,13 +1056,20 @@ if ($opt_list_file) {
     #     File::Find's find() which in turn calls files()
 }
 if ($opt_exclude_list_file) {
-    # now reject a specific set of files
+    # now reject a specific set of files and/or directories
     my @reject_list   = read_list_file($opt_exclude_list_file);
+    my @file_reject_list = ();
+    foreach my $F_or_D (@reject_list) {
+        if (is_dir($F_or_D)) {
+            $Exclude_Dir{$F_or_D} = 1;
+        } else {
+            push @file_reject_list, $F_or_D;
+        }
+    }
 
     # Normalize file names for better comparison.
     my %normalized_input  = normalize_file_names(@file_list);
-    my %normalized_reject = normalize_file_names(@reject_list);
-
+    my %normalized_reject = normalize_file_names(@file_reject_list);
     foreach my $F (keys %normalized_input) {
         if ($normalized_reject{$F}) {
             my $orig_F = $normalized_input{$F};
@@ -2152,7 +2160,11 @@ sub files {                                  # {{{1
     if ($opt_exclude_dir) {
         my $return = 0;
         foreach my $skip_dir (keys %Exclude_Dir) {
-            if ($File::Find::dir =~ m{/$skip_dir(/|$)} ) {
+            # File::Find::dir used to always start with / but
+            # newer versions (1.13) no longer do; have to correct for this
+            my $dir = $File::Find::dir;
+               $dir = "./$dir" unless $dir =~ m{^/};
+            if ($dir =~ m{/$skip_dir(/|$)} ) {
                 $Ignored{$File::Find::name} = "--exclude_dir=$skip_dir";
                 $return = 1;
                 last;
