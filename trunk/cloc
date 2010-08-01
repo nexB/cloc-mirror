@@ -6369,10 +6369,22 @@ sub remove_leading_dir {                     # {{{1
     my @D = (); # a matrix:   [ [ dir1, dir2 ],         # dir1/dir2/a.txt
                 #               [ dir1, dir2 ],         # dir1/dir2/b.txt
                 #               [ dir1, dir2 , dir3] ]  # dir1/dir2/dir3/c.txt
+    if ($ON_WINDOWS) {
+        foreach my $F (@filenames) {
+            $F =~ s{\\}{/}g;
+            $F = ucfirst($F) if $F =~ /^\w:/;  # uppercase drive letter
+        }
+    }
     foreach my $F (@filenames) {
         my ($Vol, $Dir, $File) = File::Spec->splitpath($F);
         my @x = File::Spec->splitdir( $Dir );
         pop @x unless $x[$#x]; # last entry usually null, remove it
+        if ($ON_WINDOWS) {
+            if (defined($Vol) and $Vol) {
+                # put the drive letter, eg, C:, at the front
+                unshift @x, uc $Vol;
+            }
+        }
 #print "F=$F, Dir=$Dir  x=[", join("][", @x), "]\n";
         push @D, [ @x ];
     }
