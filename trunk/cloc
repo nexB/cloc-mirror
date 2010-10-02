@@ -1298,6 +1298,9 @@ sub combine_results {                        # {{{1
 } # 1}}}
 sub diff_report     {                        # {{{1
     # returns an array of lines containing the results
+
+    return diff_xml_report(@_) if $opt_xml;
+
     my ($version    , # in
         $elapsed_sec, # in
         $report_type, # in  "by language" | "by report file" | "by file"
@@ -1307,7 +1310,7 @@ sub diff_report     {                        # {{{1
 
 #print "diff_report: ", Dumper($rhhh_count), "\n";
     my @results       = ();
-    
+
     my $languages     = ();
     my %sum           = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
     my $max_len       = 0;
@@ -1385,13 +1388,8 @@ my $sum_lines=1;
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
     if ($Style eq "txt") {
         push @results, output_header($header_line, $hyphen_line, $BY_FILE);
-    } elsif ($Style eq "xml") {
-        push @results,
-"<?xml version=\"1.0\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
-<diff_results>
-<header>$header_line</header>
-";
+    } elsif ($Style eq "csv") {
+        die "csv";
     }
 
     # column headers
@@ -1473,6 +1471,7 @@ sub diff_xml_report {                        # {{{1
        ) = @_;
 
 #print "diff_report: ", Dumper($rhhh_count), "\n";
+    my @results       = ();
     
     my $languages     = ();
     my %sum           = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
@@ -1500,63 +1499,52 @@ sub diff_xml_report {                        # {{{1
     }
 
     my $header_line  = sprintf "%s v %4.2f", $URL, $version;
+
 my $sum_files=1;
 my $sum_lines=1;
        $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec);
+    push @results,
+"<?xml version=\"1.0\"?>
+<?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
+<diff_results>
+<header>$header_line</header>";
 
-    my $XML = new IO::File;
-    my $out_file = ">-";   # stdout
-       $out_file = $opt_report_file if $opt_report_file;
-    if (!$XML->open(">$out_file")) {
-        die "Unable to write to $out_file:  $!\n";
-    }
-
-    foreach my $lang_or_file (sort {
-                                 $rhhh_count->{$b}{'code'} <=>
-                                 $rhhh_count->{$a}{'code'}
-                               }
-                          keys %{$rhhh_count}) {
-
-        foreach my $S (qw(same modified added removed)) {
-            print $XML "  <$S>\n";
-
-
+    foreach my $S (qw(same modified added removed)) {
+        push @results, "  <$S>";
+        foreach my $lang_or_file (sort {
+                                     $rhhh_count->{$b}{'code'} <=>
+                                     $rhhh_count->{$a}{'code'}
+                                   }
+                              keys %{$rhhh_count}) {
+            my $L = "";
             if ($BY_FILE) {
-                printf $XML "    <file %s files_count=1 ", $lang_or_file;
+                $L .= sprintf "    <file name=\"%s\" files_count=\"1\" ", 
+                        $lang_or_file;
             } else {
-                printf $XML "    <language %s files_count=%d ",
-                    $lang_or_file ,
-                    $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+                $L .= sprintf "    <language name=\"%s\" files_count=\"%d\" ",
+                        $lang_or_file ,
+                        $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
             }
             foreach my $T (qw(blank comment code)) {
-                printf $XML "%s=\"%d\" ", 
+                $L .= sprintf "%s=\"%d\" ", 
                         $T, $rhhh_count->{$lang_or_file}{$T}{$S};
             }
-            print $XML "\n";
+            push @results, $L . "/>";
         }
+
+        my $L = sprintf "    <total sum_files=\"%d\" ", $sum{'nFiles'}{$S};
+        foreach my $V (qw(blank comment code)) {
+            $L .= sprintf "%s=\"%d\" ", $V, $sum{$V}{$S};
+        }
+        push @results, $L . "/>";
+        push @results, "  </$S>";
     }
-#   push @results, "-" x 79;
-#   push @results, "SUM:";
-#   foreach my $S (qw(same modified added removed)) {
-#       my $indent = $spacing_1 - 2;
-#       my $line .= sprintf " %-${indent}s", $S;
-#           if ($BY_FILE) {
-#               $line .= sprintf "   ";
-#           } else {
-#               $line .= sprintf "  %${spacing_2}s", $sum{'nFiles'}{$S};
-#           }
-#       $line .= sprintf " %${spacing_2}s %${spacing_2}s %${spacing_2}s",
-#           $sum{'blank'}{$S}   ,
-#           $sum{'comment'}{$S} ,
-#           $sum{'code'}{$S}    ;
-#       push @results, $line;
-#   }
-#   push @results, "-" x 79;
-#   return @results;
-    $XML->close() if $opt_report_file;
+
+    push @results, "</diff_results>";
+    return @results;
 } # 1}}}
 sub generate_sql    {                        # {{{1
     my ($elapsed_sec, # in
