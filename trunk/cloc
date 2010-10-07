@@ -429,7 +429,7 @@ $Exclude_Dir{".svn"}   = 1;
 $Exclude_Dir{".cvs"}   = 1;
 $Exclude_Dir{".hg"}    = 1;
 $opt_diff              = 1 if $opt_diff_alignment;
-$opt_exclude_ext       = "";
+$opt_exclude_ext       = "" unless $opt_exclude_ext;
 $opt_ignore_whitespace = 0 unless $opt_ignore_whitespace;
 
 # Options defaults:
