@@ -788,6 +788,23 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         push @alignment, sprintf "  + %s ; %s\n", $f, $Language{$fh[$F+1]}{$f}
             if $opt_diff_alignment;
         ++$Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'nFiles'}{'added'};
+        # Additionally, add contents of file $f to 
+        #        Delta_by_File{$f}{comment/blank/code}{'added'}
+        #        Delta_by_Language{$lang}{comment/blank/code}{'added'}
+        my ($all_line_count,
+            $blank_count   ,
+            $comment_count ,
+           ) = call_counter($f, $Language{$fh[$F+1]}{$f}, \@Errors);
+        $Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'comment'}{'added'} +=
+            $comment_count;
+        $Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'blank'}{'added'}   +=
+            $blank_count;
+        $Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'code'}{'added'}    +=
+            $all_line_count - $blank_count - $comment_count;
+        $Delta_by_File{ $f }{'comment'}{'added'} = $comment_count;
+        $Delta_by_File{ $f }{'blank'}{'added'}   = $blank_count;
+        $Delta_by_File{ $f }{'code'}{'added'}    = 
+            $all_line_count - $blank_count - $comment_count;
     }
     push @alignment, "\n";
 
@@ -799,6 +816,23 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         push @alignment, sprintf "  - %s ; %s\n", $f, $Language{$fh[$F]}{$f}
             if $opt_diff_alignment;
 #printf "%10s -> %s\n", $f, $Language{$fh[$F  ]}{$f};
+        # Additionally, add contents of file $f to 
+        #        Delta_by_File{$f}{comment/blank/code}{'removed'}
+        #        Delta_by_Language{$lang}{comment/blank/code}{'removed'}
+        my ($all_line_count,
+            $blank_count   ,
+            $comment_count ,
+           ) = call_counter($f, $Language{$fh[$F  ]}{$f}, \@Errors);
+        $Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'comment'}{'removed'} +=
+            $comment_count;
+        $Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'blank'}{'removed'}   +=
+            $blank_count;
+        $Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'code'}{'removed'}    +=
+            $all_line_count - $blank_count - $comment_count;
+        $Delta_by_File{ $f }{'comment'}{'removed'} = $comment_count;
+        $Delta_by_File{ $f }{'blank'}{'removed'}   = $blank_count;
+        $Delta_by_File{ $f }{'code'}{'removed'}    = 
+            $all_line_count - $blank_count - $comment_count;
     }
     push @alignment, "\n";
 
@@ -1034,8 +1068,11 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 
 }
 #use Data::Dumper;
-#print Dumper("Delta_by_Language:", \%Delta_by_Language);
-
+#print Dumper("Delta_by_Language:"  , \%Delta_by_Language);
+#print Dumper("Results_by_Language:", \%Results_by_Language);
+#print Dumper("Delta_by_File:"      , \%Delta_by_File);
+#print Dumper("Results_by_File:"    , \%Results_by_File);
+#die;
 my @ignored_reasons = map { "$_: $Ignored{$_}" } sort keys %Ignored;
 write_file($opt_ignored, @ignored_reasons   ) if $opt_ignored;
 write_file($opt_counted, sort keys %Language) if $opt_counted;
