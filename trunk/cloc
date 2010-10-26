@@ -1258,6 +1258,7 @@ sub combine_results {                        # {{{1
         $rhaa_Filters_by_Language , # in
        ) = @_;
 
+    print "-> combine_results(report_type=$report_type)\n" if $opt_v > 2;
     my $found_language = 0;
 
     foreach my $file (@{$ra_report_files}) {
@@ -1330,13 +1331,18 @@ sub combine_results {                        # {{{1
             }
         }
     }
+    print "<- combine_results\n" if $opt_v > 2;
     return $found_language;
 
 } # 1}}}
 sub diff_report     {                        # {{{1
     # returns an array of lines containing the results
+    print "-> diff_report\n" if $opt_v > 2;
 
-    return diff_xml_report(@_) if $opt_xml;
+    if ($opt_xml) {
+        print "<- diff_report\n" if $opt_v > 2;
+        return diff_xml_report(@_) 
+    }
 
     my ($version    , # in
         $elapsed_sec, # in
@@ -1495,6 +1501,7 @@ my $sum_lines=1;
         push @results, $line;
     }
     push @results, "-" x 79;
+    print "<- diff_report\n" if $opt_v > 2;
 
     return @results;
 } # 1}}}
@@ -1506,6 +1513,7 @@ sub diff_xml_report {                        # {{{1
         $rhhh_count , # in  count{TYPE}{nFiles|code|blank|comment}{a|m|r|s}
         $rh_scale   , # in
        ) = @_;
+    print "-> diff_xml_report\n" if $opt_v > 2;
 
 #print "diff_report: ", Dumper($rhhh_count), "\n";
     my @results       = ();
@@ -1581,6 +1589,7 @@ my $sum_lines=1;
     }
 
     push @results, "</diff_results>";
+    print "<- diff_xml_report\n" if $opt_v > 2;
     return @results;
 } # 1}}}
 sub generate_sql    {                        # {{{1
@@ -1678,6 +1687,7 @@ sub output_header   {                        # {{{1
     my ($header_line, 
         $hyphen_line,
         $BY_FILE    ,)    = @_;
+    print "-> output_header\n" if $opt_v > 2;
     my @R = ();
     if      ($opt_xml) {
         push @R, "<?xml version=\"1.0\"?>";
@@ -1705,6 +1715,7 @@ sub output_header   {                        # {{{1
         }
         push @R, $hyphen_line;
     }
+    print "<- output_header\n" if $opt_v > 2;
     return @R;
 } # 1}}}
 sub generate_report {                        # {{{1
@@ -1716,6 +1727,7 @@ sub generate_report {                        # {{{1
         $rh_scale   , # in
        ) = @_;
 
+    print "-> generate_report\n" if $opt_v > 2;
     my @results       = ();
     
     my $languages     = ();
@@ -1988,6 +2000,7 @@ sub generate_report {                        # {{{1
         push @results, $hyphen_line;
     }
     write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
+    print "<- generate_report\n" if $opt_v > 2;
     return @results;
 } # 1}}}
 sub print_errors {                           # {{{1
@@ -1995,6 +2008,7 @@ sub print_errors {                           # {{{1
         $raa_errors    , # in
        ) = @_;
 
+    print "-> print_errors\n" if $opt_v > 2;
     my %error_string = reverse(%{$rh_Error_Codes});
     my $nErrors      = scalar @{$raa_errors};
     warn sprintf "\n%d error%s:\n", plural_form(scalar @Errors);
@@ -2003,6 +2017,7 @@ sub print_errors {                           # {{{1
                      $error_string{ $raa_errors->[$i][0] },
                      $raa_errors->[$i][1] ;
     }
+    print "<- print_errors\n" if $opt_v > 2;
 
 } # 1}}}
 sub write_lang_def {                         # {{{1
@@ -2016,6 +2031,7 @@ sub write_lang_def {                         # {{{1
         $rh_Scale_Factor          , # in
        ) = @_;
 
+    print "-> write_lang_def($file)\n" if $opt_v > 2;
     my $OUT = new IO::File $file, "w";
     die "Unable to write to $file\n" unless defined $OUT;
 
@@ -2046,6 +2062,7 @@ sub write_lang_def {                         # {{{1
     }
 
     $OUT->close;
+    print "<- write_lang_def\n" if $opt_v > 2;
 } # 1}}}
 sub read_lang_def {                          # {{{1
     my ($file                     ,
@@ -2058,6 +2075,7 @@ sub read_lang_def {                          # {{{1
         $rh_Scale_Factor          , # out
        ) = @_;
 
+    print "-> read_lang_def($file)\n" if $opt_v > 2;
     my $IN = new IO::File $file, "r";
     die "Unable to read $file.\n" unless defined $IN;
 
@@ -2103,6 +2121,7 @@ sub read_lang_def {                          # {{{1
 
     }
     $IN->close;
+    print "<- read_lang_def\n" if $opt_v > 2;
 } # 1}}}
 sub print_extension_info {                   # {{{1
     my ($extension,) = @_;
@@ -2729,6 +2748,7 @@ sub read_file  {                             # {{{1
 } # 1}}}
 sub rm_blanks {                              # {{{1
     my ($ra_in, $language) = @_;
+    print "-> rm_blanks(language=$language)\n" if $opt_v > 2;
 #print "rm_blanks: language = [$language]\n";
     my @out = ();
     if ($language eq "COBOL") {
@@ -2736,6 +2756,7 @@ sub rm_blanks {                              # {{{1
     } else {
         @out = remove_matches($ra_in, '^\s*$'); # removes blank lines
     }
+    print "<- rm_blanks(language=$language)\n" if $opt_v > 2;
     return @out;
 } # 1}}}
 sub rm_comments {                            # {{{1
@@ -2744,6 +2765,7 @@ sub rm_comments {                            # {{{1
         $file     , # in (some language counters, eg Haskell, need 
                     #     access to the original file)
        ) = @_;
+    print "-> rm_comments(file=$file)\n" if $opt_v > 2;
     my @routines       = @{$Filters_by_Language{$language}};
     my @lines          = @{$ra_lines};
     my @original_lines = @{$ra_lines};
@@ -2780,6 +2802,7 @@ sub rm_comments {                            # {{{1
          $lines[0] ne $original_lines[0])) {
         unshift @lines, $original_lines[0];  # add the first line back
     }
+    print "<- rm_comments\n" if $opt_v > 2;
     return @lines;
 } # 1}}}
 sub remove_f77_comments {                    # {{{1
@@ -6524,6 +6547,7 @@ sub remove_leading_dir {                     # {{{1
     #      b.txt
     #      dir3/c.txt
     #
+    print "-> remove_leading_dir()\n" if $opt_v > 2;
     my @D = (); # a matrix:   [ [ dir1, dir2 ],         # dir1/dir2/a.txt
                 #               [ dir1, dir2 ],         # dir1/dir2/b.txt
                 #               [ dir1, dir2 , dir3] ]  # dir1/dir2/dir3/c.txt
@@ -6586,6 +6610,7 @@ sub remove_leading_dir {                     # {{{1
         $F =~ s{^$leading}{};
     }
 
+    print "<- remove_leading_dir()\n" if $opt_v > 2;
     return @filenames;
 
 } # 1}}}
@@ -6596,6 +6621,7 @@ sub align_by_pairs {                         # {{{1
         $ra_removed            , # out
         $ra_compare_list       , # out
         ) = @_;
+    print "-> align_by_pairs()\n" if $opt_v > 2;
     @{$ra_compare_list} = ();
 
     my @files_L = sort keys %{$rh_file_list_L};
@@ -6654,6 +6680,7 @@ sub align_by_pairs {                         # {{{1
     @{$ra_added   } = keys %added  ;
     @{$ra_removed } = keys %deleted;
 
+    print "<- align_by_pairs()\n" if $opt_v > 2;
     return;
 #print Dumper("align_by_pairs", @files_L_minus_dir, @files_R_minus_dir);
 #die;
