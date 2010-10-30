@@ -180,9 +180,15 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              with the <lang> counter.  This option can be 
                              specified multiple times (but that is only
                              useful when <ext> is given each time).  
-                             See also --script-lang.
+                             See also --script-lang, --lang-no-ext.
    --ignore-whitespace       Ignore horizontal white space when comparing files
                              with --diff.
+   --lang-no-ext=<lang>      Count files without extensions using the <lang> 
+                             counter.  This option overrides internal logic 
+                             for files without extensions (where such files 
+                             are checked against known scripting languages
+                             by examining the first line for #!).  See also 
+                             --force-lang, --script-lang.
    --read-binary-files       Process binary files in addition to text files.
                              This is usually a bad idea and should only be
                              attempted with text files that have embedded 
@@ -199,7 +205,8 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              The language name is case insensitive but the
                              name of the script language executable, <s>,
                              must have the right case.  This option can be 
-                             specified multiple times.  See also --force-lang.
+                             specified multiple times.  See also --force-lang,
+                             --lang-no-ext.
    --sdir=<dir>              Use <dir> as the scratch directory instead of
                              letting File::Temp chose the location.  Files
                              written to this location are not removed at
@@ -314,6 +321,7 @@ my (
     $opt_categorized          ,
     $opt_found                ,
     @opt_force_lang           ,
+    $opt_lang_no_ext          ,
     @opt_script_lang          ,
     $opt_diff                 ,
     $opt_diff_alignment       ,
@@ -398,6 +406,7 @@ my $getopt_success = GetOptions(
    "xml"                                     => \$opt_xml                 ,
    "xsl:s"                                   => \$opt_xsl                 ,
    "force_lang|force-lang=s"                 => \@opt_force_lang          ,
+   "lang_no_ext|lang-no-ext=s"               => \$opt_lang_no_ext         ,
    "yaml"                                    => \$opt_yaml                ,
    "csv"                                     => \$opt_csv                 ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
@@ -430,7 +439,8 @@ $Exclude_Dir{".cvs"}   = 1;
 $Exclude_Dir{".hg"}    = 1;
 $opt_diff              = 1 if $opt_diff_alignment;
 $opt_exclude_ext       = "" unless $opt_exclude_ext;
-$opt_ignore_whitespace = 0 unless $opt_ignore_whitespace;
+$opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
+$opt_lang_no_ext       = 0  unless $opt_lang_no_ext;
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -506,6 +516,9 @@ if ($opt_read_lang_def) {
         \%Scale_Factor         , # Scale_Factor{Perl}          = 4.0
         \%Known_Binary_Archives, # Known_Binary_Archives{.tar} = 1
         );
+}
+if ($opt_lang_no_ext and !defined $Filters_by_Language{$opt_lang_no_ext}) {
+    die_unknown_lang($opt_lang_no_ext, "--opt_lang_no_ext")
 }
 
 # Process command line provided extention-to-language mapping overrides.
@@ -2469,6 +2482,9 @@ sub classify_file {                          # {{{1
         }
     } elsif (defined $Language_by_File{lc $file}) {
         return $Language_by_File{lc $file};
+    } elsif ($opt_lang_no_ext and 
+             defined $Filters_by_Language{$opt_lang_no_ext}) {
+        return $opt_lang_no_ext;
     } else {  # no file extension
         $look_at_first_line = 1;
     }
@@ -6750,7 +6766,8 @@ sub die_unknown_lang {                       # {{{1
     my ($lang, $option_name) = @_;
     die "Unknown language '$lang' used with $option_name option.  " .
         "The command\n  $script --show-lang\n" .
-        "will print all recognized languages.\n" ;
+        "will print all recognized languages.  Language names are " .
+        "case sensitive.\n" ;
 } # 1}}}
 sub unicode_file {                           # {{{1
     my $file = shift @_; 
