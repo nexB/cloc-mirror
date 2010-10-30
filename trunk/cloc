@@ -167,7 +167,7 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              may be pairs of files, directories, or archives.
                              Use --diff-alignment to generate a list showing
                              which file pairs where compared.  See also
-                             --ignore-whitespace.
+                             --ignore-case, --ignore-whitespace.
    --force-lang=<lang>[,<ext>]
                              Process all files that have a <ext> extension 
                              with the counter for language <lang>.  For 
@@ -182,7 +182,10 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
                              useful when <ext> is given each time).  
                              See also --script-lang, --lang-no-ext.
    --ignore-whitespace       Ignore horizontal white space when comparing files
-                             with --diff.
+                             with --diff.  See also --ignore-case.
+   --ignore-case             Ignore changes in case; consider upper- and lower-
+                             case letters equivalent when comparing files with
+                             --diff.  See also --ignore-whitespace.
    --lang-no-ext=<lang>      Count files without extensions using the <lang> 
                              counter.  This option overrides internal logic 
                              for files without extensions (where such files 
@@ -368,6 +371,7 @@ my (
 	$opt_inline               ,
     $opt_exclude_ext          ,
     $opt_ignore_whitespace    ,
+    $opt_ignore_case          ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -421,6 +425,7 @@ my $getopt_success = GetOptions(
    "inline"                                  => \$opt_inline              ,
    "exclude_ext|exclude-ext=s"               => \$opt_exclude_ext         ,
    "ignore_whitespace|ignore-whitespace"     => \$opt_ignore_whitespace   ,
+   "ignore_case|ignore-case"                 => \$opt_ignore_case         ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 die "\n" unless $getopt_success;
@@ -440,6 +445,7 @@ $Exclude_Dir{".hg"}    = 1;
 $opt_diff              = 1 if $opt_diff_alignment;
 $opt_exclude_ext       = "" unless $opt_exclude_ext;
 $opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
+$opt_ignore_case       = 0  unless $opt_ignore_case;       
 $opt_lang_no_ext       = 0  unless $opt_lang_no_ext;
 
 # Options defaults:
@@ -1004,6 +1010,13 @@ print "Diff blank removal R language= $Lang_R\n";
             foreach (@code_R) { s/\s+//g }
             foreach (@comm_L) { s/\s+//g }
             foreach (@comm_R) { s/\s+//g }
+        }
+        if ($opt_ignore_case) {
+            # change all text to lowercase in diffs
+            foreach (@code_L) { $_ = lc }
+            foreach (@code_R) { $_ = lc }
+            foreach (@comm_L) { $_ = lc }
+            foreach (@comm_R) { $_ = lc }
         }
         # step 3: compute code diffs
         array_diff("$file_L v. $file_R"   ,   # in
