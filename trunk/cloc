@@ -935,18 +935,18 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         }
 
         # step 1: identify comments in both files
-print "Diff blank removal L language= $Lang_L";
-print " scalar(lines_L)=", scalar @lines_L, "\n";
+#print "Diff blank removal L language= $Lang_L";
+#print " scalar(lines_L)=", scalar @lines_L, "\n";
         my @original_minus_blanks_L 
                     = rm_blanks(  \@lines_L, $Lang_L);
-print "1: scalar(original_minus_blanks_L)=", scalar @original_minus_blanks_L, "\n";
+#print "1: scalar(original_minus_blanks_L)=", scalar @original_minus_blanks_L, "\n";
         @lines_L    = @original_minus_blanks_L;
-print "2: scalar(lines_L)=", scalar @lines_L, "\n";
+#print "2: scalar(lines_L)=", scalar @lines_L, "\n";
         @lines_L    = add_newlines(\@lines_L); # compensate for rm_comments()
         @lines_L    = rm_comments( \@lines_L, $Lang_L, $file_L);
-print "3: scalar(lines_L)=", scalar @lines_L, "\n";
+#print "3: scalar(lines_L)=", scalar @lines_L, "\n";
 
-print "Diff blank removal R language= $Lang_R\n";
+#print "Diff blank removal R language= $Lang_R\n";
         my @original_minus_blanks_R 
                     = rm_blanks(  \@lines_R, $Lang_R);
         @lines_R    = @original_minus_blanks_R;
@@ -1345,7 +1345,7 @@ sub combine_results {                        # {{{1
                    )?
                    $}x) {
                 if ($report_type eq "by language") {
-                    next unless defined %{$rhaa_Filters_by_Language->{$1}};
+                    next unless %{$rhaa_Filters_by_Language->{$1}};
                     # above test necessary to avoid trying to sum reports
                     # of reports (which have no language breakdown).
                     $found_language = 1;
