@@ -1554,12 +1554,19 @@ sub diff_xml_report {                        # {{{1
     my $languages     = ();
     my %sum           = (); # sum{nFiles|blank|comment|code}{same|modified|added|removed}
 
+    my $sum_files = 0;
+    my $sum_lines = 0;
     foreach my $language (keys %{$rhhh_count}) {
         foreach my $V (qw(nFiles blank comment code)) {
             foreach my $S (qw(added same modified removed)) {
                 $rhhh_count->{$language}{$V}{$S} = 0 unless
                     defined $rhhh_count->{$language}{$V}{$S};
                 $sum{$V}{$S}  += $rhhh_count->{$language}{$V}{$S};
+                if ($V eq "nFiles") {
+                    $sum_files += $rhhh_count->{$language}{$V}{$S};
+                } else {
+                    $sum_lines += $rhhh_count->{$language}{$V}{$S};
+                }
             }
         }
     }
@@ -1578,15 +1585,15 @@ sub diff_xml_report {                        # {{{1
 
     my $header_line  = sprintf "%s v %4.2f", $URL, $version;
 
-my $sum_files=1;
-my $sum_lines=1;
        $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec);
     push @results,
 "<?xml version=\"1.0\"?>
+<!--
 <?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
+  -->
 <diff_results>
 <header>$header_line</header>";
 
