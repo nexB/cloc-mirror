@@ -1372,9 +1372,9 @@ sub diff_report     {                        # {{{1
     # returns an array of lines containing the results
     print "-> diff_report\n" if $opt_v > 2;
 
-    if ($opt_xml) {
+    if ($opt_xml or $opt_yaml) {
         print "<- diff_report\n" if $opt_v > 2;
-        return diff_xml_report(@_) 
+        return diff_xml_yaml_report(@_) 
     }
 
     my ($version    , # in
@@ -1538,7 +1538,7 @@ my $sum_lines=1;
 
     return @results;
 } # 1}}}
-sub diff_xml_report {                        # {{{1
+sub diff_xml_yaml_report {                   # {{{1
     # returns an array of lines containing the results
     my ($version    , # in
         $elapsed_sec, # in
@@ -1546,7 +1546,7 @@ sub diff_xml_report {                        # {{{1
         $rhhh_count , # in  count{TYPE}{nFiles|code|blank|comment}{a|m|r|s}
         $rh_scale   , # in
        ) = @_;
-    print "-> diff_xml_report\n" if $opt_v > 2;
+    print "-> diff_xml_yaml_report\n" if $opt_v > 2;
 
 #print "diff_report: ", Dumper($rhhh_count), "\n";
     my @results       = ();
@@ -1572,9 +1572,7 @@ sub diff_xml_report {                        # {{{1
     }
     $elapsed_sec = 0.5 unless $elapsed_sec;
 
-    my $Style = "xml";
-
-    my $data_line  = "";
+    my $data_line   = "";
     my $BY_LANGUAGE = 0;
     my $BY_FILE     = 0;
     if      ($report_type eq "by language") {
@@ -1589,47 +1587,80 @@ sub diff_xml_report {                        # {{{1
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec);
-    push @results,
+    if ($opt_xml) {
+        push @results,
 "<?xml version=\"1.0\"?>
 <!--
 <?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
   -->
 <diff_results>
 <header>$header_line</header>";
+    } elsif ($opt_yaml) {
+        push @results, "---\n# $header_line";
+    }
 
     foreach my $S (qw(same modified added removed)) {
-        push @results, "  <$S>";
+        if ($opt_xml) {
+            push @results, "  <$S>";
+        } elsif ($opt_yaml) {
+            push @results, "$S :";
+        }
         foreach my $lang_or_file (sort {
                                      $rhhh_count->{$b}{'code'} <=>
                                      $rhhh_count->{$a}{'code'}
                                    }
                               keys %{$rhhh_count}) {
             my $L = "";
-            if ($BY_FILE) {
-                $L .= sprintf "    <file name=\"%s\" files_count=\"1\" ", 
-                        $lang_or_file;
-            } else {
-                $L .= sprintf "    <language name=\"%s\" files_count=\"%d\" ",
-                        $lang_or_file ,
-                        $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+            if ($opt_xml) {
+                if ($BY_FILE) {
+                    $L .= sprintf "    <file name=\"%s\" files_count=\"1\" ", 
+                            $lang_or_file;
+                } else {
+                    $L .= sprintf "    <language name=\"%s\" files_count=\"%d\" ",
+                            $lang_or_file ,
+                            $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+                }
+                foreach my $T (qw(blank comment code)) {
+                    $L .= sprintf "%s=\"%d\" ", 
+                            $T, $rhhh_count->{$lang_or_file}{$T}{$S};
+                }
+                push @results, $L . "/>";
+            } elsif ($opt_yaml) {
+                if ($BY_FILE) {
+                    push @results, sprintf "  - file : %s", $lang_or_file;
+                    push @results, sprintf "    files_count : 1", 
+                } else {
+                    push @results, sprintf "  - language : %s", $lang_or_file;
+                    push @results, sprintf "    files_count : %d", 
+                            $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
+                }
+                foreach my $T (qw(blank comment code)) {
+                    push @results, sprintf "    %s : %d", 
+                            $T, $rhhh_count->{$lang_or_file}{$T}{$S};
+                }
             }
-            foreach my $T (qw(blank comment code)) {
-                $L .= sprintf "%s=\"%d\" ", 
-                        $T, $rhhh_count->{$lang_or_file}{$T}{$S};
+        }
+
+        if ($opt_xml) {
+            my $L = sprintf "    <total sum_files=\"%d\" ", $sum{'nFiles'}{$S};
+            foreach my $V (qw(blank comment code)) {
+                $L .= sprintf "%s=\"%d\" ", $V, $sum{$V}{$S};
             }
             push @results, $L . "/>";
+            push @results, "  </$S>";
+        } elsif ($opt_yaml) {
+            push @results, sprintf "%s_total :\n    sum_files : %d", 
+                                $S, $sum{'nFiles'}{$S};
+            foreach my $V (qw(blank comment code)) {
+                push @results, sprintf "    %s : %d", $V, $sum{$V}{$S};
+            }
         }
-
-        my $L = sprintf "    <total sum_files=\"%d\" ", $sum{'nFiles'}{$S};
-        foreach my $V (qw(blank comment code)) {
-            $L .= sprintf "%s=\"%d\" ", $V, $sum{$V}{$S};
-        }
-        push @results, $L . "/>";
-        push @results, "  </$S>";
     }
 
-    push @results, "</diff_results>";
-    print "<- diff_xml_report\n" if $opt_v > 2;
+    if ($opt_xml) {
+        push @results, "</diff_results>";
+    }
+    print "<- diff_xml_yaml_report\n" if $opt_v > 2;
     return @results;
 } # 1}}}
 sub generate_sql    {                        # {{{1
