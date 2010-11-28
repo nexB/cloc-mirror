@@ -120,7 +120,6 @@ my $ON_WINDOWS = 0;
    $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
    $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
 
-my $CLOC_XSL   = "cloc.xsl"; # created with --xsl
 
 my $NN     = chr(27) . "[0m";  # normal
    $NN     = "" if $ON_WINDOWS;
@@ -307,8 +306,9 @@ Usage: $script [options] <file(s)/dir(s)> | <report files>
    --xml                     Write the results in XML.
    --xsl[=<file>]            Reference <file> as an XSL stylesheet within
                              the XML output.  If <file> is not given, writes
-                             a default stylesheet, $CLOC_XSL.  This switch
-                             forces --xml to be on.
+                             a default stylesheet, cloc.xsl (or cloc-diff.xsl
+                             if --diff is also given).  This switch forces 
+                             --xml to be on.
    --yaml                    Write the results in YAML.
 
 ";
@@ -428,6 +428,8 @@ my $getopt_success = GetOptions(
    "ignore_case|ignore-case"                 => \$opt_ignore_case         ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
+my $CLOC_XSL = "cloc.xsl"; # created with --xsl
+   $CLOC_XSL = "cloc-diff.xsl" if $opt_diff;
 die "\n" unless $getopt_success;
 die $usage if $opt_help;
 my %Exclude_Language = ();
@@ -1534,6 +1536,7 @@ my $sum_lines=1;
         push @results, $line;
     }
     push @results, "-" x 79;
+    write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
     print "<- diff_report\n" if $opt_v > 2;
 
     return @results;
@@ -1590,9 +1593,7 @@ sub diff_xml_yaml_report {                   # {{{1
     if ($opt_xml) {
         push @results,
 "<?xml version=\"1.0\"?>
-<!--
 <?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
-  -->
 <diff_results>
 <header>$header_line</header>";
     } elsif ($opt_yaml) {
@@ -1660,6 +1661,7 @@ sub diff_xml_yaml_report {                   # {{{1
     if ($opt_xml) {
         push @results, "</diff_results>";
     }
+    write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
     print "<- diff_xml_yaml_report\n" if $opt_v > 2;
     return @results;
 } # 1}}}
@@ -7009,7 +7011,7 @@ sub write_xsl_file {                         # {{{1
         warn "Unable to write $CLOC_XSL  $!\n";
         return;
     }
-my $XSL = <<'EOCommon'; # {{{2
+my $XSL = <<'EO_XSL'; # {{{2
 <?xml version="1.0" encoding="US-ASCII"?>
 <!-- XLS file by Paul Schwann, January 2009 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -7081,9 +7083,151 @@ my $XSL = <<'EOCommon'; # {{{2
 </xsl:stylesheet>
 
  	  	 
-EOCommon
+EO_XSL
 # 2}}}
-    print $OUT $XSL;
+my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- XLS file by Blazej Kroll, November 2010 -->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="html"/>
+  <xsl:template match="/">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <title>CLOC Results</title>
+      </head>
+      <style type="text/css">
+        table {
+          table-layout: auto;
+          border-collapse: collapse;
+          empty-cells: show;
+		  margin: 1em;
+        }
+        td, th {
+          padding: 4px;
+        }
+        th {
+          background-color: #CCCCCC;
+        }
+        td {
+          text-align: center;
+        }
+        table, td, tr, th {
+          border: thin solid #999999;
+        }
+      </style>
+      <body>
+        <h3><xsl:value-of select="results/header"/></h3>
+        
+		<table>
+          <thead>
+		  <tr><th colspan="5">Unchanged files</th>
+		  </tr>
+            <tr>
+              <th>Language</th>
+              <th>Files</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/same/language">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@files_count"/></td>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="5">Modified Files</th>
+		  </tr>
+            <tr>
+              <th>Language</th>
+              <th>Files</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/modified/language">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@files_count"/></td>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="5">Added Files</th>
+		  </tr>
+            <tr>
+              <th>Language</th>
+              <th>Files</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/added/language">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@files_count"/></td>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="5">Removed Files</th>
+		  </tr>
+            <tr>
+              <th>Language</th>
+              <th>Files</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/removed/language">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@files_count"/></td>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>
+EO_DIFF_XSL
+# 2}}}
+    if ($opt_diff) {
+        print $OUT $XSL_DIFF;
+    } else {
+        print $OUT $XSL;
+    }
     $OUT->close();
 } # 1}}}
 sub normalize_file_names {                   # {{{1 
