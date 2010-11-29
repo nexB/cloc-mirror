@@ -7120,7 +7120,7 @@ my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
         
 		<table>
           <thead>
-		  <tr><th colspan="5">Unchanged files</th>
+		  <tr><th colspan="5">Same</th>
 		  </tr>
             <tr>
               <th>Language</th>
@@ -7145,7 +7145,7 @@ my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
 		
 		<table>
           <thead>
-		  <tr><th colspan="5">Modified Files</th>
+		  <tr><th colspan="5">Modified</th>
 		  </tr>
             <tr>
               <th>Language</th>
@@ -7170,7 +7170,7 @@ my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
 		
 		<table>
           <thead>
-		  <tr><th colspan="5">Added Files</th>
+		  <tr><th colspan="5">Added</th>
 		  </tr>
             <tr>
               <th>Language</th>
@@ -7195,7 +7195,7 @@ my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
 		
 		<table>
           <thead>
-		  <tr><th colspan="5">Removed Files</th>
+		  <tr><th colspan="5">Removed</th>
 		  </tr>
             <tr>
               <th>Language</th>
