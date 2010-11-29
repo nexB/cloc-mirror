@@ -127,11 +127,11 @@ my $BB     = chr(27) . "[1m";  # bold
    $BB     = "" if $ON_WINDOWS;
 my $script = basename $0;
 my $usage  = "
-Usage: $script [options] <file(s)/dir(s)> | <report files>
+Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
 
- Count physical lines of source code in the given files (may be
- archives such as compressed tarballs or zip files) and/or
- recursively below the given directories.
+ Count, or compute differences of, physical lines of source code in the 
+ given files (may be archives such as compressed tarballs or zip files) 
+ and/or recursively below the given directories.
 
  ${BB}Input Options${NN}
    --extract-with=<cmd>      This option is only needed if cloc is unable
