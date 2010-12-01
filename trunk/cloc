@@ -496,6 +496,7 @@ my (%Language_by_Extension, %Language_by_Script,
     %Language_by_File, %Scale_Factor, %Known_Binary_Archives,
    );
 my $ALREADY_SHOWED_HEADER = 0;
+my $ALREADY_SHOWED_XML_SECTION = 0;
 my %Error_Codes = ( 'Unable to read'                => -1,
                     'Neither file nor directory'    => -2, 
                     'Diff error (quoted comments?)' => -3, 
@@ -1763,11 +1764,13 @@ sub output_header   {                        # {{{1
     print "-> output_header\n" if $opt_v > 2;
     my @R = ();
     if      ($opt_xml) {
-        push @R, "<?xml version=\"1.0\"?>";
-        push @R, '<?xml-stylesheet type="text/xsl" href="' .
-                        $opt_xsl . '"?>' if $opt_xsl;
-        push @R, "<results>";
-        push @R, "<header>$header_line</header>";
+        if (!$ALREADY_SHOWED_XML_SECTION) {
+            push @R, "<?xml version=\"1.0\"?>";
+            push @R, '<?xml-stylesheet type="text/xsl" href="' .
+                            $opt_xsl . '"?>' if $opt_xsl;
+            push @R, "<results>";
+            push @R, "<header>$header_line</header>";
+        }
         if ($BY_FILE) {
             push @R, "<files>";
         } else {
@@ -2040,7 +2043,12 @@ sub generate_report {                        # {{{1
             push @results, "</languages>";
         }
         
-        push @results, "</results>";
+        if (!$opt_by_file_by_lang or $ALREADY_SHOWED_XML_SECTION) {
+    	    push @results, "</results>";
+        }
+        else {
+            $ALREADY_SHOWED_XML_SECTION = 1;
+        }
     } elsif ($opt_yaml) {
         push @results, "SUM:";
         push @results, "  blank: "  . $sum_blank  ;
@@ -7013,7 +7021,9 @@ sub write_xsl_file {                         # {{{1
     }
 my $XSL = <<'EO_XSL'; # {{{2
 <?xml version="1.0" encoding="US-ASCII"?>
-<!-- XLS file by Paul Schwann, January 2009 -->
+<!-- XLS file by Paul Schwann, January 2009.
+     Fixes for --by-file and --by-file-by-lang by d_uragan, November 2010.
+     -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="html"/>
   <xsl:template match="/">
@@ -7042,6 +7052,48 @@ my $XSL = <<'EO_XSL'; # {{{2
       </style>
       <body>
         <h3><xsl:value-of select="results/header"/></h3>
+EO_XSL
+# 2}}}
+
+    if ($opt_by_file) {
+$XSL.= <<'EO_XSL'; # {{{2
+        <table>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>
+              <th>Language</th>
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="results/files/file">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>
+              <td><xsl:value-of select="@language"/></td>
+            </tr>
+          </xsl:for-each>
+            <tr>
+              <th>Total</th>
+              <th><xsl:value-of select="results/files/total/@blank"/></th>
+              <th><xsl:value-of select="results/files/total/@comment"/></th>
+              <th><xsl:value-of select="results/files/total/@code"/></th>
+              <th><xsl:value-of select="results/files/total/@language"/></th>
+            </tr>
+          </tbody>
+        </table>
+        <br/>
+
+EO_XSL
+# 2}}}
+    }
+
+    if (!$opt_by_file or $opt_by_file_by_lang) {
+$XSL.= <<'EO_XSL'; # {{{2
         <table>
           <thead>
             <tr>
@@ -7077,15 +7129,20 @@ my $XSL = <<'EO_XSL'; # {{{2
             </tr>
           </tbody>
         </table>
+EO_XSL
+# 2}}}
+    }
+
+    $XSL.= <<'EO_XSL'; # {{{2
       </body>
     </html>
   </xsl:template>
 </xsl:stylesheet>
 
- 	  	 
 EO_XSL
 # 2}}}
-my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
+
+    my $XSL_DIFF = <<'EO_DIFF_XSL'; # {{{2
 <?xml version="1.0" encoding="US-ASCII"?>
 <!-- XLS file by Blazej Kroll, November 2010 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
