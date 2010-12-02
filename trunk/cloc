@@ -3371,6 +3371,7 @@ sub set_constants {                          # {{{1
             'frm'         => 'Visual Basic'          ,
             'gnumakefile' => 'make'                  ,
             'Gnumakefile' => 'make'                  ,
+            'go'          => 'Go'                    ,
             'groovy'      => 'Groovy'                ,
             'h'           => 'C/C++ Header'          ,
             'H'           => 'C/C++ Header'          ,
@@ -3601,6 +3602,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_f77_comments' ,          ],
                                 [ 'remove_f90_comments' ,          ], 
                                 [ 'remove_inline'       , '\!.*$'  ],
+                            ],
+    'Go'                 => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
                             ],
     'Groovy'             => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -4097,6 +4103,7 @@ sub set_constants {                          # {{{1
     'gpss'                         =>   1.74,
     'guest'                        =>   2.86,
     'guru'                         =>   1.63,
+    'Go'                           =>   2.50,
     'Groovy'                       =>   4.10,
     'gw basic'                     =>   0.82,
     'Haskell'                      =>   2.11,
