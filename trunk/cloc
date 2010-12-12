@@ -1594,7 +1594,7 @@ sub diff_xml_yaml_report {                   # {{{1
     if ($opt_xml) {
         push @results,
 "<?xml version=\"1.0\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"cloc-diff.xsl\"?>
+<?xml-stylesheet type=\"text/xsl\" href=\"" . $opt_xsl . "\"?>
 <diff_results>
 <header>$header_line</header>";
     } elsif ($opt_yaml) {
@@ -7210,7 +7210,108 @@ EO_XSL
       </style>
       <body>
         <h3><xsl:value-of select="results/header"/></h3>
-        
+EO_DIFF_XSL
+# 2}}}
+
+    if ($opt_by_file) {
+        $XSL_DIFF.= <<'EO_DIFF_XSL'; # {{{2
+		<table>
+          <thead>
+		  <tr><th colspan="4">Same</th>
+		  </tr>
+            <tr>
+              <th>File</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/same/file">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="4">Modified</th>
+		  </tr>
+            <tr>
+              <th>File</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/modified/file">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="4">Added</th>
+		  </tr>
+            <tr>
+              <th>File</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/added/file">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+		
+		<table>
+          <thead>
+		  <tr><th colspan="4">Removed</th>
+		  </tr>
+            <tr>
+              <th>File</th>
+              <th>Blank</th>
+              <th>Comment</th>
+              <th>Code</th>              
+            </tr>
+          </thead>
+          <tbody>
+          <xsl:for-each select="diff_results/removed/file">
+            <tr>
+              <th><xsl:value-of select="@name"/></th>
+              <td><xsl:value-of select="@blank"/></td>
+              <td><xsl:value-of select="@comment"/></td>
+              <td><xsl:value-of select="@code"/></td>              
+            </tr>
+          </xsl:for-each>            
+          </tbody>
+        </table>
+EO_DIFF_XSL
+# 2}}}
+    }
+
+    if (!$opt_by_file or $opt_by_file_by_lang) {
+        $XSL_DIFF.= <<'EO_DIFF_XSL'; # {{{2
 		<table>
           <thead>
 		  <tr><th colspan="5">Same</th>
@@ -7310,6 +7411,12 @@ EO_XSL
           </xsl:for-each>            
           </tbody>
         </table>
+EO_DIFF_XSL
+# 2}}}
+
+    }
+    
+    $XSL_DIFF.= <<'EO_DIFF_XSL'; # {{{2
       </body>
     </html>
   </xsl:template>
