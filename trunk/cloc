@@ -3409,8 +3409,9 @@ sub set_constants {                          # {{{1
             'mli'         => 'ML'                    ,
             'ml'          => 'ML'                    , 
             'm'           => 'MATLAB/Objective C/MUMPS' ,
-            'wdproj'      => 'MSBuild scripts' ,
-            'csproj'      => 'MSBuild scripts' ,
+            'mm'          => 'Objective C++'         ,
+            'wdproj'      => 'MSBuild scripts'       ,
+            'csproj'      => 'MSBuild scripts'       ,
             'mps'         => 'MUMPS'                 ,
             'mth'         => 'Teamcenter mth'        ,
             'oscript'     => 'LiveLink OScript'      ,
@@ -3651,6 +3652,11 @@ sub set_constants {                          # {{{1
         # Modula 3 comments are (* ... *) so applying the Pascal filter
         # which also treats { ... } as a comment is not really correct.
     'Objective C'        => [   
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                            ], 
+    'Objective C++'      => [   
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
@@ -4235,6 +4241,7 @@ sub set_constants {                          # {{{1
     'object pascal'                =>   2.76,
     'object star'                  =>   5.00,
     'Objective C'                  =>   2.96,
+    'Objective C++'                =>   2.96,
     'objectoriented default'       =>   2.76,
     'objectview'                   =>   3.20,
     'ogl'                          =>   1.00,
