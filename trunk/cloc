@@ -33,6 +33,11 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
+# To do before 1.54 release:
+# o fix --diff where one of the inputs has no files
+# o fix --diff where one of the inputs has a single file
+# o add support for double extensions, eg, .proc.sql and .data.sql
+# o add Smarty template extension, validate against PHP code
 my $VERSION = sprintf("%.2f", 1.54);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
