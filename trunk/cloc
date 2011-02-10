@@ -2542,6 +2542,14 @@ sub classify_file {                          # {{{1
                         'failure in matlab_or_objective_C()';
                     return $language; # (unknown)
                 }
+            } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
+                # Smarty extension .tpl is generic; make sure the
+                # file at least roughly resembles PHP
+                if (really_is_php($full_file)) {
+                    return 'Smarty';
+                } else {
+                    return $language; # (unknown)
+                }
             } else {
                 return $Language_by_Extension{$extension};
             }
@@ -3230,6 +3238,20 @@ sub docstring_to_C {                         # {{{1
     print "<- docstring_to_C\n" if $opt_v > 2;
     return @{$ra_lines};
 } # 1}}}
+sub smarty_to_C {                            # {{{1
+    my ($ra_lines, ) = @_;
+    # Converts Python docstrings to C comments.
+
+    print "-> smarty_to_C()\n" if $opt_v > 2;
+
+    foreach (@{$ra_lines}) {
+        s[{\*][/*]g;
+        s[\*}][*/]g;
+    }
+
+    print "<- smarty_to_C\n" if $opt_v > 2;
+    return @{$ra_lines};
+} # 1}}}
 sub determine_lit_type {                     # {{{1
   my ($file) = @_;
 
@@ -3459,11 +3481,13 @@ sub set_constants {                          # {{{1
             'ses'         => 'Patran Command Language'   ,
             'pcl'         => 'Patran Command Language'   ,
             'sh'          => 'Bourne Shell'          ,
+            'smarty'      => 'Smarty'                ,
             'sql'         => 'SQL'                   ,
             'SQL'         => 'SQL'                   ,
             'tcl'         => 'Tcl/Tk'                ,
             'tcsh'        => 'C Shell'               ,
             'tk'          => 'Tcl/Tk'                ,
+            'tpl'         => 'Smarty'                ,
             'vhd'         => 'VHDL'                  ,
             'VHD'         => 'VHDL'                  ,
             'vhdl'        => 'VHDL'                  ,
@@ -3695,11 +3719,12 @@ sub set_constants {                          # {{{1
                                 [ 'remove_below_above'  , '^=head1', '^=cut'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                             ], 
-    'Python'             => [   [ 'remove_matches'      , '^\s*#'  ], 
+    'Python'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'docstring_to_C'                 ], 
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '#.*$'   ],
-                                ], 
+                            ], 
     'PHP'                => [   
                                 [ 'remove_matches'      , '^\s*#'  ],
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -3735,6 +3760,10 @@ sub set_constants {                          # {{{1
     'sed'                => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Smarty'             => [   
+                                [ 'smarty_to_C'                    ], 
+                                [ 'call_regexp_common'  , 'C'      ],
                             ], 
     'Bourne Again Shell' => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -4365,6 +4394,7 @@ sub set_constants {                          # {{{1
     'smalltalk 286'                =>   3.81,
     'smalltalk 80'                 =>   3.81,
     'smalltalk/v'                  =>   3.81,
+    'Smarty'                       =>   3.50,
     'snap'                         =>   1.00,
     'snobol24'                     =>   0.63,
     'softscreen'                   =>   5.71,
