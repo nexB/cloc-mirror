@@ -37,8 +37,6 @@
 # o fix --diff where one of the inputs has no files
 # o add support for double extensions, eg, .proc.sql and .data.sql
 # o add Smarty template extension, validate against PHP code
-# o add Ocaml
-# o .lisp extension for Lisp
 my $VERSION = sprintf("%.2f", 1.54);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
@@ -3416,8 +3414,9 @@ sub set_constants {                          # {{{1
             'Makefile'    => 'make'                  ,
             'met'         => 'Teamcenter met'        ,
             'mg'          => 'Modula3'               , 
-            'mli'         => 'ML'                    ,
-            'ml'          => 'ML'                    , 
+#           'mli'         => 'ML'                    , # ML not implemented
+#           'ml'          => 'ML'                    , 
+            'ml'          => 'Ocaml'                 , 
             'm'           => 'MATLAB/Objective C/MUMPS' ,
             'mm'          => 'Objective C++'         ,
             'wdproj'      => 'MSBuild scripts'       ,
@@ -3671,6 +3670,9 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ], 
+    'Ocaml'              => [   
+                                [ 'call_regexp_common'  , 'Pascal' ], 
+                            ],
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
     'Octave'             => [   
@@ -4254,6 +4256,7 @@ sub set_constants {                          # {{{1
     'Objective C++'                =>   2.96,
     'objectoriented default'       =>   2.76,
     'objectview'                   =>   3.20,
+    'Ocaml'                        =>   3.00,
     'ogl'                          =>   1.00,
     'omnis 7'                      =>   2.00,
     'oodl'                         =>   2.76,
