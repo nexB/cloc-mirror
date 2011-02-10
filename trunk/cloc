@@ -38,6 +38,8 @@
 # o fix --diff where one of the inputs has a single file
 # o add support for double extensions, eg, .proc.sql and .data.sql
 # o add Smarty template extension, validate against PHP code
+# o add Ocaml
+# o .lisp extension for Lisp
 my $VERSION = sprintf("%.2f", 1.54);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
