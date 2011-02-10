@@ -35,7 +35,6 @@
 # 1}}}
 # To do before 1.54 release:
 # o fix --diff where one of the inputs has no files
-# o fix --diff where one of the inputs has a single file
 # o add support for double extensions, eg, .proc.sql and .data.sql
 # o add Smarty template extension, validate against PHP code
 # o add Ocaml
@@ -3409,6 +3408,7 @@ sub set_constants {                          # {{{1
             'lhs'         => 'Haskell'               ,
             'l'           => 'lex'                   ,
             'lsp'         => 'Lisp'                  ,
+            'lisp'        => 'Lisp'                  ,
             'lua'         => 'Lua'                   ,
             'm3'          => 'Modula3'               ,
             'm4'          => 'm4'                    ,
