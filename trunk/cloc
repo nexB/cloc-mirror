@@ -806,6 +806,9 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                    \@files_removed                       , # out
                    \@file_pairs                          , # out
                    );
+   #use Data::Dumper::Simple;
+   #use Data::Dumper;
+   #print Dumper(\@files_added, \@files_removed, \@file_pairs);
     my @alignment = (); # only  used if --diff-alignment
 #print "after align_by_pairs:\n";
 
@@ -6667,6 +6670,11 @@ sub remove_leading_dir {                     # {{{1
             $F = ucfirst($F) if $F =~ /^\w:/;  # uppercase drive letter
         }
     }
+    if (scalar @filenames == 1) {
+        # special case:  with only one filename
+        # cannot determine a baseline
+        return ( basename $filenames[0] );
+    }
     foreach my $F (@filenames) {
         my ($Vol, $Dir, $File) = File::Spec->splitpath($F);
         my @x = File::Spec->splitdir( $Dir );
@@ -6680,7 +6688,7 @@ sub remove_leading_dir {                     # {{{1
 #print "F=$F, Dir=$Dir  x=[", join("][", @x), "]\n";
         push @D, [ @x ];
     }
-    
+
     # now loop over columns until either they are all
     # eliminated or a unique column is found
 
@@ -6691,7 +6699,7 @@ sub remove_leading_dir {                     # {{{1
     my $mismatch = 0;
     while (!$mismatch) {
         for (my $row = 1; $row < scalar @D; $row++) {
-# print "comparing $D[$row][0] to $D[0][0]\n";
+#print "comparing $D[$row][0] to $D[0][0]\n";
 
             if (!defined $D[$row][0] or !defined $D[0][0] or
                 ($D[$row][0] ne $D[0][0])) {
@@ -6740,14 +6748,13 @@ sub align_by_pairs {                         # {{{1
 #use Data::Dumper::Simple;
 #print Dumper("align_by_pairs", @files_L, @files_R);
 #die;
-    if (scalar @files_L == 1 or scalar @files_R == 1) {
+    if (scalar @files_L == 1 and scalar @files_R == 1) {
         # The easy case:  compare two files.
         push @{$ra_compare_list}, [ $files_L[0],  $files_R[0] ]; 
         @{$ra_added  } = ();
         @{$ra_removed} = ();
         return;
     }
-
     # The harder case:  compare groups of files.  This only works
     # if the groups are in different directories so the first step
     # is to strip the leading directory names from file lists to
