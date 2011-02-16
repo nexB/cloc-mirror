@@ -122,8 +122,13 @@ use Cwd qw { cwd };
 # Usage information, options processing.       {{{1
 my $ON_WINDOWS = 0;
    $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
-   $ON_WINDOWS = 0 if $ENV{'SHELL'};  # make Cygwin look like Unix
-
+if ($ON_WINDOWS and $ENV{'SHELL'}) {
+    if ($ENV{'SHELL'} =~ m{^/}) {
+        $ON_WINDOWS = 1;  # make Cygwin look like Unix
+    } else {
+        $ON_WINDOWS = 0;  # MKS defines $SHELL but still acts like Windows
+    }
+}
 
 my $NN     = chr(27) . "[0m";  # normal
    $NN     = "" if $ON_WINDOWS;
