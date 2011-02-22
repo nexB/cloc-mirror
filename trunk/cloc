@@ -3249,7 +3249,7 @@ sub docstring_to_C {                         # {{{1
 } # 1}}}
 sub smarty_to_C {                            # {{{1
     my ($ra_lines, ) = @_;
-    # Converts Python docstrings to C comments.
+    # Converts Smarty comments to C comments.
 
     print "-> smarty_to_C()\n" if $opt_v > 2;
 
@@ -3474,6 +3474,7 @@ sub set_constants {                          # {{{1
             'pp'          => 'Pascal'                ,
             'psql'        => 'SQL'                   ,
             'py'          => 'Python'                ,
+            'pyx'         => 'Cython'                ,
             'rb'          => 'Ruby'                  ,
          #  'resx'        => 'ASP.Net'               ,
             'rex'         => 'Oracle Reports'        ,
@@ -3599,6 +3600,12 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
+    'Cython'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'docstring_to_C'                 ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'C#'                 => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
@@ -4519,6 +4526,7 @@ sub set_constants {                          # {{{1
 'Modula3' => 2.00,
 'PHP'     => 3.50,
 'Python'  => 4.20,
+'Cython'  => 3.80,
 'Ruby'    => 4.20,
 'Ruby HTML' => 4.00,
 'sed'     => 4.00,
