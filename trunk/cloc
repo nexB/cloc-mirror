@@ -1105,6 +1105,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             $Results_by_File{$file_L}{'comment'} = $comment_count_L ;
             $Results_by_File{$file_L}{'lang'   } = $Lang_L          ;
             $Results_by_File{$file_L}{'nFiles' } = 1                ;
+        } else {
+            $Results_by_File{$file_L} = 1;  # just keep track of counted files
         }
    
         $Results_by_Language{$Lang_L}{'nFiles'}++;
@@ -1123,7 +1125,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #die;
 my @ignored_reasons = map { "$_: $Ignored{$_}" } sort keys %Ignored;
 write_file($opt_ignored, @ignored_reasons   ) if $opt_ignored;
-write_file($opt_counted, sort keys %Language) if $opt_counted;
+write_file($opt_counted, sort keys %Results_by_File) if $opt_counted;
 # 1}}}
 # Step 7:  Assemble results.                      {{{1
 #
@@ -1253,6 +1255,8 @@ foreach my $file (sort keys %unique_source_file) {
         $Results_by_File{$file}{'comment'} = $comment_count  ;
         $Results_by_File{$file}{'lang'   } = $Language{$file};
         $Results_by_File{$file}{'nFiles' } = 1;
+    } else {
+        $Results_by_File{$file} = 1;  # just keep track of counted files
     }
 
     $Results_by_Language{$Language{$file}}{'nFiles'}++;
@@ -1262,7 +1266,7 @@ foreach my $file (sort keys %unique_source_file) {
 }
 my @ignored_reasons = map { "$_: $Ignored{$_}" } sort keys %Ignored;
 write_file($opt_ignored, @ignored_reasons   ) if $opt_ignored;
-write_file($opt_counted, sort keys %Language) if $opt_counted;
+write_file($opt_counted, sort keys %Results_by_Language) if $opt_counted;
 # 1}}}
 # Step 7:  Assemble results.                      {{{1
 #
