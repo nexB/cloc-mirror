@@ -753,9 +753,14 @@ my %Ignored   = ();  # files that are not counted (language not recognized or
 my @Lines_Out = ();
 if ($opt_diff) {
 # Step 4:  Separate code from non-code files. {{{1
-my @fh;
+my @fh            = ();
 my @files_for_set = ();
 # make file lists for each separate argument
+if ($opt_exclude_list_file) {
+    process_exclude_list_file($opt_exclude_list_file, 
+                             \%Exclude_Dir,
+                             \%Ignored);
+}
 for (my $i = 0; $i < scalar @ARGV; $i++) {
     push @fh, 
          make_file_list([ $ARGV[$i] ], \%Error_Codes, \@Errors, \%Ignored);
@@ -1158,29 +1163,9 @@ if ($opt_list_file) {
     #     File::Find's find() which in turn calls files()
 }
 if ($opt_exclude_list_file) {
-    # now reject a specific set of files and/or directories
-    my @reject_list   = read_list_file($opt_exclude_list_file);
-    my @file_reject_list = ();
-    foreach my $F_or_D (@reject_list) {
-        if (is_dir($F_or_D)) {
-            $Exclude_Dir{$F_or_D} = 1;
-        } elsif (is_file($F_or_D)) {
-            push @file_reject_list, $F_or_D;
-        }
-    }
-
-    # Normalize file names for better comparison.
-    my %normalized_input   = normalize_file_names(@file_list);
-    my %normalized_reject  = normalize_file_names(@file_reject_list);
-    my %normalized_exclude = normalize_file_names(keys %Exclude_Dir);
-    foreach my $F (keys %normalized_input) {
-        if ($normalized_reject{$F} or is_excluded($F, \%normalized_exclude)) {
-            my $orig_F = $normalized_input{$F};
-            $Ignored{$orig_F} = "listed in exclusion file $opt_exclude_list_file";
-            print "Ignoring $orig_F because it appears in $opt_exclude_list_file\n" 
-                if $opt_v > 1;
-        }
-    }
+    process_exclude_list_file($opt_exclude_list_file, 
+                             \%Exclude_Dir,
+                             \%Ignored);
 }
 if ($opt_skip_win_hidden and $ON_WINDOWS) {
     my @file_list_minus_hidded = ();
@@ -1301,6 +1286,37 @@ if      ($opt_by_file_by_lang) {
 if ($opt_report_file) { write_file($opt_report_file, @Lines_Out); } 
 else                  { print "\n", join("\n", @Lines_Out), "\n"; }
 
+sub process_exclude_list_file {              # {{{1
+    my ($list_file      , # in
+        $rh_exclude_dir , # out
+        $rh_ignored     , # out
+       ) = @_;
+    print "-> process_exclude_list_file($list_file)\n" if $opt_v > 2;
+    # reject a specific set of files and/or directories
+    my @reject_list   = read_list_file($list_file);
+    my @file_reject_list = ();
+    foreach my $F_or_D (@reject_list) {
+        if (is_dir($F_or_D)) {
+            $rh_exclude_dir->{$F_or_D} = 1;
+        } elsif (is_file($F_or_D)) {
+            push @file_reject_list, $F_or_D;
+        }
+    }
+
+    # Normalize file names for better comparison.
+    my %normalized_input   = normalize_file_names(@file_list);
+    my %normalized_reject  = normalize_file_names(@file_reject_list);
+    my %normalized_exclude = normalize_file_names(keys %{$rh_exclude_dir});
+    foreach my $F (keys %normalized_input) {
+        if ($normalized_reject{$F} or is_excluded($F, \%normalized_exclude)) {
+            my $orig_F = $normalized_input{$F};
+            $rh_ignored->{$orig_F} = "listed in exclusion file $opt_exclude_list_file";
+            print "Ignoring $orig_F because it appears in $opt_exclude_list_file\n" 
+                if $opt_v > 1;
+        }
+    }
+    print "<- process_exclude_list_file\n" if $opt_v > 2;
+} # 1}}}
 sub combine_results {                        # {{{1
     # returns 1 if the inputs are categorized by language
     #         0 if no identifiable language was found
