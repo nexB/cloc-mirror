@@ -264,6 +264,13 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              only counts files that start with Widget or widget.
    --not-match-f=<regex>     Count all files except those whose basenames
                              match the Perl regex.
+   --match-d=<regex>         Only count files in directories matching the Perl 
+                             regex.  For example
+                               --match-d=/src/
+                             only counts files in directories containing
+                             /src/
+   --not-match-d=<regex>     Count all files except those in directories
+                             matching the Perl regex.
    --skip-win-hidden         On Windows, ignore hidden files.
 
  ${BB}Debug Options${NN}
@@ -369,6 +376,8 @@ my (
     $opt_csv                  ,
 	$opt_match_f              ,
 	$opt_not_match_f          ,
+	$opt_match_d              ,
+	$opt_not_match_d          ,
 	$opt_skip_uniqueness      ,
 	$opt_list_file            ,
 	$opt_help                 ,
@@ -424,6 +433,8 @@ my $getopt_success = GetOptions(
    "csv"                                     => \$opt_csv                 ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
+   "match_d|match-d=s"                       => \$opt_match_d             ,
+   "not_match_d|not-match-d=s"               => \$opt_not_match_d         ,
    "list_file|list-file=s"                   => \$opt_list_file           ,
    "help"                                    => \$opt_help                ,
    "skip_win_hidden|skip-win-hidden"         => \$opt_skip_win_hidden     ,
@@ -2458,8 +2469,11 @@ sub files {                                  # {{{1
         }
         return if $return;
     }
+    my $Dir = cwd(); # not $File::Find::dir which just gives relative path
 	if ($opt_match_f    ) {	return unless /$opt_match_f/;     }
     if ($opt_not_match_f) {	return if     /$opt_not_match_f/; }
+	if ($opt_match_d    ) {	return unless $Dir =~ m{$opt_match_d}     }
+    if ($opt_not_match_d) {	return if     $Dir =~ m{$opt_not_match_d} }
 
     my $nBytes = -s     $_ ;
     if (!$nBytes and $opt_v > 5) {
