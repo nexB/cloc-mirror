@@ -1587,11 +1587,14 @@ my $sum_lines=1;
 } # 1}}}
 sub xml_or_yaml_header {                     # {{{1
     my ($URL, $version, $elapsed_sec, $sum_files, $sum_lines) = @_;
-    my $header = "";
-    my $file_rate = $sum_files/$elapsed_sec;
-    my $line_rate = $sum_lines/$elapsed_sec;
-    my $type      = ""; 
-       $type      = "diff_" if $opt_diff;
+    my $header      = "";
+    my $file_rate   = $sum_files/$elapsed_sec;
+    my $line_rate   = $sum_lines/$elapsed_sec;
+    my $type        = ""; 
+       $type        = "diff_" if $opt_diff;
+    my $report_file = "";
+       $report_file = "  <report_file>$opt_report_file</report_file>"
+       if $opt_report_file;
     if ($opt_xml) {
         $header = "<?xml version=\"1.0\"?>";
         $header .= "\n<?xml-stylesheet type=\"text/xsl\" href=\"" . $opt_xsl . "\"?>" if $opt_xsl;
@@ -1603,8 +1606,10 @@ sub xml_or_yaml_header {                     # {{{1
   <n_files>$sum_files</n_files>
   <n_lines>$sum_lines</n_lines>
   <files_per_second>$file_rate</files_per_second>
-  <lines_per_second>$line_rate</lines_per_second>
-</header>";
+  <lines_per_second>$line_rate</lines_per_second>";
+        $header .= "\n$report_file"
+            if $opt_report_file;
+        $header .= "\n</header>";
     } elsif ($opt_yaml) {
         $header = "---\n# $URL
 header :
@@ -1615,6 +1620,8 @@ header :
   n_lines            : $sum_lines
   files_per_second   : $file_rate
   lines_per_second   : $line_rate";
+        $header .= "\n  report_file        : $opt_report_file"
+            if $opt_report_file;
     }
     return $header;
 } # 1}}}
