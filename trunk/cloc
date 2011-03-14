@@ -320,11 +320,11 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              by --sql and do not generate table creation 
                              statements.  Only valid with the --sql option.
    --xml                     Write the results in XML.
-   --xsl[=<file>]            Reference <file> as an XSL stylesheet within
-                             the XML output.  If <file> is not given, writes
-                             a default stylesheet, cloc.xsl (or cloc-diff.xsl
-                             if --diff is also given).  This switch forces 
-                             --xml to be on.
+   --xsl=<file>              Reference <file> as an XSL stylesheet within
+                             the XML output.  If <file> is 1 (numeric one), 
+                             writes a default stylesheet, cloc.xsl (or 
+                             cloc-diff.xsl if --diff is also given).  
+                             This switch forces --xml on.
    --yaml                    Write the results in YAML.
 
 ";
@@ -426,7 +426,7 @@ my $getopt_success = GetOptions(
    "version"                                 => \$opt_version             ,
    "write_lang_def|write-lang-def=s"         => \$opt_write_lang_def      ,
    "xml"                                     => \$opt_xml                 ,
-   "xsl:s"                                   => \$opt_xsl                 ,
+   "xsl=s"                                   => \$opt_xsl                 ,
    "force_lang|force-lang=s"                 => \@opt_force_lang          ,
    "lang_no_ext|lang-no-ext=s"               => \$opt_lang_no_ext         ,
    "yaml"                                    => \$opt_yaml                ,
@@ -478,8 +478,8 @@ if (!defined $opt_v) {
     $opt_v  = 1;
 }
 if (defined $opt_xsl) {
-    $opt_xml  = 1;
-    $opt_xsl  = $CLOC_XSL unless $opt_xsl;
+    $opt_xsl = $CLOC_XSL if $opt_xsl eq "1";
+    $opt_xml = 1;
 }
 my $skip_generate_report = 0;
 $opt_sql = 0 unless defined $opt_sql;
@@ -499,7 +499,7 @@ die $usage unless defined $opt_version         or
                   defined $opt_show_ext        or
                   defined $opt_write_lang_def  or
                   defined $opt_list_file       or
-                  defined $opt_list_file       or
+                  defined $opt_xsl             or
                   scalar @ARGV >= 1;
 die "--diff requires at least two arguments\n" 
     if $opt_diff and scalar @ARGV < 2;
@@ -1585,6 +1585,39 @@ my $sum_lines=1;
 
     return @results;
 } # 1}}}
+sub xml_or_yaml_header {                     # {{{1
+    my ($URL, $version, $elapsed_sec, $sum_files, $sum_lines) = @_;
+    my $header = "";
+    my $file_rate = $sum_files/$elapsed_sec;
+    my $line_rate = $sum_lines/$elapsed_sec;
+    my $type      = ""; 
+       $type      = "diff_" if $opt_diff;
+    if ($opt_xml) {
+        $header = "<?xml version=\"1.0\"?>";
+        $header .= "\n<?xml-stylesheet type=\"text/xsl\" href=\"" . $opt_xsl . "\"?>" if $opt_xsl;
+        $header .= "<${type}results>
+<header>
+  <cloc_url>$URL</cloc_url>
+  <cloc_version>$version</cloc_version>
+  <elapsed_seconds>$elapsed_sec</elapsed_seconds>
+  <n_files>$sum_files</n_files>
+  <n_lines>$sum_lines</n_lines>
+  <files_per_second>$file_rate</files_per_second>
+  <lines_per_second>$line_rate</lines_per_second>
+</header>";
+    } elsif ($opt_yaml) {
+        $header = "---\n# $URL
+header :
+  cloc_url           : http://cloc.sourceforge.net
+  cloc_version       : $version
+  elapsed_seconds    : $elapsed_sec
+  n_files            : $sum_files
+  n_lines            : $sum_lines
+  files_per_second   : $file_rate
+  lines_per_second   : $line_rate";
+    }
+    return $header;
+} # 1}}}
 sub diff_xml_yaml_report {                   # {{{1
     # returns an array of lines containing the results
     my ($version    , # in
@@ -1628,21 +1661,9 @@ sub diff_xml_yaml_report {                   # {{{1
         $BY_FILE      = 1;
     }
 
-    my $header_line  = sprintf "%s v %4.2f", $URL, $version;
-
-       $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
-                        $elapsed_sec           ,
-                        $sum_files/$elapsed_sec,
-                        $sum_lines/$elapsed_sec);
-    if ($opt_xml) {
-        push @results,
-"<?xml version=\"1.0\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"" . $opt_xsl . "\"?>
-<diff_results>
-<header>$header_line</header>";
-    } elsif ($opt_yaml) {
-        push @results, "---\n# $header_line";
-    }
+    push @results,
+          xml_or_yaml_header($URL, $version, $elapsed_sec, 
+                             $sum_files, $sum_lines);
 
     foreach my $S (qw(same modified added removed)) {
         if ($opt_xml) {
@@ -1924,7 +1945,12 @@ sub generate_report {                        # {{{1
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
-    push @results, output_header($header_line, $hyphen_line, $BY_FILE);
+    if ($opt_xml or $opt_yaml) {
+        push @results, xml_or_yaml_header($URL, $version, $elapsed_sec, 
+                                          $sum_files, $sum_lines);
+    } else {
+        push @results, output_header($header_line, $hyphen_line, $BY_FILE);
+    }
 
     if ($Style eq "txt") {
         # column headers
