@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # cloc -- Count Lines of Code {{{1
-# Copyright (C) 2006-2010 Northrop Grumman Corporation
+# Copyright (C) 2006-2011 Northrop Grumman Corporation
 # Author:  Al Danial <al.danial@gmail.com>
 #          First release August 2006
 #
@@ -34,9 +34,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
 # To do before 1.54 release:
-# o fix --diff where one of the inputs has no files
-# o add support for double extensions, eg, .proc.sql and .data.sql
-# o add Smarty template extension, validate against PHP code
+# o sum diff output
 my $VERSION = sprintf("%.2f", 1.54);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
@@ -2585,11 +2583,18 @@ sub classify_file {                          # {{{1
     return $language if $file =~ m{~$}; # a temp edit file (unknown)
 
     if ($file =~ /\.(\w+)$/) { # has an extension
-        print "$full_file extension=[$1]\n" if $opt_v > 2;
-        my $extension = $1;
-           # Windows file names are case insensitive so map 
-           # all extensions to lowercase there.
-           $extension = lc $extension if $ON_WINDOWS;  
+      print "$full_file extension=[$1]\n" if $opt_v > 2;
+      my $extension = $1;
+         # Windows file names are case insensitive so map 
+         # all extensions to lowercase there.
+         $extension = lc $extension if $ON_WINDOWS;  
+      my @extension_list = ( $extension );
+      if ($file =~ /\.(\w+\.\w+)$/) { # has a double extension
+          my $extension = $1;
+          $extension = lc $extension if $ON_WINDOWS;  
+          unshift @extension_list, $extension;  # examine double ext first
+      }
+      foreach my $extension (@extension_list) {
         if ($Not_Code_Extension{$extension} and 
            !$Forced_Extension{$extension}) {
            # If .1 (for example) is an extention that would ordinarily be
@@ -2628,6 +2633,7 @@ sub classify_file {                          # {{{1
         } else { # has an unmapped file extension
             $look_at_first_line = 1;
         }
+      }
     } elsif (defined $Language_by_File{lc $file}) {
         return $Language_by_File{lc $file};
     } elsif ($opt_lang_no_ext and 
@@ -3557,6 +3563,11 @@ sub set_constants {                          # {{{1
             'smarty'      => 'Smarty'                ,
             'sql'         => 'SQL'                   ,
             'SQL'         => 'SQL'                   ,
+            'sproc.sql'   => 'SQL Stored Procedure'  ,
+            'spoc.sql'    => 'SQL Stored Procedure'  ,
+            'spc.sql'     => 'SQL Stored Procedure'  ,
+            'udf.sql'     => 'SQL Stored Procedure'  ,
+            'data.sql'    => 'SQL Data'              ,
             'tcl'         => 'Tcl/Tk'                ,
             'tcsh'        => 'C Shell'               ,
             'tk'          => 'Tcl/Tk'                ,
@@ -3836,6 +3847,16 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'remove_inline'       , '--.*$'  ],
                             ],
+    'SQL Stored Procedure'=> [   
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_matches'      , '^\s*--' ],
+                                [ 'remove_inline'       , '--.*$'  ],
+                            ],
+    'SQL Data'           => [   
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_matches'      , '^\s*--' ],
+                                [ 'remove_inline'       , '--.*$'  ],
+                            ],
     'sed'                => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
@@ -4039,6 +4060,8 @@ sub set_constants {                          # {{{1
     'ansi cobol 74'                =>   0.75,
     'ansi cobol 85'                =>   0.88,
     'SQL'                          =>   6.15,
+    'SQL Stored Procedure'         =>   6.15,
+    'SQL Data'                     =>   1.00,
     'answer/db'                    =>   6.15,
     'apl 360/370'                  =>   2.50,
     'apl default'                  =>   2.50,
