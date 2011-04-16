@@ -615,6 +615,15 @@ exit if (defined $opt_show_ext) or (defined $opt_show_lang);
 @ARGV = windows_glob(@ARGV) if $ON_WINDOWS;
 #print "after  glob have [", join(",", @ARGV), "]\n";
 
+if ($opt_sum_reports and $opt_diff) {
+    my @results = combine_diffs(\@ARGV);
+    if ($opt_report_file) {
+        write_file($opt_report_file, @results);
+    } else {
+        print "\n", join("\n", @results), "\n";
+    }
+    exit;
+}
 if ($opt_sum_reports) {
     my %Results = ();
     foreach my $type( "by language", "by report file" ) {
@@ -7616,6 +7625,84 @@ sub normalize_file_names {                   # {{{1
         $normalized{ $F_norm } = $F;
     }
     return %normalized;
+} # 1}}}
+sub combine_diffs {                          # {{{1
+    # subroutine by Andy (awalshe@sf.net)
+    # https://sourceforge.net/tracker/?func=detail&aid=3261017&group_id=174787&atid=870625
+    my ($ra_files) = @_;
+
+    my $res   = "$URL v $VERSION\n";
+    my $dl    = '-';
+    my $width = 79;
+    # columns are in this order
+    my @cols  = ('files', 'blank', 'comment', 'code');
+    my %HoH   = ();
+  
+    foreach my $file (@{$ra_files}) {
+        my $IN = new IO::File $file, "r";
+        if (!defined $IN) {
+            warn "Unable to read $file; ignoring.\n";
+            next;
+        }
+
+        my $sec;
+        while (<$IN>) {
+            next if /^(http|Language|-----)/;
+            if (/^[A-Z][a-z]*/) {        # section title
+                $sec = $_;
+                chomp($sec);
+                $HoH{$sec} = () if ! exists $HoH{$sec};
+                next;
+            }
+  
+            if (/^\s(same|modified|added|removed)/) {  # calculated totals row
+                my @ar = grep { $_ ne '' } split(/ /, $_);
+                chomp(@ar);
+                my $ttl = shift @ar;
+                my $i = 0;
+                foreach(@ar) {
+                    my $t = "$ttl$dl$cols[$i]";
+                    $HoH{$sec}{$t} = 0 if ! exists $HoH{$sec}{$t};
+                    $HoH{$sec}{$t} += $_;
+                    $i++;
+                }
+            }
+        }
+        $IN->close;
+    }
+  
+    # rows are in this order
+    my @rows = ('same', 'modified', 'added', 'removed');
+  
+    $res .= sprintf("%s\n", "-" x $width);
+    $res .= sprintf("%-19s %14s %14s %14s %14s\n", 'Language', 
+                    $cols[0], $cols[1], $cols[2], $cols[3]);
+    $res .= sprintf("%s\n", "-" x $width);
+  
+    for my $sec ( keys %HoH ) {
+        next if $sec =~ /SUM:/;
+        $res .= "$sec\n";
+        foreach (@rows) {
+            $res .= sprintf(" %-18s %14s %14s %14s %14s\n", 
+                            $_, $HoH{$sec}{"$_$dl$cols[0]"},
+                                $HoH{$sec}{"$_$dl$cols[1]"},
+                                $HoH{$sec}{"$_$dl$cols[2]"},
+                                $HoH{$sec}{"$_$dl$cols[3]"});
+        }
+    }
+    $res .= sprintf("%s\n", "-" x $width);
+    my $sec = 'SUM:';
+    $res .= "$sec\n";
+    foreach (@rows) {
+        $res .= sprintf(" %-18s %14s %14s %14s %14s\n", 
+                        $_, $HoH{$sec}{"$_$dl$cols[0]"},
+                            $HoH{$sec}{"$_$dl$cols[1]"},
+                            $HoH{$sec}{"$_$dl$cols[2]"},
+                            $HoH{$sec}{"$_$dl$cols[3]"});
+    }
+    $res .= sprintf("%s\n", "-" x $width);
+  
+    return $res;
 } # 1}}}
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
