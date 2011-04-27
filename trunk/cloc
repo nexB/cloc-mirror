@@ -845,7 +845,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
         next if $Language{$fh[$F+1]}{$f} eq "(unknown)";
-
+        next if $Exclude_Language{$Language{$fh[$F+1]}{$f}};
         push @alignment, sprintf "  + %s ; %s\n", $f, $Language{$fh[$F+1]}{$f}
             if $opt_diff_alignment;
         ++$Delta_by_Language{ $Language{$fh[$F+1]}{$f} }{'nFiles'}{'added'};
@@ -876,6 +876,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
         next if $Language{$fh[$F  ]}{$f} eq "(unknown)";
+        next if $Exclude_Language{$Language{$fh[$F  ]}{$f}};
         ++$Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'nFiles'}{'removed'};
         push @alignment, sprintf "  - %s ; %s\n", $f, $Language{$fh[$F]}{$f}
             if $opt_diff_alignment;
