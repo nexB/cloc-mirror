@@ -1269,7 +1269,7 @@ foreach my $file (sort keys %unique_source_file) {
 }
 my @ignored_reasons = map { "$_: $Ignored{$_}" } sort keys %Ignored;
 write_file($opt_ignored, @ignored_reasons   ) if $opt_ignored;
-write_file($opt_counted, sort keys %Results_by_Language) if $opt_counted;
+write_file($opt_counted, sort keys %Results_by_File) if $opt_counted;
 # 1}}}
 # Step 7:  Assemble results.                      {{{1
 #
