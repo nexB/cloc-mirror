@@ -7085,6 +7085,10 @@ sub unicode_to_ascii {                       # {{{1
 sub uncompress_archive_cmd {                 # {{{1
     my ($archive_file, ) = @_;
 
+    # Wrap $archive_file in single or double quotes in the system
+    # commands below to avoid filename chicanery (including
+    # spaces in the names).
+
     print "-> uncompress_archive_cmd($archive_file)\n" if $opt_v > 2;
     my $extract_cmd = "";
     my $missing     = "";
@@ -7094,7 +7098,7 @@ sub uncompress_archive_cmd {                 # {{{1
               $archive_file =~ /\.tgz$/       ) and !$ON_WINDOWS)    {
         if (external_utility_exists("gzip --version")) {
             if (external_utility_exists("tar --version")) {
-                $extract_cmd = "gzip  -dc $archive_file | tar xf -";
+                $extract_cmd = "gzip -dc '$archive_file' | tar xf -";
             } else {
                 $missing = "tar";
             }
@@ -7104,7 +7108,7 @@ sub uncompress_archive_cmd {                 # {{{1
     } elsif ($archive_file =~ /\.tar\.bz2$/ and !$ON_WINDOWS)    {
         if (external_utility_exists("bzip2 --help")) {
             if (external_utility_exists("tar --version")) {
-                $extract_cmd = "bzip2 -dc $archive_file | tar xf -";
+                $extract_cmd = "bzip2 -dc '$archive_file' | tar xf -";
             } else {
                 $missing = "tar";
             }
@@ -7112,11 +7116,11 @@ sub uncompress_archive_cmd {                 # {{{1
             $missing = "bzip2";
         }
     } elsif ($archive_file =~ /\.tar$/ and !$ON_WINDOWS)    {
-        $extract_cmd = "tar xf $archive_file";
+        $extract_cmd = "tar xf '$archive_file'";
     } elsif ($archive_file =~ /\.src\.rpm$/i and !$ON_WINDOWS) {
         if (external_utility_exists("cpio --version")) {
             if (external_utility_exists("rpm2cpio")) {
-                $extract_cmd = "rpm2cpio $archive_file | cpio -i";
+                $extract_cmd = "rpm2cpio '$archive_file' | cpio -i";
             } else {
                 $missing = "rpm2cpio";
             }
@@ -7125,7 +7129,7 @@ sub uncompress_archive_cmd {                 # {{{1
         }
     } elsif ($archive_file =~ /\.zip$/i and !$ON_WINDOWS)    {
         if (external_utility_exists("unzip")) {
-            $extract_cmd = "unzip -qq -d . $archive_file";
+            $extract_cmd = "unzip -qq -d . '$archive_file'";
         } else {
             $missing = "unzip";
         }
@@ -7134,7 +7138,7 @@ sub uncompress_archive_cmd {                 # {{{1
         $extract_cmd = "";
         my $WinZip = '"C:\\Program Files\\WinZip\\WinZip32.exe"';
         if (external_utility_exists($WinZip)) {
-            $extract_cmd = "$WinZip -e -o $archive_file .";
+            $extract_cmd = "$WinZip -e -o \"$archive_file\" .";
 #print "trace 5 extract_cmd=[$extract_cmd]\n";
         } else {
 #print "trace 6\n";
