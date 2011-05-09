@@ -1157,7 +1157,10 @@ my $end_time = time();
 printf "%8d file%s ignored.                           \n", 
     plural_form(scalar keys %Ignored) unless $opt_quiet;
 print_errors(\%Error_Codes, \@Errors) if @Errors;
-exit unless %Results_by_Language;
+if (!%Delta_by_Language) {
+    print "Nothing to count.\n";
+    exit;
+}
 
 if ($opt_by_file) {
     @Lines_Out = diff_report($VERSION, time() - $start_time,
