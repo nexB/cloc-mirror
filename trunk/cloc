@@ -2594,6 +2594,9 @@ sub classify_file {                          # {{{1
     my $file = basename $full_file; 
     return $language if $Not_Code_Filename{$file}; # (unknown)
     return $language if $file =~ m{~$}; # a temp edit file (unknown)
+    if (defined $Language_by_File{$file}) {
+        return $Language_by_File{$file};
+    }
 
     if ($file =~ /\.(\w+)$/) { # has an extension
       print "$full_file extension=[$1]\n" if $opt_v > 2;
@@ -3460,6 +3463,7 @@ sub set_constants {                          # {{{1
             'cfm'         => 'ColdFusion'            ,
             'cl'          => 'Lisp'                  ,
             'cls'         => 'Visual Basic'          ,
+            'CMakeLists.txt' => 'CMake'              ,
             'cob'         => 'COBOL'                 ,
             'COB'         => 'COBOL'                 ,
             'config'      => 'ASP.Net'               ,
@@ -3639,10 +3643,11 @@ sub set_constants {                          # {{{1
             );
 # 1}}}
 %{$rh_Language_by_File}      = (                 # {{{1
-            'Makefile'    => 'make'                  ,
-            'makefile'    => 'make'                  ,
-            'gnumakefile' => 'make'                  ,
-            'Gnumakefile' => 'make'                  ,
+            'Makefile'       => 'make'               ,
+            'makefile'       => 'make'               ,
+            'gnumakefile'    => 'make'               ,
+            'Gnumakefile'    => 'make'               ,
+            'CMakeLists.txt' => 'CMake'              ,
             );
 # 1}}}
 %{$rhaa_Filters_by_Language} = (                 # {{{1
@@ -3686,6 +3691,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
+                            ],
+    'CMake'              => [   
+                                [ 'remove_matches'      , '^\s*#'  ],
+                                [ 'remove_inline'       , '#.*$'   ], 
                             ],
     'Cython'             => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -4156,6 +4165,7 @@ sub set_constants {                          # {{{1
     'clipper db'                   =>   2.00,
     'clos'                         =>   3.81,
     'clout'                        =>   2.00,
+    'CMake'                        =>   1.00,
     'cms2'                         =>   0.75,
     'cmsgen'                       =>   4.21,
     'COBOL'                        =>   1.04,
