@@ -545,7 +545,7 @@ if ($opt_read_lang_def) {
         );
 }
 if ($opt_lang_no_ext and !defined $Filters_by_Language{$opt_lang_no_ext}) {
-    die_unknown_lang($opt_lang_no_ext, "--opt_lang_no_ext")
+    die_unknown_lang($opt_lang_no_ext, "--lang-no-ext")
 }
 
 # Process command line provided extention-to-language mapping overrides.
@@ -917,8 +917,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 
         # filter out excluded or unrecognized languages
         if ($Exclude_Language{$Lang_L} or $Exclude_Language{$Lang_R}) {
-            $Ignored{$file_L} = "--exclude_lang=$Lang_L}";
-            $Ignored{$file_R} = "--exclude_lang=$Lang_R}";
+            $Ignored{$file_L} = "--exclude-lang=$Lang_L}";
+            $Ignored{$file_R} = "--exclude-lang=$Lang_R}";
             next;
         }
         if (!defined @{$Filters_by_Language{$Lang_L} } or
@@ -1239,7 +1239,7 @@ foreach my $file (sort keys %unique_source_file) {
         unless (!$opt_progress_rate or ($nCounted % $opt_progress_rate));
     next if $Ignored{$file};
     if ($Exclude_Language{$Language{$file}}) {
-        $Ignored{$file} = "--exclude_lang=$Language{$file}";
+        $Ignored{$file} = "--exclude-lang=$Language{$file}";
         next;
     }
     if (!defined @{$Filters_by_Language{$Language{$file}} }) {
@@ -2506,7 +2506,7 @@ sub files {                                  # {{{1
             my $dir = $File::Find::dir;
                $dir = "./$dir" unless $dir =~ m{^/};
             if ($dir =~ m{/$skip_dir(/|$)} ) {
-                $Ignored{$File::Find::name} = "--exclude_dir=$skip_dir";
+                $Ignored{$File::Find::name} = "--exclude-dir=$skip_dir";
                 $return = 1;
                 last;
             }
