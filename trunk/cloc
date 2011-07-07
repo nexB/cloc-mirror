@@ -2635,6 +2635,14 @@ sub classify_file {                          # {{{1
                         'failure in matlab_or_objective_C()';
                     return $language; # (unknown)
                 }
+            } elsif ($Language_by_Extension{$extension} eq 'PHP/Pascal') {
+                if (really_is_php($full_file)) {
+                    return 'PHP';
+                } elsif (really_is_incpascal($full_file)) {
+                    return 'Pascal';
+                } else {
+                    return $language; # (unknown)
+                }
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
                 # file at least roughly resembles PHP
@@ -3511,7 +3519,7 @@ sub set_constants {                          # {{{1
             'ig'          => 'Modula3'               ,
             'il'          => 'SKILL'                 ,
             'ils'         => 'SKILL++'               ,
-            'inc'         => 'inc'                   , # might be PHP
+            'inc'         => 'PHP/Pascal'            , # might be PHP or Pascal
             'itk'         => 'Tcl/Tk'                ,
             'java'        => 'Java'                  ,
             'jcl'         => 'JCL'                   , # IBM Job Control Lang.
@@ -3809,6 +3817,7 @@ sub set_constants {                          # {{{1
     'Ocaml'              => [   
                                 [ 'call_regexp_common'  , 'Pascal' ], 
                             ],
+    'PHP/Pascal'               => [ [ 'die' ,          ], ], # never called
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
     'Octave'             => [   
