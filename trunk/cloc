@@ -3020,7 +3020,7 @@ sub rm_comments {                            # {{{1
 
         print_lines($file, "After $subroutine(@args)", \@lines) 
             if $opt_print_filter_stages;
-        @lines = remove_matches(\@lines, '^\s*$'); # then remove blank lines
+########@lines = remove_matches(\@lines, '^\s*$'); # then remove blank lines
         
         print_lines($file, "post $subroutine(@args) blank cleanup:", \@lines) 
             if $opt_print_filter_stages;
@@ -3088,16 +3088,23 @@ sub remove_matches {                         # {{{1
 } # 1}}}
 sub remove_matches_2re {                     # {{{1
     my ($ra_lines, # in
-        $pattern1, # in   Perl regex 1 (case insensitive) to match
-        $pattern2, # in   Perl regex 2 (case insensitive) to not match
+        $pattern1, # in Perl regex 1 (case insensitive) to match
+        $pattern2, # in Perl regex 2 (case insensitive) to not match prev line
        ) = @_;
     print "-> remove_matches_2re(pattern=$pattern1,$pattern2)\n" if $opt_v > 2;
 
     my @save_lines = ();
-    foreach (@{$ra_lines}) {
-#chomp; print "remove_matches_2re [$pattern1] [$pattern2] [$_]\n";
-        next if m{$pattern1}i and !m{$pattern2};
-        push @save_lines, $_;
+    for (my $i = 0; $i < scalar @{$ra_lines}; $i++) {
+#print "remove_matches_2re [$pattern1] [$pattern2] [$ra_lines->[$i]]\n";
+        if ($i) {
+#print "remove_matches_2re prev=[$ra_lines->[$i-1]] this=[$ra_lines->[$i]]\n";
+            next if ($ra_lines->[$i]   =~ m{$pattern1}i) and 
+                    ($ra_lines->[$i-1] !~ m{$pattern2}i);
+        } else {
+            # on first line
+            next if $ra_lines->[$i]   =~  m{$pattern1}i;
+        }
+        push @save_lines, $ra_lines->[$i];
     }
 
     print "<- remove_matches_2re\n" if $opt_v > 2;
