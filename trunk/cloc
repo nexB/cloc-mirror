@@ -517,6 +517,7 @@ my $nFiles_Found = 0;  # updated in make_file_list
 my (%Language_by_Extension, %Language_by_Script,
     %Filters_by_Language, %Not_Code_Extension, %Not_Code_Filename,
     %Language_by_File, %Scale_Factor, %Known_Binary_Archives,
+    %EOL_Continuation_re,
    );
 my $ALREADY_SHOWED_HEADER = 0;
 my $ALREADY_SHOWED_XML_SECTION = 0;
@@ -535,6 +536,7 @@ if ($opt_read_lang_def) {
         \%Not_Code_Extension   , # Not_Code_Extension{jpg}     = 1
         \%Not_Code_Filename    , # Not_Code_Filename{README}   = 1
         \%Scale_Factor         , # Scale_Factor{Perl}          = 4.0
+        \%EOL_Continuation_re  , # EOL_Continuation_re{C++}    = '\\$'
         );
 } else {
     set_constants(               #
@@ -547,6 +549,7 @@ if ($opt_read_lang_def) {
         \%Not_Code_Filename    , # Not_Code_Filename{README}   = 1
         \%Scale_Factor         , # Scale_Factor{Perl}          = 4.0
         \%Known_Binary_Archives, # Known_Binary_Archives{.tar} = 1
+        \%EOL_Continuation_re  , # EOL_Continuation_re{C++}    = '\\$'
         );
 }
 if ($opt_lang_no_ext and !defined $Filters_by_Language{$opt_lang_no_ext}) {
@@ -661,6 +664,7 @@ if ($opt_write_lang_def) {
                   \%Not_Code_Extension   ,
                   \%Not_Code_Filename    ,
                   \%Scale_Factor         ,
+                  \%EOL_Continuation_re  ,
                   );
     exit;
 }
@@ -982,7 +986,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #print "Diff blank removal L language= $Lang_L";
 #print " scalar(lines_L)=", scalar @lines_L, "\n";
         my @original_minus_blanks_L 
-                    = rm_blanks(  \@lines_L, $Lang_L);
+                    = rm_blanks(  \@lines_L, $Lang_L, \%EOL_Continuation_re);
 #print "1: scalar(original_minus_blanks_L)=", scalar @original_minus_blanks_L, "\n";
         @lines_L    = @original_minus_blanks_L;
 #print "2: scalar(lines_L)=", scalar @lines_L, "\n";
@@ -992,7 +996,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 
 #print "Diff blank removal R language= $Lang_R\n";
         my @original_minus_blanks_R 
-                    = rm_blanks(  \@lines_R, $Lang_R);
+                    = rm_blanks(  \@lines_R, $Lang_R, \%EOL_Continuation_re);
         @lines_R    = @original_minus_blanks_R;
         @lines_R    = add_newlines(\@lines_R); # taken away by rm_comments()
         @lines_R    = rm_comments( \@lines_R, $Lang_R, $file_R);
@@ -2202,6 +2206,7 @@ sub write_lang_def {                         # {{{1
         $rh_Not_Code_Extension    , # in
         $rh_Not_Code_Filename     , # in
         $rh_Scale_Factor          , # in
+        $rh_EOL_Continuation_re   , # in
        ) = @_;
 
     print "-> write_lang_def($file)\n" if $opt_v > 2;
@@ -2209,7 +2214,8 @@ sub write_lang_def {                         # {{{1
     die "Unable to write to $file\n" unless defined $OUT;
 
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
-        next if $language eq "MATLAB/Objective C/MUMPS";
+        next if $language eq "MATLAB/Objective C/MUMPS" or
+                $language eq "PHP/Pascal";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
@@ -2232,6 +2238,10 @@ sub write_lang_def {                         # {{{1
             }
         }
         printf $OUT "    3rd_gen_scale %.2f\n", $rh_Scale_Factor->{$language};
+        if (defined $rh_EOL_Continuation_re->{$language}) {
+            printf $OUT "    end_of_line_continuation %s\n", 
+                $rh_EOL_Continuation_re->{$language};
+        }
     }
 
     $OUT->close;
@@ -2246,7 +2256,10 @@ sub read_lang_def {                          # {{{1
         $rh_Not_Code_Extension    , # out
         $rh_Not_Code_Filename     , # out
         $rh_Scale_Factor          , # out
+        $rh_EOL_Continuation_re   , # out
+        $rh_EOL_abc,
        ) = @_;
+
 
     print "-> read_lang_def($file)\n" if $opt_v > 2;
     my $IN = new IO::File $file, "r";
@@ -2287,6 +2300,9 @@ sub read_lang_def {                          # {{{1
 
         } elsif (/^    3rd_gen_scale\s+(\S+)\s*$/) {
             $rh_Scale_Factor->{$language} = $1;
+
+        } elsif (/^    end_of_line_continuation\s+(\S+)\s*$/) {
+            $rh_EOL_Continuation_re->{$language} = $1;
 
         } else {
             die "Unexpected data line $. of $file:\n$_\n";
@@ -2836,7 +2852,7 @@ sub call_counter {                           # {{{1
     my $total_lines    = scalar @lines;
 
     print_lines($file, "Original file:", \@lines) if $opt_print_filter_stages;
-    @lines = rm_blanks(\@lines, $language); # remove blank lines
+    @lines = rm_blanks(\@lines, $language, \%EOL_Continuation_re); # remove blank lines
     my $blank_lines = $total_lines - scalar @lines;
     print_lines($file, "Blank lines removed:", \@lines) 
         if $opt_print_filter_stages;
@@ -2954,14 +2970,22 @@ sub read_file  {                             # {{{1
     return @lines;
 } # 1}}}
 sub rm_blanks {                              # {{{1
-    my ($ra_in, $language) = @_;
+    my ($ra_in    ,
+        $language ,
+        $rh_EOL_continuation_re) = @_;
     print "-> rm_blanks(language=$language)\n" if $opt_v > 2;
 #print "rm_blanks: language = [$language]\n";
     my @out = ();
     if ($language eq "COBOL") {
         @out = remove_cobol_blanks($ra_in);
     } else {
-        @out = remove_matches($ra_in, '^\s*$'); # removes blank lines
+        # removes blank lines
+        if (defined $rh_EOL_continuation_re->{$language}) {
+            @out = remove_matches_2re($ra_in, '^\s*$', 
+                                      $rh_EOL_continuation_re->{$language}); 
+        } else {
+            @out = remove_matches($ra_in, '^\s*$');
+        }
     }
     print "<- rm_blanks(language=$language)\n" if $opt_v > 2;
     return @out;
@@ -3060,6 +3084,24 @@ sub remove_matches {                         # {{{1
 
     print "<- remove_matches\n" if $opt_v > 2;
 #print "remove_matches returning\n   ", join("\n   ", @save_lines), "\n";
+    return @save_lines;
+} # 1}}}
+sub remove_matches_2re {                     # {{{1
+    my ($ra_lines, # in
+        $pattern1, # in   Perl regex 1 (case insensitive) to match
+        $pattern2, # in   Perl regex 2 (case insensitive) to not match
+       ) = @_;
+    print "-> remove_matches_2re(pattern=$pattern1,$pattern2)\n" if $opt_v > 2;
+
+    my @save_lines = ();
+    foreach (@{$ra_lines}) {
+#chomp; print "remove_matches_2re [$pattern1] [$pattern2] [$_]\n";
+        next if m{$pattern1}i and !m{$pattern2};
+        push @save_lines, $_;
+    }
+
+    print "<- remove_matches_2re\n" if $opt_v > 2;
+#print "remove_matches_2re returning\n   ", join("\n   ", @save_lines), "\n";
     return @save_lines;
 } # 1}}}
 sub remove_inline {                          # {{{1
@@ -3440,6 +3482,7 @@ sub set_constants {                          # {{{1
         $rh_Not_Code_Filename     , # out
         $rh_Scale_Factor          , # out
         $rh_Known_Binary_Archives , # out
+        $rh_EOL_continuation_re   , # out
        ) = @_;
 # 1}}}
 %{$rh_Language_by_Extension} = (                 # {{{1
@@ -3969,6 +4012,44 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'MSBuild scripts'    => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
+    );
+# 1}}}
+%{$rh_EOL_continuation_re} = (                 # {{{1
+    'ActionScript'       =>     '\\\\$'           ,
+    'ASP'                =>     '\\\\$'         ,
+    'ASP.Net'            =>     '\\\\$'         ,
+    'Ada'                =>     '\\\\$'         ,
+    'awk'                =>     '\\\\$'         ,
+    'bc'                 =>     '\\\\$'         ,
+    'C'                  =>     '\\\\$'         ,
+    'C++'                =>     '\\\\$'         ,
+    'C/C++ Header'       =>     '\\\\$'         ,
+    'CMake'              =>     '\\\\$'         ,
+    'Cython'             =>     '\\\\$'         ,
+    'C#'                 =>     '\\\\$'         ,
+    'D'                  =>     '\\\\$'         ,
+    'Expect'             =>     '\\\\$'         ,
+    'Go'                 =>     '\\\\$'         ,
+    'Java'               =>     '\\\\$'         ,
+    'Javascript'         =>     '\\\\$'         ,
+    'Lua'                =>     '\\\\$'         ,
+    'make'               =>     '\\\\$'         ,
+    'MATLAB'             =>     '\.\.\.\s*$'    ,
+    'Objective C'        =>     '\\\\$'         ,
+    'Objective C++'      =>     '\\\\$'         ,
+    'Ocaml'              =>     '\\\\$'         ,
+    'Octave'             =>     '\.\.\.\s*$'    ,
+    'Patran Command Language'=> '\\\\$'         ,
+    'Python'             =>     '\\\\$'         ,
+    'Ruby'               =>     '\\\\$'         ,
+    'sed'                =>     '\\\\$'         ,
+    'Bourne Again Shell' =>     '\\\\$'         ,
+    'Bourne Shell'       =>     '\\\\$'         ,
+    'C Shell'            =>     '\\\\$'         ,
+    'Kermit'             =>     '\\\\$'         ,
+    'Korn Shell'         =>     '\\\\$'         ,
+    'Tcl/Tk'             =>     '\\\\$'         ,
+    'lex'                =>     '\\\\$'         ,
     );
 # 1}}}
 %{$rh_Not_Code_Extension}    = (                 # {{{1
