@@ -991,7 +991,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         @lines_L    = @original_minus_blanks_L;
 #print "2: scalar(lines_L)=", scalar @lines_L, "\n";
         @lines_L    = add_newlines(\@lines_L); # compensate for rm_comments()
-        @lines_L    = rm_comments( \@lines_L, $Lang_L, $file_L);
+        @lines_L    = rm_comments( \@lines_L, $Lang_L, $file_L,
+                                   \%EOL_Continuation_re);
 #print "3: scalar(lines_L)=", scalar @lines_L, "\n";
 
 #print "Diff blank removal R language= $Lang_R\n";
@@ -999,7 +1000,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                     = rm_blanks(  \@lines_R, $Lang_R, \%EOL_Continuation_re);
         @lines_R    = @original_minus_blanks_R;
         @lines_R    = add_newlines(\@lines_R); # taken away by rm_comments()
-        @lines_R    = rm_comments( \@lines_R, $Lang_R, $file_R);
+        @lines_R    = rm_comments( \@lines_R, $Lang_R, $file_R,
+                                   \%EOL_Continuation_re);
 
         my (@diff_LL, @diff_LR, );
         array_diff( $file_L                  ,   # in
@@ -2857,7 +2859,8 @@ sub call_counter {                           # {{{1
     print_lines($file, "Blank lines removed:", \@lines) 
         if $opt_print_filter_stages;
 
-    @lines = rm_comments(\@lines, $language, $file);
+    @lines = rm_comments(\@lines, $language, $file,
+                               \%EOL_Continuation_re);
 
     my $comment_lines = $total_lines - $blank_lines - scalar  @lines;
     if ($opt_strip_comments) {
@@ -2995,6 +2998,7 @@ sub rm_comments {                            # {{{1
         $language , # in
         $file     , # in (some language counters, eg Haskell, need 
                     #     access to the original file)
+        $rh_EOL_continuation_re , # in
        ) = @_;
     print "-> rm_comments(file=$file)\n" if $opt_v > 2;
     my @routines       = @{$Filters_by_Language{$language}};
@@ -3020,7 +3024,13 @@ sub rm_comments {                            # {{{1
 
         print_lines($file, "After $subroutine(@args)", \@lines) 
             if $opt_print_filter_stages;
-########@lines = remove_matches(\@lines, '^\s*$'); # then remove blank lines
+        # then remove blank lines which are created by comment removal
+        if (defined $rh_EOL_continuation_re->{$language}) {
+            @lines = remove_matches_2re(\@lines, '^\s*$',
+                                        $rh_EOL_continuation_re);
+        } else {
+            @lines = remove_matches(\@lines, '^\s*$');
+        }
         
         print_lines($file, "post $subroutine(@args) blank cleanup:", \@lines) 
             if $opt_print_filter_stages;
