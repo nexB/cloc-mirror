@@ -624,7 +624,13 @@ exit if (defined $opt_show_ext) or (defined $opt_show_lang);
 #print "after  glob have [", join(",", @ARGV), "]\n";
 
 if ($opt_sum_reports and $opt_diff) {
-    my @results = combine_diffs(\@ARGV);
+    my @results = ();
+    if ($opt_list_file) { # read inputs from the list file
+        my @list = read_list_file($opt_list_file);
+        @results = combine_diffs(\@list);
+    } else { # get inputs from the command line
+        @results = combine_diffs(\@ARGV);
+    }
     if ($opt_report_file) {
         write_file($opt_report_file, @results);
     } else {
@@ -635,10 +641,19 @@ if ($opt_sum_reports and $opt_diff) {
 if ($opt_sum_reports) {
     my %Results = ();
     foreach my $type( "by language", "by report file" ) {
-        my $found_lang = combine_results(\@ARGV, 
-                                          $type, 
-                                         \%{$Results{ $type }}, 
-                                         \%Filters_by_Language );
+        my $found_lang = undef; 
+        if ($opt_list_file) { # read inputs from the list file
+            my @list = read_list_file($opt_list_file);
+            $found_lang = combine_results(\@list, 
+                                           $type, 
+                                          \%{$Results{ $type }}, 
+                                          \%Filters_by_Language );
+        } else { # get inputs from the command line
+            $found_lang = combine_results(\@ARGV, 
+                                           $type, 
+                                          \%{$Results{ $type }}, 
+                                          \%Filters_by_Language );
+        }
         next unless %Results;
         my $end_time = time();
         my @results  = generate_report($VERSION, $end_time - $start_time,
