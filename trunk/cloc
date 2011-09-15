@@ -33,8 +33,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-# To do before 1.54 release:
-# o sum diff output
 my $VERSION = sprintf("%.2f", 1.54);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
@@ -855,6 +853,32 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                    \@files_removed                       , # out
                    \@file_pairs                          , # out
                    );
+    if (!@file_pairs) {
+        # Special case where all files were either added or deleted.
+        # In this case, one of these arrays will be empty: 
+        #   @files_added, @files_removed
+        # so loop over both to cover both cases.
+        my $status = @files_added ? 'added' : 'removed';
+        my $offset = @files_added ? 1       : 0        ;
+        foreach my $file (@files_added, @files_removed) {
+            my $Lang = $Language{$fh[$F+$offset]}{$file};
+            my ($all_line_count,
+                $blank_count   ,
+                $comment_count ,
+               ) = call_counter($file, $Lang, \@Errors);
+            my $code_count = $all_line_count-$blank_count-$comment_count;
+            if ($opt_by_file) {
+                $Delta_by_File{$file}{'code'   }{$status} += $code_count   ;
+                $Delta_by_File{$file}{'blank'  }{$status} += $blank_count  ;
+                $Delta_by_File{$file}{'comment'}{$status} += $comment_count;
+                $Delta_by_File{$file}{'lang'   }{$status}  = $Lang         ;
+                $Delta_by_File{$file}{'nFiles' }{$status} += 1             ;
+            }
+            $Delta_by_Language{$Lang}{'code'   }{$status} += $code_count   ;
+            $Delta_by_Language{$Lang}{'blank'  }{$status} += $blank_count  ;
+            $Delta_by_Language{$Lang}{'comment'}{$status} += $comment_count;
+        }
+    }
    #use Data::Dumper::Simple;
    #use Data::Dumper;
    #print Dumper(\@files_added, \@files_removed, \@file_pairs);
@@ -7032,7 +7056,20 @@ sub align_by_pairs {                         # {{{1
 
     my @files_L = sort keys %{$rh_file_list_L};
     my @files_R = sort keys %{$rh_file_list_R};
-    return () unless @files_L and @files_R;
+    return () unless @files_L or  @files_R;  # at least one must have stuff
+    if      ( @files_L and !@files_R) {
+        # left side has stuff, right side is empty; everything deleted
+        @{$ra_added   }     = ();
+        @{$ra_removed }     = @files_L;
+        @{$ra_compare_list} = ();
+        return;
+    } elsif (!@files_L and  @files_R) {
+        # left side is empty, right side has stuff; everything added
+        @{$ra_added   }     = @files_R;
+        @{$ra_removed }     = ();
+        @{$ra_compare_list} = ();
+        return;
+    }
 #use Data::Dumper::Simple;
 #print Dumper("align_by_pairs", @files_L, @files_R);
 #die;
