@@ -2568,7 +2568,7 @@ sub files {                                  # {{{1
             # newer versions (1.13) no longer do; have to correct for this
             my $dir = $File::Find::dir;
                $dir = "./$dir" unless $dir =~ m{^/};
-            if ($dir =~ m{/$skip_dir(/|$)} ) {
+            if ($dir =~ m{/\Q$skip_dir\E(/|$)} ) {
                 $Ignored{$File::Find::name} = "--exclude-dir=$skip_dir";
                 $return = 1;
                 last;
