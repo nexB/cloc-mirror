@@ -163,6 +163,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              drop noticably.
 
  ${BB}Processing Options${NN}
+   --autoconf                Count .in files (as processed by GNU autoconf) of 
+                             recognized languages.
    --by-file                 Report results for every source file encountered.
    --by-file-by-lang         Report results for every source file encountered
                              in addition to reporting by language.
@@ -389,6 +391,7 @@ my (
     $opt_ignore_whitespace    ,
     $opt_ignore_case          ,
     $opt_follow_links         ,
+    $opt_autoconf             ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -446,6 +449,7 @@ my $getopt_success = GetOptions(
    "ignore_whitespace|ignore-whitespace"     => \$opt_ignore_whitespace   ,
    "ignore_case|ignore-case"                 => \$opt_ignore_case         ,
    "follow_links|follow-links"               => \$opt_follow_links        ,
+   "autoconf"                                => \$opt_autoconf            ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -2718,6 +2722,9 @@ sub classify_file {                          # {{{1
 
     my $look_at_first_line = 0;
     my $file = basename $full_file; 
+    if ($opt_autoconf and $file =~ /\.in$/) {
+       $file =~ s/\.in$//;
+    }
     return $language if $Not_Code_Filename{$file}; # (unknown)
     return $language if $file =~ m{~$}; # a temp edit file (unknown)
     if (defined $Language_by_File{$file}) {
