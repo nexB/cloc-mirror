@@ -1482,6 +1482,9 @@ sub diff_report     {                        # {{{1
     if ($opt_xml or $opt_yaml) {
         print "<- diff_report\n" if $opt_v > 2;
         return diff_xml_yaml_report(@_) 
+    } elsif ($opt_csv) {
+        print "<- diff_report\n" if $opt_v > 2;
+        return diff_csv_report(@_) 
     }
 
     my ($version    , # in
@@ -1796,6 +1799,66 @@ sub diff_xml_yaml_report {                   # {{{1
     }
     write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
     print "<- diff_xml_yaml_report\n" if $opt_v > 2;
+    return @results;
+} # 1}}}
+sub diff_csv_report {                        # {{{1
+    # returns an array of lines containing the results
+    my ($version    , # in
+        $elapsed_sec, # in
+        $report_type, # in  "by language" | "by report file" | "by file"
+        $rhhh_count , # in  count{TYPE}{nFiles|code|blank|comment}{a|m|r|s}
+        $rh_scale   , # in  unused
+       ) = @_;
+    print "-> diff_csv_report\n" if $opt_v > 2;
+
+#use Data::Dumper;
+#print "diff_csv_report: ", Dumper($rhhh_count), "\n";
+#die;
+    my @results       = ();
+    my $languages     = ();
+
+    my $data_line   = "";
+    my $BY_LANGUAGE = 0;
+    my $BY_FILE     = 0;
+    if      ($report_type eq "by language") {
+        $BY_LANGUAGE  = 1;
+    } elsif ($report_type eq "by file")     {
+        $BY_FILE      = 1;
+    }
+
+    $elapsed_sec = 0.5 unless $elapsed_sec;
+
+    my $line = "Language, ";
+       $line = "File, " if $BY_FILE;
+    foreach my $item (qw(files blank comment code)) {
+        next if $BY_FILE and $item eq 'files';
+        foreach my $symbol qw( == != + - ) {
+            $line .= "$symbol $item, ";
+        }
+    }
+    $line .= "\"$URL v $version T=$elapsed_sec s\"";
+    push @results, $line;
+
+    foreach my $lang_or_file (sort {
+                                 $rhhh_count->{$b}{'code'} <=>
+                                 $rhhh_count->{$a}{'code'}
+                               }
+                          keys %{$rhhh_count}) {
+        $line = "$lang_or_file, ";
+        foreach my $item (qw(nFiles blank comment code)) {
+            next if $BY_FILE and $item eq 'nFiles';
+            foreach my $symbol (qw(same modified added removed)) {
+                if (defined $rhhh_count->{$lang_or_file}{$item}{$symbol}) {
+                    $line .= "$rhhh_count->{$lang_or_file}{$item}{$symbol}, ";
+                } else {
+                    $line .= "0, ";
+                }
+            }
+        }
+        push @results, $line;
+    }
+
+    print "<- diff_csv_report\n" if $opt_v > 2;
     return @results;
 } # 1}}}
 sub generate_sql    {                        # {{{1
