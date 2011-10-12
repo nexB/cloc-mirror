@@ -319,6 +319,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --sql-append              Append SQL insert statements to the file specified
                              by --sql and do not generate table creation 
                              statements.  Only valid with the --sql option.
+   --sum-one                 For plain text reports, show the SUM: output line 
+                             even if only one input file is processed.
    --xml                     Write the results in XML.
    --xsl=<file>              Reference <file> as an XSL stylesheet within
                              the XML output.  If <file> is 1 (numeric one), 
@@ -392,6 +394,7 @@ my (
     $opt_ignore_case          ,
     $opt_follow_links         ,
     $opt_autoconf             ,
+    $opt_sum_one              ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -450,6 +453,7 @@ my $getopt_success = GetOptions(
    "ignore_case|ignore-case"                 => \$opt_ignore_case         ,
    "follow_links|follow-links"               => \$opt_follow_links        ,
    "autoconf"                                => \$opt_autoconf            ,
+   "sum_one|sum-one"                         => \$opt_sum_one             ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -2227,6 +2231,7 @@ sub generate_report {                        # {{{1
             push @results, $data_line;
         }
     }
+
     my $avg_scale = 1;  # weighted average of scale factors
        $avg_scale = sprintf("%.2f", $sum_scaled / $sum_code) 
             if $sum_code and $opt_3;
@@ -2256,8 +2261,7 @@ sub generate_report {                        # {{{1
 
         if (!$opt_by_file_by_lang or $ALREADY_SHOWED_XML_SECTION) {
     	    push @results, "</results>";
-        }
-        else {
+        } else {
             $ALREADY_SHOWED_XML_SECTION = 1;
         }
     } elsif ($opt_yaml) {
@@ -2273,7 +2277,7 @@ sub generate_report {                        # {{{1
     } elsif ($opt_csv) {
         # do nothing
     } else {
- 
+
         if ($BY_FILE) {
             $data_line  = sprintf "%-${spacing_0}s ", "SUM:"  ;
         } else {
@@ -2287,8 +2291,8 @@ sub generate_report {                        # {{{1
         $data_line .= sprintf $Format{'5'}{$Style},
             $avg_scale   ,
             $sum_scaled if $opt_3;
-        push @results, $hyphen_line if $sum_files > 1;
-        push @results, $data_line   if $sum_files > 1;
+        push @results, $hyphen_line if $sum_files > 1 or $opt_sum_one;
+        push @results, $data_line   if $sum_files > 1 or $opt_sum_one;
         push @results, $hyphen_line;
     }
     write_xsl_file() if $opt_xsl and $opt_xsl eq $CLOC_XSL;
