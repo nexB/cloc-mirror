@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.54);
+my $VERSION = sprintf("%.2f", 1.55);
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -1570,8 +1570,8 @@ sub diff_report     {                        # {{{1
     }
 
     my $header_line  = sprintf "%s v %4.2f", $URL, $version;
-my $sum_files=1;
-my $sum_lines=1;
+    my $sum_files    = 1;
+    my $sum_lines    = 1;
        $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
@@ -1598,16 +1598,11 @@ my $sum_lines=1;
         "blank"         ,
         "comment"       ,
         "code";
+
     if ($Style eq "txt") {
         push @results, $data_line;
         push @results, $hyphen_line;
-    } elsif ($Style eq "xml") {
-        if ($BY_FILE) {
-            push @results, "<files>";
-        } else {
-            push @results, "<languages>";
-        }
-    } # here=
+    }
 
     foreach my $lang_or_file (sort {
                                  $rhhh_count->{$b}{'code'} <=>
@@ -1736,9 +1731,12 @@ sub diff_xml_yaml_report {                   # {{{1
         $BY_FILE      = 1;
     }
 
-    push @results,
-          xml_or_yaml_header($URL, $version, $elapsed_sec, 
-                             $sum_files, $sum_lines);
+    if (!$ALREADY_SHOWED_HEADER) {
+        push @results,
+              xml_or_yaml_header($URL, $version, $elapsed_sec, 
+                                 $sum_files, $sum_lines);
+        $ALREADY_SHOWED_HEADER = 1;
+    }
 
     foreach my $S (qw(same modified added removed)) {
         if ($opt_xml) {
@@ -1969,6 +1967,7 @@ sub output_header   {                        # {{{1
                             $opt_xsl . '"?>' if $opt_xsl;
             push @R, "<results>";
             push @R, "<header>$header_line</header>";
+            $ALREADY_SHOWED_XML_SECTION = 1;
         }
         if ($BY_FILE) {
             push @R, "<files>";
@@ -2081,8 +2080,16 @@ sub generate_report {                        # {{{1
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
     if ($opt_xml or $opt_yaml) {
-        push @results, xml_or_yaml_header($URL, $version, $elapsed_sec, 
-                                          $sum_files, $sum_lines);
+        if (!$ALREADY_SHOWED_HEADER) {
+            push @results, xml_or_yaml_header($URL, $version, $elapsed_sec, 
+                                              $sum_files, $sum_lines);
+            $ALREADY_SHOWED_HEADER = 1;
+        }
+        if ($BY_FILE) {
+            push @results, "<files>";
+        } else {
+            push @results, "<languages>";
+        }
     } else {
         push @results, output_header($header_line, $hyphen_line, $BY_FILE);
     }
@@ -2184,9 +2191,9 @@ sub generate_report {                        # {{{1
                 $data_line.=' language="' . $lang . '" ';
             }
             if ($BY_FILE) {
-                push @results, "<file " . $data_line . "/>";
+                push @results, "  <file " . $data_line . "/>";
             } else {
-                push @results, "<language " . $data_line . "/>";
+                push @results, "  <language " . $data_line . "/>";
             }
         } elsif ($opt_yaml) {
             push @results,$lang_or_file . ":";
@@ -2236,17 +2243,17 @@ sub generate_report {                        # {{{1
         $data_line .= sprintf $Format{'5'}{$Style},
             $avg_scale   ,
             $sum_scaled  if $opt_3;
-        push @results, "<total " . $data_line . "/>";
-        
+        push @results, "  <total " . $data_line . "/>";
+
         if ($BY_FILE) {
             push @results, "</files>";
         } else {
             foreach my $language (keys %{$languages}) {
-                push @results, '<language name="' . $language . '"/>';
+                push @results, '  <language name="' . $language . '"/>';
             }
             push @results, "</languages>";
         }
-        
+
         if (!$opt_by_file_by_lang or $ALREADY_SHOWED_XML_SECTION) {
     	    push @results, "</results>";
         }
