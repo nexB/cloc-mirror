@@ -7981,7 +7981,6 @@ sub combine_diffs {                          # {{{1
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
 my %expect_files = ();  # really_is_expect()
-my %pascal_files = ();  # really_is_pascal(), really_is_incpascal()
 my %php_files    = ();  # really_is_php()
 sub really_is_lex {                          # {{{1
 # Given filename, returns TRUE if its contents really is lex.
@@ -8135,9 +8134,6 @@ sub really_is_pascal {                       # {{{1
  my $found_terminating_end = 0;
  my $has_begin = 0;
 
- # Return cached result, if available:
- if ($pascal_files{$filename}) { return pascal_files{$filename};}
-
  open(PASCAL_FILE, "<$filename") ||
       die "Can't open $filename to determine if it's pascal.\n";
  while(<PASCAL_FILE>) {
@@ -8172,8 +8168,6 @@ sub really_is_pascal {                       # {{{1
       ( $has_program && $has_begin && $found_terminating_end ) )
           {$is_pascal = 1;}
 
- $pascal_files{$filename} = $is_pascal; # Store result in cache.
-
  return $is_pascal;
 } # 1}}}
 sub really_is_incpascal {                    # {{{1
@@ -8188,8 +8182,7 @@ sub really_is_incpascal {                    # {{{1
 # 2. Any usual reserverd word is found (program, unit, const, begin...)
 
  # If the general routine for Pascal files works, we have it
- if (&really_is_pascal ($filename)) { 
-   $pascal_files{$filename} = 1;
+ if (really_is_pascal($filename)) { 
    return 1;
  }
 
@@ -8217,7 +8210,6 @@ sub really_is_incpascal {                    # {{{1
  }
 
  close(PASCAL_FILE);
- $pascal_files{$filename} = $is_pascal; # Store result in cache.
  return $is_pascal;
 } # 1}}}
 sub really_is_php {                          # {{{1
