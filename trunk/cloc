@@ -1839,7 +1839,7 @@ sub diff_csv_report {                        # {{{1
        $line = "File, " if $BY_FILE;
     foreach my $item (qw(files blank comment code)) {
         next if $BY_FILE and $item eq 'files';
-        foreach my $symbol qw( == != + - ) {
+        foreach my $symbol ( '==', '!=', '+', '-', ) {
             $line .= "$symbol $item, ";
         }
     }
