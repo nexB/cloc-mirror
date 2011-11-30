@@ -2335,7 +2335,8 @@ sub write_lang_def {                         # {{{1
 
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
         next if $language eq "MATLAB/Objective C/MUMPS" or
-                $language eq "PHP/Pascal";
+                $language eq "PHP/Pascal"               or
+                $language eq "Lisp/OpenCL";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
@@ -2470,6 +2471,10 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'MATLAB'}}     , "m";
         push @{$extensions{'MUMPS'}}      , "m";
         delete $extensions{'MATLAB/Objective C/MUMPS'};
+    } elsif ($language =~ /^(Lisp|OpenCL)$/i) {
+        push @{$extensions{'Lisp'}}  , "cl";
+        push @{$extensions{'OpenCL'}}, "cl";
+        delete $extensions{'Lisp/OpenCL'};
     }
 
     if (%extensions) {
@@ -2788,6 +2793,8 @@ sub classify_file {                          # {{{1
                 } else {
                     return $language; # (unknown)
                 }
+            } elsif ($Language_by_Extension{$extension} eq 'Lisp/OpenCL') {
+                return Lisp_or_OpenCL($full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
                 # file at least roughly resembles PHP
@@ -3657,7 +3664,7 @@ sub set_constants {                          # {{{1
             'ccs'         => 'CCS'                   ,
             'cfc'         => 'ColdFusion CFScript'   ,
             'cfm'         => 'ColdFusion'            ,
-            'cl'          => 'Lisp'                  ,
+            'cl'          => 'Lisp/OpenCL'           ,
             'cls'         => 'Visual Basic'          ,
             'CMakeLists.txt' => 'CMake'              ,
             'cob'         => 'COBOL'                 ,
@@ -3991,6 +3998,7 @@ sub set_constants {                          # {{{1
                             ],
     'JCL'                => [   [ 'remove_jcl_comments' ,          ], ],
     'Lisp'               => [   [ 'remove_matches'      , '^\s*;'  ], ],
+    'Lisp/OpenCL'        => [ [ 'die' ,          ], ], # never called
     'LiveLink OScript'   => [   [ 'remove_matches'      , '^\s*//' ], ],
 #   'Lua'                => [   [ 'call_regexp_common'  , 'lua'    ], ],
     'Lua'                => [   [ 'remove_matches'      , '^\s*\-\-' ], ],
@@ -4017,6 +4025,11 @@ sub set_constants {                          # {{{1
                             ], 
     'Ocaml'              => [   
                                 [ 'call_regexp_common'  , 'Pascal' ], 
+                            ],
+    'OpenCL'             => [   
+                                [ 'remove_matches'      , '^\s*//' ], # C99
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ], # C99
                             ],
     'PHP/Pascal'               => [ [ 'die' ,          ], ], # never called
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
@@ -4893,6 +4906,7 @@ sub set_constants {                          # {{{1
 'Ruby HTML' => 4.00,
 'sed'     => 4.00,
 'Lua'     => 4.00,
+'OpenCL'  => 1.50,
 );
 # 1}}}
 %{$rh_Known_Binary_Archives} = (                 # {{{1
@@ -6704,6 +6718,38 @@ printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points,
         ${$rs_language} = "Objective C";
     }
 
+} # 1}}}
+sub Lisp_or_OpenCL {                         # {{{1
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+       ) = @_;
+
+    print "-> Lisp_or_OpenCL\n" if $opt_v > 2;
+
+    my $lang = undef;
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
+        return $lang;
+    }
+    my $lisp_points   = 0;
+    my $opcl_points = 0;
+    while (<$IN>) {
+        ++$lisp_points if  /^\s*;/;
+        ++$lisp_points if  /\((def|eval|require|export|let|loop|dec|format)/;
+        ++$opcl_points if  /^\s*(int|float|const|{)/;
+    }
+    $IN->close;
+    # print "lisp_points=$lisp_points   opcl_points=$opcl_points\n";
+    if ($lisp_points > $opcl_points) {
+        $lang = "Lisp";
+    } else {
+        $lang = "OpenCL";
+    }
+
+    print "<- Lisp_or_OpenCL\n" if $opt_v > 2;
+    return $lang;
 } # 1}}}
 sub html_colored_text {                      # {{{1
     # http://www.pagetutor.com/pagetutor/makapage/pics/net216-2.gif
