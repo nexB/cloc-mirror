@@ -1482,7 +1482,6 @@ sub combine_results {                        # {{{1
     }
     print "<- combine_results\n" if $opt_v > 2;
     return $found_language;
-
 } # 1}}}
 sub diff_report     {                        # {{{1
     # returns an array of lines containing the results
@@ -1655,6 +1654,7 @@ sub diff_report     {                        # {{{1
 } # 1}}}
 sub xml_or_yaml_header {                     # {{{1
     my ($URL, $version, $elapsed_sec, $sum_files, $sum_lines) = @_;
+    print "-> xml_or_yaml_header\n" if $opt_v > 2;
     my $header      = "";
     my $file_rate   = $sum_files/$elapsed_sec;
     my $line_rate   = $sum_lines/$elapsed_sec;
@@ -1691,6 +1691,7 @@ header :
         $header .= "\n  report_file        : $opt_report_file"
             if $opt_report_file;
     }
+    print "<- xml_or_yaml_header\n" if $opt_v > 2;
     return $header;
 } # 1}}}
 sub diff_xml_yaml_report {                   # {{{1
@@ -2088,7 +2089,9 @@ sub generate_report {                        # {{{1
         if (!$ALREADY_SHOWED_HEADER) {
             push @results, xml_or_yaml_header($URL, $version, $elapsed_sec, 
                                               $sum_files, $sum_lines);
-            $ALREADY_SHOWED_HEADER = 1;
+            $ALREADY_SHOWED_HEADER = 1 unless $opt_sum_reports;
+            # --sum-reports yields two xml or yaml files, one by
+            # language and one by report file, each of which needs a header
         }
         if ($BY_FILE) {
             push @results, "<files>";
