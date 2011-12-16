@@ -1653,7 +1653,7 @@ sub diff_report     {                        # {{{1
     return @results;
 } # 1}}}
 sub xml_or_yaml_header {                     # {{{1
-    my ($URL, $version, $elapsed_sec, $sum_files, $sum_lines) = @_;
+    my ($URL, $version, $elapsed_sec, $sum_files, $sum_lines, $by_file) = @_;
     print "-> xml_or_yaml_header\n" if $opt_v > 2;
     my $header      = "";
     my $file_rate   = $sum_files/$elapsed_sec;
@@ -1661,8 +1661,17 @@ sub xml_or_yaml_header {                     # {{{1
     my $type        = ""; 
        $type        = "diff_" if $opt_diff;
     my $report_file = "";
-       $report_file = "  <report_file>$opt_report_file</report_file>"
-       if $opt_report_file;
+    if ($opt_report_file) {
+        if ($opt_sum_reports) {
+            if ($by_file) {
+                $report_file = "  <report_file>$opt_report_file.file</report_file>"
+            } else {
+                $report_file = "  <report_file>$opt_report_file.lang</report_file>"
+            }
+        } else {
+            $report_file = "  <report_file>$opt_report_file</report_file>"
+        }
+    }
     if ($opt_xml) {
         $header = "<?xml version=\"1.0\"?>";
         $header .= "\n<?xml-stylesheet type=\"text/xsl\" href=\"" . $opt_xsl . "\"?>" if $opt_xsl;
@@ -1688,8 +1697,17 @@ header :
   n_lines            : $sum_lines
   files_per_second   : $file_rate
   lines_per_second   : $line_rate";
-        $header .= "\n  report_file        : $opt_report_file"
-            if $opt_report_file;
+        if ($opt_report_file) {
+            if ($opt_sum_reports) {
+                if ($by_file) {
+                    $header .= "\n  report_file        : $opt_report_file.file"
+                } else {
+                    $header .= "\n  report_file        : $opt_report_file.lang"
+                }
+            } else {
+                $header .= "\n  report_file        : $opt_report_file";
+            }
+        }
     }
     print "<- xml_or_yaml_header\n" if $opt_v > 2;
     return $header;
@@ -1740,7 +1758,7 @@ sub diff_xml_yaml_report {                   # {{{1
     if (!$ALREADY_SHOWED_HEADER) {
         push @results,
               xml_or_yaml_header($URL, $version, $elapsed_sec, 
-                                 $sum_files, $sum_lines);
+                                 $sum_files, $sum_lines, $BY_FILE);
         $ALREADY_SHOWED_HEADER = 1;
     }
 
@@ -2076,6 +2094,9 @@ sub generate_report {                        # {{{1
     } elsif ($report_type eq "by file")     {
         $first_column = "File";
         $BY_FILE      = 1;
+    } elsif ($report_type eq "by report file")     {
+        $first_column = "File";
+        $BY_FILE      = 1;
     } else {
         $first_column = "Report File";
     }
@@ -2088,15 +2109,17 @@ sub generate_report {                        # {{{1
     if ($opt_xml or $opt_yaml) {
         if (!$ALREADY_SHOWED_HEADER) {
             push @results, xml_or_yaml_header($URL, $version, $elapsed_sec, 
-                                              $sum_files, $sum_lines);
+                                              $sum_files, $sum_lines, $BY_FILE);
             $ALREADY_SHOWED_HEADER = 1 unless $opt_sum_reports;
             # --sum-reports yields two xml or yaml files, one by
             # language and one by report file, each of which needs a header
         }
-        if ($BY_FILE) {
-            push @results, "<files>";
-        } else {
-            push @results, "<languages>";
+        if ($opt_xml) {
+            if ($BY_FILE) {
+                push @results, "<files>";
+            } else {
+                push @results, "<languages>";
+            }
         }
     } else {
         push @results, output_header($header_line, $hyphen_line, $BY_FILE);
@@ -2145,6 +2168,7 @@ sub generate_report {                        # {{{1
                                  $rhh_count->{$a}{'code'}
                                }
                           keys %{$rhh_count}) {
+        next if $lang_or_file eq "by report file";
         my ($factor, $scaled);
         if ($BY_LANGUAGE or $BY_FILE) {
             $factor = 1;
@@ -2155,6 +2179,8 @@ sub generate_report {                        # {{{1
                     warn "No scale factor for $lang_or_file; using 1.00";
                 }
             } else { # by individual code file
+                next unless defined $rhh_count->{$lang_or_file}{'lang'};
+                next unless defined $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
                 $factor = $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
             }
             $scaled = $factor*$rhh_count->{$lang_or_file}{'code'};
