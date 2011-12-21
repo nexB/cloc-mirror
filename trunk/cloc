@@ -1502,6 +1502,7 @@ sub diff_report     {                        # {{{1
         $rh_scale   , # in
        ) = @_;
 
+#use Data::Dumper;
 #print "diff_report: ", Dumper($rhhh_count), "\n";
     my @results       = ();
 
@@ -2673,7 +2674,8 @@ sub remove_duplicate_files {                 # {{{1
     print "<- remove_duplicate_files\n" if $opt_v > 2;
 } # 1}}}
 sub files {                                  # {{{1
-    # invoked by File::Find's find()   Populates global variable @file_list
+    # invoked by File::Find's find()   Populates global variables,
+    # @file_list, %Ignored
     if ($opt_exclude_dir or $opt_exclude_list_file) {
         my $return = 0;
         foreach my $skip_dir (keys %Exclude_Dir) {
@@ -2696,8 +2698,9 @@ sub files {                                  # {{{1
     if ($opt_not_match_d) {	return if     $Dir =~ m{$opt_not_match_d} }
 
     my $nBytes = -s     $_ ;
-    if (!$nBytes and $opt_v > 5) {
-        printf "files(%s)  zero size\n", $File::Find::name;
+    if (!$nBytes) {
+        $Ignored{$File::Find::name} = 'zero sized file';
+        printf "files(%s)  zero size\n", $File::Find::name if $opt_v > 5;
     }
     return unless $nBytes  ; # attempting other tests w/pipe or socket will hang
     my $is_dir = is_dir($_);
@@ -3121,8 +3124,11 @@ sub read_file  {                             # {{{1
     if (defined $IN) {
         @lines = <$IN>;
         $IN->close;
-        # Some files don't end with a new line.  Force this:
-        $lines[$#lines] .= "\n" unless $lines[$#lines] =~ m/\n$/;
+        if ($lines[$#lines]) {  # test necessary for zero content files
+                                # (superfluous?)
+            # Some files don't end with a new line.  Force this:
+            $lines[$#lines] .= "\n" unless $lines[$#lines] =~ m/\n$/;
+        }
     } else {
         warn "Unable to read $file\n";
     }
