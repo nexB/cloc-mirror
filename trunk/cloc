@@ -862,6 +862,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
                    \@files_removed                       , # out
                    \@file_pairs                          , # out
                    );
+    my %already_counted = (); # already_counted{ filename } = 1
+                              
     if (!@file_pairs) {
         # Special case where all files were either added or deleted.
         # In this case, one of these arrays will be empty: 
@@ -870,11 +872,14 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         my $status = @files_added ? 'added' : 'removed';
         my $offset = @files_added ? 1       : 0        ;
         foreach my $file (@files_added, @files_removed) {
+            next unless defined $Language{$fh[$F+$offset]}{$file};
             my $Lang = $Language{$fh[$F+$offset]}{$file};
+            next if $Lang eq '(unknown)';
             my ($all_line_count,
                 $blank_count   ,
                 $comment_count ,
                ) = call_counter($file, $Lang, \@Errors);
+            $already_counted{$file} = 1;
             my $code_count = $all_line_count-$blank_count-$comment_count;
             if ($opt_by_file) {
                 $Delta_by_File{$file}{'code'   }{$status} += $code_count   ;
@@ -898,6 +903,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
     push @alignment, sprintf "Files added: %d\n", scalar @files_added
         if $opt_diff_alignment;
     foreach my $f (@files_added) {
+        next if $already_counted{$f};
 #printf "%10s -> %s\n", $f, $Language{$fh[$F+1]}{$f};
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
@@ -930,6 +936,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
     push @alignment, sprintf "Files removed: %d\n", scalar @files_removed
         if $opt_diff_alignment;
     foreach my $f (@files_removed) {
+        next if $already_counted{$f};
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
         next if $Language{$fh[$F  ]}{$f} eq "(unknown)";
@@ -1154,6 +1161,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #die; here=  need to save original line number in diff result for html display
 
         # step 5: compute difference in blank lines (kind of pointless)
+        next if $Lang_L eq '(unknown)' or 
+                $Lang_R eq '(unknown)';
         my ($all_line_count_L,
             $blank_count_L   ,
             $comment_count_L ,
