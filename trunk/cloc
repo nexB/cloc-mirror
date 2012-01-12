@@ -2838,8 +2838,16 @@ sub classify_file {                          # {{{1
                 return Lisp_or_OpenCL($full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
-                # file at least roughly resembles PHP
-                if (really_is_php($full_file)) {
+                # file at least roughly resembles PHP.  Alternatively,
+                # if the user forces the issue, do the count.
+                my $force_smarty = 0;
+                foreach (@opt_force_lang) {
+                    if (lc($_) eq "smarty,tpl") {
+                        $force_smarty = 1; 
+                        last;
+                    }
+                }
+                if (really_is_php($full_file) or $force_smarty) {
                     return 'Smarty';
                 } else {
                     return $language; # (unknown)
