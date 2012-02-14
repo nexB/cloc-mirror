@@ -3718,6 +3718,7 @@ sub set_constants {                          # {{{1
             'cfc'         => 'ColdFusion CFScript'   ,
             'cfm'         => 'ColdFusion'            ,
             'cl'          => 'Lisp/OpenCL'           ,
+            'clj'         => 'Clojure'               ,
             'cls'         => 'Visual Basic'          ,
             'CMakeLists.txt' => 'CMake'              ,
             'cob'         => 'COBOL'                 ,
@@ -3951,6 +3952,7 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
+    'Clojure'            => [   [ 'remove_matches'      , '^\s*;'  ], ],
     'CMake'              => [   
                                 [ 'remove_matches'      , '^\s*#'  ],
                                 [ 'remove_inline'       , '#.*$'   ], 
@@ -4486,6 +4488,7 @@ sub set_constants {                          # {{{1
     'clipper'                      =>   2.05,
     'clipper db'                   =>   2.00,
     'clos'                         =>   3.81,
+    'Clojure'                      =>   1.25,
     'clout'                        =>   2.00,
     'CMake'                        =>   1.00,
     'cms2'                         =>   0.75,
