@@ -121,9 +121,9 @@ my $ON_WINDOWS = 0;
    $ON_WINDOWS = 1 if ($^O =~ /^MSWin/) or ($^O eq "Windows_NT");
 if ($ON_WINDOWS and $ENV{'SHELL'}) {
     if ($ENV{'SHELL'} =~ m{^/}) {
-        $ON_WINDOWS = 1;  # make Cygwin look like Unix
+        $ON_WINDOWS = 0;  # make Cygwin look like Unix
     } else {
-        $ON_WINDOWS = 0;  # MKS defines $SHELL but still acts like Windows
+        $ON_WINDOWS = 1;  # MKS defines $SHELL but still acts like Windows
     }
 }
 
