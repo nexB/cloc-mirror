@@ -3690,6 +3690,7 @@ sub set_constants {                          # {{{1
             'adb'         => 'Ada'                   ,
             'ads'         => 'Ada'                   ,
             'adso'        => 'ADSO/IDSM'             ,
+            'ahk'         => 'AutoHotkey'            ,
             'am'          => 'make'                  ,
             'ample'       => 'AMPLE'                 ,
             'as'          => 'ActionScript'          ,
@@ -3927,6 +3928,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'remove_inline'       , ';.*$'   ],
+                            ],
+    'AutoHotkey'         => [   
+                                [ 'remove_matches'      , '^\s*;'  ],
                                 [ 'remove_inline'       , ';.*$'   ],
                             ],
     'awk'                => [   
@@ -4447,6 +4452,7 @@ sub set_constants {                          # {{{1
     'Assembly (macro)'             =>   0.51,
     'associative default'          =>   1.25,
     'autocoder'                    =>   0.25,
+    'AutoHotkey'                   =>   1.29,
     'awk'                          =>   3.81,
     'aztec c'                      =>   0.63,
     'balm'                         =>   0.75,
