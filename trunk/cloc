@@ -128,9 +128,9 @@ if ($ON_WINDOWS and $ENV{'SHELL'}) {
 }
 
 my $NN     = chr(27) . "[0m";  # normal
-   $NN     = "" if $ON_WINDOWS or !(-t STDOUT); # -t STDOUT:  is it a terminal?
+   $NN     = "" if $ON_WINDOWS or !(-t STDERR); # -t STDERR:  is it a terminal?
 my $BB     = chr(27) . "[1m";  # bold
-   $BB     = "" if $ON_WINDOWS or !(-t STDOUT);
+   $BB     = "" if $ON_WINDOWS or !(-t STDERR);
 my $script = basename $0;
 my $usage  = "
 Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
