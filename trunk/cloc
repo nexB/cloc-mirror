@@ -3725,6 +3725,7 @@ sub set_constants {                          # {{{1
             'CMakeLists.txt' => 'CMake'              ,
             'cob'         => 'COBOL'                 ,
             'COB'         => 'COBOL'                 ,
+            'coffee'      => 'CoffeeScript'          ,
             'config'      => 'ASP.Net'               ,
             'cpp'         => 'C++'                   ,
             'cs'          => 'C#'                    ,
@@ -3978,6 +3979,10 @@ sub set_constants {                          # {{{1
     'CCS'                => [   [ 'call_regexp_common'  , 'C'      ], ],
     'CSS'                => [   [ 'call_regexp_common'  , 'C'      ], ],
     'COBOL'              => [   [ 'remove_cobol_comments',         ], ],
+    'CoffeeScript'       => [   
+                                [ 'remove_matches'      , '^\s*#'  ],
+                                [ 'remove_inline'       , '#.*$'   ], 
+                            ],
     'ColdFusion'         => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'ColdFusion CFScript'=> [
@@ -4508,6 +4513,7 @@ sub set_constants {                          # {{{1
     'cobra'                        =>   4.00,
     'codecenter'                   =>   2.22,
     'cofac'                        =>   2.22,
+    'CoffeeScript'                 =>   2.00,
     'cogen'                        =>   2.22,
     'cognos'                       =>   2.22,
     'cogo'                         =>   1.13,
