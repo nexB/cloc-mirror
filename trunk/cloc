@@ -1619,6 +1619,10 @@ sub diff_report     {                        # {{{1
         push @results, $hyphen_line;
     }
 
+####foreach my $lang_or_file (keys %{$rhhh_count}) {
+####    $rhhh_count->{$lang_or_file}{'code'} = 0 unless 
+####        defined $rhhh_count->{$lang_or_file}{'code'};
+####}
     foreach my $lang_or_file (sort {
                                  $rhhh_count->{$b}{'code'} <=>
                                  $rhhh_count->{$a}{'code'}
@@ -1779,6 +1783,10 @@ sub diff_xml_yaml_report {                   # {{{1
         } elsif ($opt_yaml) {
             push @results, "$S :";
         }
+########foreach my $lang_or_file (keys %{$rhhh_count}) {
+########    $rhhh_count->{$lang_or_file}{'code'} = 0 unless 
+########        defined $rhhh_count->{$lang_or_file}{'code'};
+########}
         foreach my $lang_or_file (sort {
                                      $rhhh_count->{$b}{'code'} <=>
                                      $rhhh_count->{$a}{'code'}
@@ -1876,6 +1884,10 @@ sub diff_csv_report {                        # {{{1
     $line .= "\"$URL v $version T=$elapsed_sec s\"";
     push @results, $line;
 
+    foreach my $lang_or_file (keys %{$rhhh_count}) {
+        $rhhh_count->{$lang_or_file}{'code'}{'added'} = 0 unless 
+            defined $rhhh_count->{$lang_or_file}{'code'};
+    }
     foreach my $lang_or_file (sort {
                                  $rhhh_count->{$b}{'code'} <=>
                                  $rhhh_count->{$a}{'code'}
@@ -2174,6 +2186,10 @@ sub generate_report {                        # {{{1
     }
 
     my $sum_scaled = 0;
+####foreach my $lang_or_file (keys %{$rhh_count}) {
+####    $rhh_count->{$lang_or_file}{'code'} = 0 unless 
+####        defined $rhh_count->{$lang_or_file}{'code'};
+####}
     foreach my $lang_or_file (sort {
                                  $rhh_count->{$b}{'code'} <=>
                                  $rhh_count->{$a}{'code'}
