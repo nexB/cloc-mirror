@@ -20,7 +20,7 @@
 #   Description
 #
 #       To learn what TOP LEVEL section to use in manual pages,
-#       see POSIX/Susv standard and "tility Description Defaults" at
+#       see POSIX/Susv standard and "Utility Description Defaults" at
 #       http://www.opengroup.org/onlinepubs/009695399/utilities/xcu_chap01.html#tag_01_11
 #
 #       This is manual page in Perl POD format. Read more at
@@ -58,6 +58,8 @@ distribution.
 
 =head2 Input Options
 
+To count standard input, use the special filename B<->.
+
 =over 4
 
 =item B<--extract-with=CMD>
@@ -73,15 +75,15 @@ gcc-4.2.tar.gz perl-5.8.8.tar.gz on Unix use:
 
 or, if you have GNU tar:
 
-    --extract-with='tar zxf >FILE'
+    --extract-with='tar zxf >FILE<'
 
 and on Windows, use:
 
     --extract-with="\"c:\Program Files\WinZip\WinZip32.exe\" -e -o >FILE<
 
-=item B<--list-file=FILE>
+=item B<--list-file=<file>>
 
-Take the list of file and/or directory names to process from FILE
+Take the list of file and/or directory names to process from <file>
  which has one file/directory name per line. See also
  B<--exclude-list-file>
 
@@ -121,18 +123,18 @@ which file pairs where compared.  See also --ignore-case, --ignore-whitespace.
 [Unix only] Follow symbolic links to directories (sym links to files 
 are always followed).
 
-=item B<--force-lang=LANG[,EXT]>
+=item B<--force-lang=<lang>[,<ext>]>
 
-Process all files that have a EXT extension with the counter for
-language LANG. For example, to count all .f files with the Fortran
+Process all files that have a <ext> extension with the counter for
+language <lang>. For example, to count all .f files with the Fortran
 90 counter (which expects files to end with .f90) instead of the
 default Fortran 77 counter, use:
 
 	--force-lang="Fortran 90",f
 
-If EXT is omitted, every file will be counted with the LANG counter.
+If <ext> is omitted, every file will be counted with the <lang> counter.
 This option can be specified multiple times (but that is only useful
-when EXT is given each time). See also B<--script-lang>.
+when <ext> is given each time). See also B<--script-lang>.
 
 =item B<--ignore-whitespace>
 
@@ -144,7 +146,7 @@ with --diff.  See also --ignore-case.
 Ignore changes in case; consider upper- and lowercase letters equivalent 
 when comparing files with --diff.  See also --ignore-whitespace.
 
-=item B<----lang-no-ext=<lang>>
+=item B<--lang-no-ext=<lang>>
 
 Count files without extensions using the <lang> 
 counter.  This option overrides internal logic 
@@ -152,6 +154,10 @@ for files without extensions (where such files
 are checked against known scripting languages
 by examining the first line for #!).  See also 
 --force-lang, --script-lang.
+
+=item B<--stdin-name=<file>>
+
+Count stdin as if it had the name <file>.
 
 =item B<--read-binary-files>
 
@@ -178,9 +184,9 @@ The language name is case insensitive but the name of the script
 language executable, <s>, must have the right case. This option can be
 specified multiple times. See also B<--force-lang>.
 
-=item B<--sdir=DIR>
+=item B<--sdir=<dir>>
 
-Use DIR as the scratch directory instead of letting I<File::Temp> chose
+Use <dir> as the scratch directory instead of letting I<File::Temp> chose
 the location. Files written to this location are not removed at the
 end of the run (as they are with I<File::Temp>).
 
@@ -190,12 +196,12 @@ Skip the file uniqueness check. This will give a performance boost at
 the expense of counting files with identical contents multiple times
 (if such duplicates exist).
 
-=item B<--strip-comments=EXT>
+=item B<--strip-comments=<ext>>
 
 For each file processed, write to the current directory a version of
 the file which has blank lines and comments removed. The name of each
-stripped file is the original file name with C<.EXT> appended to it.
-It is written to the current directory unless <--original-dir> is on.
+stripped file is the original file name with C<.<ext>> appended to it.
+It is written to the current directory unless B<--original-dir> is on.
 
 =item B<--original-dir>
 
@@ -214,7 +220,7 @@ the sum of data from the individual report files.
 
 =over 4
 
-=item B<--exclude-dir=DIR[,DIR ...]>
+=item B<--exclude-dir=<dir>[,<dir> ...]>
 
 Exclude the given comma separated directories from being scanned. For
 example:
@@ -228,20 +234,20 @@ their path. Directories named C<.cvs> and C<.svn> are always excluded.
 
 Exclude the given comma separated languages from being counted.
 
-=item B<--exclude-list-file=FILE>
+=item B<--exclude-list-file=<file>>
 
-Ignore files whose names appear in FILE. FILE should have one entry
+Ignore files whose names appear in <file>. <file> should have one entry
 per line. Relative path names will be resolved starting from the
 directory where cloc is invoked. See also B<--list-file>.
 
-=item B<--match-f=REGEX>
+=item B<--match-f=<regex>>
 
 Only count files whose basenames match the Perl regex. For example
 this only counts files at start with Widget or widget:
 
      --match-f="^[Ww]idge"
 
-=item B<--not-match-f=REGEX>
+=item B<--not-match-f=<regex>>
 
 Count all files except those whose basenames match the Perl regex.
 
@@ -255,42 +261,42 @@ On Windows, ignore hidden files.
 
 =over 4
 
-=item B<--categorized=FILE>
+=item B<--categorized=<file>>
 
-Save names of categorized files to FILE.
+Save names of categorized files to <file>.
 
-=item B<--counted=FILE>
+=item B<--counted=<file>>
 
-Save names of processed source files to FILE.
+Save names of processed source files to <file>.
 
 =item B<--help>
 
 Print this usage information and exit.
 
-=item B<--found=FILE>
+=item B<--found=<file>>
 
-Save names of every file found to FILE.
+Save names of every file found to <file>.
 
-=item B<--ignored=FILE>
+=item B<--ignored=<file>>
 
-Save names of ignored files and the reason they were ignored to FILE.
+Save names of ignored files and the reason they were ignored to <file>.
 
 =item B<--print-filter-stages>
 
 Print to STDOUT processed source code before and after each filter is
 applied.
 
-=item B<--show-ext[=EXT]>
+=item B<--show-ext[=<ext>]>
 
 Print information about all known (or just the given) file extensions
 and exit.
 
-=item B<--show-lang[=LANG]>
+=item B<--show-lang[=<lang>]>
 
 Print information about all known (or just the given) languages and
 exit.
 
-=item B<-v[=NUMBER]>
+=item B<-v[=<number>]>
 
 Turn on verbose with optional numeric value.
 
@@ -298,9 +304,9 @@ Turn on verbose with optional numeric value.
 
 Print the version of this program and exit.
 
-=item B<--write-lang-def=FILE>
+=item B<--write-lang-def=<file>>
 
-Writes to FILE the language processing filters then exits. Useful as a
+Writes to <file> the language processing filters then exits. Useful as a
 first step to creating custom language definitions. See
 B<--read-lang-def>.
 
@@ -316,7 +322,7 @@ Suppress third-generation language output. This option can cause
 report summation to fail f some reports were produced with this option
 hile others were produced without it.)
 
-=item B<--progress-rate=NUMBER>
+=item B<--progress-rate=<number>>
 
 Show progress update after every NUMBER files are processed (default
 NUMBER=100). Set NUMBER to 0 to suppress progress output; useful when
@@ -326,25 +332,25 @@ redirecting output to I<stdout>.
 
 Suppress all information messages except for the final report.
 
-=item B<--report-file=FILE>
+=item B<--report-file=<file>>
 
-Write the results to FILE instead of STDOUT.
+Write the results to <file> instead of standard output.
 
-=item B<--out=FILE>
+=item B<--out=<file>>
 
-Synonym for B<--report-file=FILE>.
+Synonym for B<--report-file=<file>>.
 
 =item B<--csv>
 
 Write the results as comma separated values.
 
-=item B<--sql=FILE>
+=item B<--sql=<file>>
 
-Write results as SQL create and insert statements which can be read by
-a database program such as SQLite. If FILE is 1, output is sent to
+Write results as SQL CREATE and INSERT statements which can be read by
+a database program such as SQLite. If <file> is B<->, output is sent to
 I<stdout>.
 
-=item B<--sql-project=NAME>
+=item B<--sql-project=<name>>
 
 Use NAME as the project identifier for the current run. Only valid
 with the B<--sql> option.
@@ -359,9 +365,9 @@ option.
 
 Write the results in XML.
 
-=item B<--xsl[=FILE]>
+=item B<--xsl[=<file>]>
 
-Reference FILE as an XSL stylesheet within the XML output. If FILE is
+Reference <file> as an XSL stylesheet within the XML output. If <file> is
 not given, writes a default stylesheet, cloc.xsl. This switch forces
 B<--xml> to be on.
 
