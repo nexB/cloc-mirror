@@ -1,6 +1,7 @@
 #   Copyright
 #
-#      Copyright (C) 2012 Al Danial
+#      Copyright (C) 2012 Al Danial <al.danial@gmail.com>.
+#      Original version written by Jari Aalto <jari.aalto@cante.net>.
 #
 #   License
 #
@@ -62,7 +63,7 @@ To count standard input, use the special filename B<->.
 
 =over 4
 
-=item B<--extract-with=CMD>
+=item B<--extract-with=<cmd>>
 
 This option is only needed if cloc is unable to figure out how to
 extract the contents of the input file(s) by itself. Use <cmd> to
@@ -84,8 +85,8 @@ and on Windows, use:
 =item B<--list-file=<file>>
 
 Take the list of file and/or directory names to process from <file>
- which has one file/directory name per line. See also
- B<--exclude-list-file>
+which has one file/directory name per line. See also
+B<--exclude-list-file>
 
 =item B<--unicode>
 
@@ -111,12 +112,13 @@ Report results for every source file encountered.
 Report results for every source file encountered in addition to
 reporting by language.
 
-=item B<--diff SET1 SET2>
+=item B<--diff <set1> <set2>>
 
 Compute differences in code and comments between source file(s) of 
-SET1 and SET2.  The inputs may be pairs of files, directories, or 
-archives.  Use --diff-alignment to generate a list showing
-which file pairs where compared.  See also --ignore-case, --ignore-whitespace.
+<set1> and <set2>.  The inputs may be pairs of files, directories, or 
+archives.  Use B<--diff-alignment> to generate a list showing
+which file pairs where compared.  See also B<--ignore-case>, 
+B<--ignore-whitespace>.
 
 =item B<--follow-links>
 
@@ -139,25 +141,23 @@ when <ext> is given each time). See also B<--script-lang>.
 =item B<--ignore-whitespace>
 
 Ignore horizontal white space when comparing files
-with --diff.  See also --ignore-case.
+with B<--diff>.  See also B<--ignore-case>.
 
 =item B<--ignore-case>
 
 Ignore changes in case; consider upper- and lowercase letters equivalent 
-when comparing files with --diff.  See also --ignore-whitespace.
+when comparing files with B<--diff>.  See also B<--ignore-whitespace>.
 
 =item B<--lang-no-ext=<lang>>
 
-Count files without extensions using the <lang> 
-counter.  This option overrides internal logic 
-for files without extensions (where such files 
-are checked against known scripting languages
-by examining the first line for #!).  See also 
---force-lang, --script-lang.
+Count files without extensions using the <lang> counter.  This option 
+overrides internal logic for files without extensions (where such files 
+are checked against known scripting languages by examining the first 
+line for C<#!>).  See also B<--force-lang>, B<--script-lang>.
 
 =item B<--stdin-name=<file>>
 
-Count stdin as if it had the name <file>.
+Count lines streamed via I<STDIN> as if they came from a file named <file>.
 
 =item B<--read-binary-files>
 
@@ -168,7 +168,7 @@ binary data.
 =item B<--read-lang-def=<file>>
 
 Load from <file> the language processing filters. (see also
---write-lang-def) then use these filters instead of the built-in
+B<--write-lang-def>) then use these filters instead of the built-in
 filters.
 
 =item B<--script-lang=LANG,<s>>
@@ -214,6 +214,16 @@ Input arguments are report files previously created with the
 B<--report-file> option. Makes a cumulative set of results containing
 the sum of data from the individual report files.
 
+=item B<--unix>
+
+Over-ride the operating system detection logic and force the UNIX
+mode.  See also B<--windows>.
+
+=item B<--windows>
+
+Over-ride the operating system detection logic and force the 
+Microsoft Windows mode.  See also B<--unix>.
+
 =back
 
 =head2 Filter Options
@@ -228,9 +238,10 @@ example:
 	--exclude-dir=.cache,test
 
 will skip all files that match C</.cache/> or C</test/> as part of
-their path. Directories named C<.cvs> and C<.svn> are always excluded.
+their path. Directories named C<.bzr>, C<.cvs>, C<.hg>, C<.git>,
+C<.hg>, and C<.svn> are always excluded.
 
-=item B<--exclude-lang=LANG[,LANG ...]>
+=item B<--exclude-lang=<L1>[,<L2> ...]>
 
 Exclude the given comma separated languages from being counted.
 
@@ -240,12 +251,24 @@ Ignore files whose names appear in <file>. <file> should have one entry
 per line. Relative path names will be resolved starting from the
 directory where cloc is invoked. See also B<--list-file>.
 
+=item B<--match-d=<regex>>
+
+Only count files in directories matching the Perl regex.  For example
+
+     --match-d=/src/
+
+only counts files in directories containing C<src>.
+
+=item B<--not-match-d=<regex>>
+
+Count all files except in directories matching the Perl regex.
+
 =item B<--match-f=<regex>>
 
 Only count files whose basenames match the Perl regex. For example
 this only counts files at start with Widget or widget:
 
-     --match-f="^[Ww]idge"
+     --match-f="^[Ww]idget"
 
 =item B<--not-match-f=<regex>>
 
@@ -283,7 +306,7 @@ Save names of ignored files and the reason they were ignored to <file>.
 
 =item B<--print-filter-stages>
 
-Print to STDOUT processed source code before and after each filter is
+Print to I<STDOUT> processed source code before and after each filter is
 applied.
 
 =item B<--show-ext[=<ext>]>
@@ -307,7 +330,7 @@ Print the version of this program and exit.
 =item B<--write-lang-def=<file>>
 
 Writes to <file> the language processing filters then exits. Useful as a
-first step to creating custom language definitions. See
+first step to creating custom language definitions. See also
 B<--read-lang-def>.
 
 =back
@@ -316,17 +339,17 @@ B<--read-lang-def>.
 
 =over 4
 
-=item B<--no3>
+=item B<--3>
 
-Suppress third-generation language output. This option can cause
-report summation to fail f some reports were produced with this option
-hile others were produced without it.)
+Print third-generation language output.  (This option can cause report 
+summation to fail if some reports were produced with this option while 
+others were produced without it.)
 
 =item B<--progress-rate=<number>>
 
-Show progress update after every NUMBER files are processed (default
-NUMBER=100). Set NUMBER to 0 to suppress progress output; useful when
-redirecting output to I<stdout>.
+Show progress update after every <n> files are processed (default
+<n>=100). Set <n> to 0 to suppress progress output; useful when
+redirecting output to I<STDOUT>.
 
 =item B<--quiet>
 
@@ -348,18 +371,22 @@ Write the results as comma separated values.
 
 Write results as SQL CREATE and INSERT statements which can be read by
 a database program such as SQLite. If <file> is B<->, output is sent to
-I<stdout>.
+I<STDOUT>.
 
 =item B<--sql-project=<name>>
 
-Use NAME as the project identifier for the current run. Only valid
+Use <name> as the project identifier for the current run. Only valid
 with the B<--sql> option.
 
 =item B<--sql-append>
 
-Append SQL insert statements to the file specified
-by B<--sql> and do not generate table creation
-option.
+Append SQL insert statements to the file specified by B<--sql> and 
+do not generate table creation option.
+
+=item B<--sum-one>
+
+For plain text reports, show the SUM: output line even if only 
+one input file is processed.
 
 =item B<--xml>
 
@@ -379,7 +406,31 @@ Write the results in YAML.
 
 =head1 EXAMPLES
 
-None (yet).
+Count the lines of code in the Perl 5.10.0 compressed tar file
+on a UNIX-like operating system:
+
+  cloc perl-5.10.0.tar.gz
+
+Count the changes in files, code, and comments between Python
+releases 2.6.6 and 2.7:
+
+  cloc --diff Python-2.6.6.tar.bz  Python-2.7.tar.bz2
+
+To see how cloc aligns files for comparison between two code
+bases, use the B<--diff-alignment=<file>> option.  Here the
+alignment information is written to C<align.txt>:
+
+  cloc --diff-aligment=align.txt gcc-4.4.0.tar.bz2  gcc-4.5.0.tar.bz2
+
+Print the recognized languages
+
+  cloc --show-lang
+
+Remove comments from C<foo.c> and save the result in C<foo.c.nc>
+
+  cloc --strip-comments=nc foo.c
+
+Additional examples can be found at L<http://cloc.sourceforge.net>.
 
 =head1 ENVIRONMENT
 
@@ -390,6 +441,7 @@ None.
 None.
 
 =head1 SEE ALSO
+
 
 sloccount(1)
 
