@@ -249,8 +249,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              example  --exclude-dir=.cache,test  will skip
                              all files that have /.cache/ or /test/ as part
                              of their path.
-                             Directories named .cvs, .svn, .hg, and .git
-                             are always excluded.
+                             Directories named .bzr, .cvs, .hg, .git, and
+                             .svn are always excluded.
    --exclude-ext=<ext1>[,<ext2>[...]]
                              Do not count files having the given file name
                              extensions.
@@ -399,6 +399,8 @@ my (
     $opt_autoconf             ,
     $opt_sum_one              ,
     $opt_stdin_name           ,
+    $opt_force_on_windows     ,
+    $opt_force_on_unix        ,   # actually forces !$ON_WINDOWS
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -459,6 +461,8 @@ my $getopt_success = GetOptions(
    "autoconf"                                => \$opt_autoconf            ,
    "sum_one|sum-one"                         => \$opt_sum_one             ,
    "stdin_name|stdin-name=s"                 => \$opt_stdin_name          ,
+   "windows"                                 => \$opt_force_on_windows    ,
+   "unix"                                    => \$opt_force_on_unix       ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -479,12 +483,14 @@ $Exclude_Dir{".cvs"}   = 1;
 $Exclude_Dir{".hg"}    = 1;
 $Exclude_Dir{".git"}   = 1;
 $Exclude_Dir{".bzr"}   = 1;
-$opt_diff              = 1 if $opt_diff_alignment;
+$opt_diff              = 1  if $opt_diff_alignment;
 $opt_exclude_ext       = "" unless $opt_exclude_ext;
 $opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
 $opt_ignore_case       = 0  unless $opt_ignore_case;
 $opt_lang_no_ext       = 0  unless $opt_lang_no_ext;
 $opt_follow_links      = 0  unless $opt_follow_links;
+$ON_WINDOWS            = 1  if $opt_force_on_windows;
+$ON_WINDOWS            = 0  if $opt_force_on_unix;
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -7519,8 +7525,8 @@ sub uncompress_archive_cmd {                 # {{{1
     my $missing     = "";
     if ($opt_extract_with) {
         ( $extract_cmd = $opt_extract_with ) =~ s/>FILE</$archive_file/g;
-    } elsif (basename($archive_file) eq "-") {
-      $extract_cmd = "cat > -";
+    } elsif (basename($archive_file) eq "-" and !$ON_WINDOWS) {
+        $extract_cmd = "cat > -";
     } elsif (($archive_file =~ /\.tar\.(gz|Z)$/ or 
               $archive_file =~ /\.tgz$/       ) and !$ON_WINDOWS)    {
         if (external_utility_exists("gzip --version")) {
