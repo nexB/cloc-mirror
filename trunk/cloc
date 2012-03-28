@@ -314,6 +314,9 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --report-file=<file>      Write the results to <file> instead of STDOUT.
    --out=<file>              Synonym for --report-file=<file>.
    --csv                     Write the results as comma separated values.
+   --csv-delimiter=<C>       Use the character <C> as the delimiter for comma
+                             separated files instead of ,.  This switch forces
+                             --csv to be on.
    --sql=<file>              Write results as SQL create and insert statements
                              which can be read by a database program such as
                              SQLite.  If <file> is -, output is sent to STDOUT.
@@ -379,6 +382,7 @@ my (
     $opt_xsl                  ,
     $opt_yaml                 ,
     $opt_csv                  ,
+    $opt_csv_delimiter        ,
     $opt_match_f              ,
     $opt_not_match_f          ,
     $opt_match_d              ,
@@ -442,6 +446,7 @@ my $getopt_success = GetOptions(
    "lang_no_ext|lang-no-ext=s"               => \$opt_lang_no_ext         ,
    "yaml"                                    => \$opt_yaml                ,
    "csv"                                     => \$opt_csv                 ,
+   "csv_delimeter|csv-delimiter=s"           => \$opt_csv_delimiter       ,
    "match_f|match-f=s"                       => \$opt_match_f             ,
    "not_match_f|not-match-f=s"               => \$opt_not_match_f         ,
    "match_d|match-d=s"                       => \$opt_match_d             ,
@@ -489,6 +494,7 @@ $opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
 $opt_ignore_case       = 0  unless $opt_ignore_case;
 $opt_lang_no_ext       = 0  unless $opt_lang_no_ext;
 $opt_follow_links      = 0  unless $opt_follow_links;
+$opt_csv               = 1  if $opt_csv_delimiter;
 $ON_WINDOWS            = 1  if $opt_force_on_windows;
 $ON_WINDOWS            = 0  if $opt_force_on_unix;
 
@@ -1881,15 +1887,17 @@ sub diff_csv_report {                        # {{{1
     } elsif ($report_type eq "by file")     {
         $BY_FILE      = 1;
     }
+    my $DELIM = ",";
+       $DELIM = $opt_csv_delimiter if defined $opt_csv_delimiter;
 
     $elapsed_sec = 0.5 unless $elapsed_sec;
 
-    my $line = "Language, ";
-       $line = "File, " if $BY_FILE;
+    my $line = "Language${DELIM} ";
+       $line = "File${DELIM} " if $BY_FILE;
     foreach my $item (qw(files blank comment code)) {
         next if $BY_FILE and $item eq 'files';
         foreach my $symbol ( '==', '!=', '+', '-', ) {
-            $line .= "$symbol $item, ";
+            $line .= "$symbol $item${DELIM} ";
         }
     }
     $line .= "\"$URL v $version T=$elapsed_sec s\"";
@@ -1904,14 +1912,14 @@ sub diff_csv_report {                        # {{{1
                                  $rhhh_count->{$a}{'code'}
                                }
                           keys %{$rhhh_count}) {
-        $line = "$lang_or_file, ";
+        $line = "$lang_or_file${DELIM} ";
         foreach my $item (qw(nFiles blank comment code)) {
             next if $BY_FILE and $item eq 'nFiles';
             foreach my $symbol (qw(same modified added removed)) {
                 if (defined $rhhh_count->{$lang_or_file}{$item}{$symbol}) {
-                    $line .= "$rhhh_count->{$lang_or_file}{$item}{$symbol}, ";
+                    $line .= "$rhhh_count->{$lang_or_file}{$item}{$symbol}${DELIM} ";
                 } else {
-                    $line .= "0, ";
+                    $line .= "0${DELIM} ";
                 }
             }
         }
@@ -2060,6 +2068,9 @@ sub generate_report {                        # {{{1
        ) = @_;
 
     print "-> generate_report\n" if $opt_v > 2;
+    my $DELIM = ",";
+       $DELIM = $opt_csv_delimiter if defined $opt_csv_delimiter;
+
     my @results       = ();
     
     my $languages     = ();
@@ -2186,13 +2197,13 @@ sub generate_report {                        # {{{1
     if ($opt_csv) {
         my $header2;
         if ($BY_FILE) {
-            $header2 = "language,filename";
+            $header2 = "language${DELIM}filename";
         } else {
-            $header2 = "files,language";
+            $header2 = "files${DELIM}language";
         }
-        $header2 .= ",blank,comment,code";
-        $header2 .= ",scale,3rd gen. equiv" if $opt_3;
-        $header2 .= ',"' . $header_line . '"';
+        $header2 .= "${DELIM}blank${DELIM}comment${DELIM}code";
+        $header2 .= "${DELIM}scale${DELIM}3rd gen. equiv" if $opt_3;
+        $header2 .= ${DELIM} . '"' . $header_line . '"';
         push @results, $header2;
     }
 
@@ -2282,16 +2293,16 @@ sub generate_report {                        # {{{1
             }
         } elsif ($opt_csv) {
             my $extra_3 = "";
-               $extra_3 = ",$factor,$scaled" if $opt_3;
+               $extra_3 = "${DELIM}$factor${DELIM}$scaled" if $opt_3;
             my $str;
             if ($BY_FILE) {
-                $str = $rhh_count->{$lang_or_file}{'lang'}   . ",";
+                $str = $rhh_count->{$lang_or_file}{'lang'}   . ${DELIM};
             } else {
-                $str = $rhh_count->{$lang_or_file}{'nFiles'} . ",";
+                $str = $rhh_count->{$lang_or_file}{'nFiles'} . ${DELIM};
             }
-            $str .= $lang_or_file                         . "," .
-                    $rhh_count->{$lang_or_file}{'blank'}  . "," .
-                    $rhh_count->{$lang_or_file}{'comment'}. "," .
+            $str .= $lang_or_file                         . ${DELIM} .
+                    $rhh_count->{$lang_or_file}{'blank'}  . ${DELIM} .
+                    $rhh_count->{$lang_or_file}{'comment'}. ${DELIM} .
                     $rhh_count->{$lang_or_file}{'code'}         .
                     $extra_3;
             push @results, $str;

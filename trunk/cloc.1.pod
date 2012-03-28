@@ -367,6 +367,11 @@ Synonym for B<--report-file=<file>>.
 
 Write the results as comma separated values.
 
+=item B<--csv-delimiter=<C>>
+
+Use the character <C> as the delimiter for comma separated files 
+instead of ,.  This switch forces B<--csv> to be on.
+
 =item B<--sql=<file>>
 
 Write results as SQL CREATE and INSERT statements which can be read by
