@@ -216,13 +216,13 @@ the sum of data from the individual report files.
 
 =item B<--unix>
 
-Over-ride the operating system detection logic and force the UNIX
-mode.  See also B<--windows>.
+Over-ride the operating system detection logic and run in UNIX
+mode.  See also B<--windows>, B<--show-os>.
 
 =item B<--windows>
 
-Over-ride the operating system detection logic and force the 
-Microsoft Windows mode.  See also B<--unix>.
+Over-ride the operating system detection logic and run in
+Microsoft Windows mode.  See also B<--unix>, B<--show-os>.
 
 =back
 
@@ -318,6 +318,11 @@ and exit.
 
 Print information about all known (or just the given) languages and
 exit.
+
+=item B<--show-os>]>
+
+Print the value of the operating system mode and exit.  See also
+B<--unix>, B<--windows>.
 
 =item B<-v[=<number>]>
 

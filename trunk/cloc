@@ -242,6 +242,12 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              created with the --report-file option.  Makes
                              a cumulative set of results containing the
                              sum of data from the individual report files.
+   --unix                    Override the operating system autodetection
+                             logic and run in UNIX mode.  See also
+                             --windows, --show-os.
+   --windows                 Override the operating system autodetection
+                             logic and run in Microsoft Windows mode.
+                             See also --unix, --show-os.
 
  ${BB}Filter Options${NN}
    --exclude-dir=<D1>[,D2,]  Exclude the given comma separated directories
@@ -293,6 +299,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              given) file extensions and exit.
    --show-lang[=<lang>]      Print information about all known (or just the
                              given) languages and exit.
+   --show-os                 Print the value of the operating system mode
+                             and exit.  See also --unix, --windows.
    -v[=<n>]                  Verbose switch (optional numeric value).
    --version                 Print the version of this program and exit.
 
@@ -405,6 +413,7 @@ my (
     $opt_stdin_name           ,
     $opt_force_on_windows     ,
     $opt_force_on_unix        ,   # actually forces !$ON_WINDOWS
+    $opt_show_os              ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -468,6 +477,7 @@ my $getopt_success = GetOptions(
    "stdin_name|stdin-name=s"                 => \$opt_stdin_name          ,
    "windows"                                 => \$opt_force_on_windows    ,
    "unix"                                    => \$opt_force_on_unix       ,
+   "show_os|show-os"                         => \$opt_show_os             ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -525,6 +535,7 @@ if ($opt_sql eq "-" || $opt_sql eq "1") { # stream SQL output to STDOUT
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
+                  defined $opt_show_os         or
                   defined $opt_write_lang_def  or
                   defined $opt_list_file       or
                   defined $opt_xsl             or
@@ -710,6 +721,14 @@ if ($opt_write_lang_def) {
                   \%Scale_Factor         ,
                   \%EOL_Continuation_re  ,
                   );
+    exit;
+}
+if ($opt_show_os) {
+    if ($ON_WINDOWS) {
+        print "Windows\n";
+    } else {
+        print "UNIX\n";
+    }
     exit;
 }
 # 1}}}
