@@ -1675,7 +1675,11 @@ sub diff_report     {                        # {{{1
                                }
                           keys %{$rhhh_count}) {
 
-        push @results, "$lang_or_file";
+        if ($BY_FILE) {
+            push @results, rm_leading_tempdir($lang_or_file, \%TEMP_DIR);
+        } else {
+            push @results, $lang_or_file;
+        }
         foreach my $S (qw(same modified added removed)) {
             my $indent = $spacing_1 - 2;
             my $line .= sprintf " %-${indent}s", $S;
@@ -1842,7 +1846,7 @@ sub diff_xml_yaml_report {                   # {{{1
             if ($opt_xml) {
                 if ($BY_FILE) {
                     $L .= sprintf "    <file name=\"%s\" files_count=\"1\" ", 
-                            $lang_or_file;
+                            rm_leading_tempdir($lang_or_file, \%TEMP_DIR);
                 } else {
                     $L .= sprintf "    <language name=\"%s\" files_count=\"%d\" ",
                             $lang_or_file ,
@@ -1855,7 +1859,8 @@ sub diff_xml_yaml_report {                   # {{{1
                 push @results, $L . "/>";
             } elsif ($opt_yaml) {
                 if ($BY_FILE) {
-                    push @results, sprintf "  - file : %s", $lang_or_file;
+                    push @results, sprintf "  - file : %s", 
+                                   rm_leading_tempdir($lang_or_file, \%TEMP_DIR);
                     push @results, sprintf "    files_count : 1", 
                 } else {
                     push @results, sprintf "  - language : %s", $lang_or_file;
