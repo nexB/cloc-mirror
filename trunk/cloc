@@ -633,6 +633,10 @@ foreach my $ext (map { $_ => 1 } split(/,/, $opt_exclude_ext ) ) {
 # cleaner if these meaningless directory names are stripped from the front
 # of files pulled from the archives.
 my %TEMP_DIR = ();
+my $TEMP_OFF =  0;  # Needed for --sdir; keep track of the number of
+                    # scratch directories made in this run to avoid
+                    # file overwrites by multiple extractions to same
+                    # sdir.
 
 # invert %Language_by_Script hash to get an easy-to-look-up list of known
 # scripting languages
@@ -725,7 +729,15 @@ if ($opt_extract_with) {
 #print "cwd main = [$cwd]\n";
     my @extract_location = ();
     foreach my $bin_file (@ARGV) {
-        my $extract_dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+        my $extract_dir = undef;
+        if ($opt_sdir) {
+            ++$TEMP_OFF;
+            $extract_dir = "$opt_sdir/$TEMP_OFF";
+            File::Path::rmtree($extract_dir) if     is_dir($extract_dir);
+            File::Path::mkpath($extract_dir) unless is_dir($extract_dir);
+        } else {
+            $extract_dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+        }
         $TEMP_DIR{ $extract_dir } = 1 if $opt_sql or $opt_by_file;
         print "mkdir $extract_dir\n"  if $opt_v;
         print "cd    $extract_dir\n"  if $opt_v;
@@ -751,13 +763,22 @@ if ($opt_extract_with) {
     my $binary_archives_exist = 1;
     my $count_binary_archives = 0;
     my $previous_count        = 0;
+    my $n_pass                = 0;
     while ($binary_archives_exist) {
         @binary_archive = ();
         foreach my $dir (@extract_location) {
             find(\&archive_files, $dir);  # populates global @binary_archive
         }
         foreach my $archive (@binary_archive) {
-            my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
+            my $extract_dir = undef;
+            if ($opt_sdir) {
+                ++$TEMP_OFF;
+                $extract_dir = "$opt_sdir/$TEMP_OFF";
+                File::Path::rmtree($extract_dir) if     is_dir($extract_dir);
+                File::Path::mkpath($extract_dir) unless is_dir($extract_dir);
+            } else {
+                $extract_dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+            }
             $TEMP_DIR{ $extract_dir } = 1 if $opt_sql or $opt_by_file;
             print "mkdir $extract_dir\n"  if $opt_v;
             print "cd    $extract_dir\n"  if $opt_v;
@@ -795,7 +816,15 @@ if ($opt_extract_with) {
 #print "full_path = [$full_path]\n";
         my $extract_cmd = uncompress_archive_cmd($full_path);
         if ($extract_cmd) {
-            my     $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
+            my $extract_dir = undef;
+            if ($opt_sdir) {
+                ++$TEMP_OFF;
+                $extract_dir = "$opt_sdir/$TEMP_OFF";
+                File::Path::rmtree($extract_dir) if     is_dir($extract_dir);
+                File::Path::mkpath($extract_dir) unless is_dir($extract_dir);
+            } else {
+                $extract_dir = tempdir( CLEANUP => 1 ); # 1 = delete on exit
+            }
             $TEMP_DIR{ $extract_dir } = 1 if $opt_sql or $opt_by_file;
             print "mkdir $extract_dir\n"  if $opt_v;
             print "cd    $extract_dir\n"  if $opt_v;
@@ -5825,8 +5854,10 @@ EOD
     $HAVE_Rexexp_Common = 0;
     my $dir             = "";
     if ($opt_sdir) {
-        # write to the user-defined scratch directory
-        $dir = $opt_sdir;
+        ++$TEMP_OFF;
+        $dir = "$opt_sdir/$TEMP_OFF";
+        File::Path::rmtree($dir) if     is_dir($dir);
+        File::Path::mkpath($dir) unless is_dir($dir);
     } else {
         # let File::Temp create a suitable temporary directory
         $dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
@@ -6689,8 +6720,10 @@ EOAlgDiff
     $HAVE_Algorith_Diff = 0;
     my $dir             = "";
     if ($opt_sdir) {
-        # write to the user-defined scratch directory
-        $dir = $opt_sdir;
+        ++$TEMP_OFF;
+        $dir = "$opt_sdir/$TEMP_OFF";
+        File::Path::rmtree($dir) if     is_dir($dir);
+        File::Path::mkpath($dir) unless is_dir($dir);
     } else {
         # let File::Temp create a suitable temporary directory
         $dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
