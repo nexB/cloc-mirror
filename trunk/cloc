@@ -3915,6 +3915,7 @@ sub set_constants {                          # {{{1
             'psql'        => 'SQL'                   ,
             'py'          => 'Python'                ,
             'pyx'         => 'Cython'                ,
+            'qml'         => 'QML'                   ,
             'rb'          => 'Ruby'                  ,
          #  'resx'        => 'ASP.Net'               ,
             'rex'         => 'Oracle Reports'        ,
@@ -4224,6 +4225,11 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                                 [ 'remove_inline'       , '//.*$'  ],
+                            ],
+    'QML'                => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Rexx'               => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ruby'               => [   
@@ -4893,6 +4899,7 @@ sub set_constants {                          # {{{1
     'qbasic'                       =>   1.38,
     'qbe'                          =>   6.15,
     'qmf'                          =>   5.33,
+    'QML'                          =>   1.25,
     'qnial'                        =>   1.63,
     'quattro'                      =>  13.33,
     'quattro pro'                  =>  13.33,
