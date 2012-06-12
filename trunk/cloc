@@ -3237,9 +3237,9 @@ sub write_file {                             # {{{1
     } else {
         warn "Unable to write to $file\n";
     }
-    print "Wrote $file";
+    print "Wrote $file" unless $opt_quiet;
     print ", $CLOC_XSL" if $opt_xsl and $opt_xsl eq $CLOC_XSL;
-    print "\n";
+    print "\n" unless $opt_quiet;
     
     print "<- write_file\n" if $opt_v > 2;
 } # 1}}}
