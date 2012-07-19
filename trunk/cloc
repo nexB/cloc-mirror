@@ -3980,6 +3980,7 @@ sub set_constants {                          # {{{1
             'tcsh'        => 'C Shell'               ,
             'tk'          => 'Tcl/Tk'                ,
             'tpl'         => 'Smarty'                ,
+            'vala'        => 'Vala'                  ,
             'vhd'         => 'VHDL'                  ,
             'VHD'         => 'VHDL'                  ,
             'vhdl'        => 'VHDL'                  ,
@@ -4352,6 +4353,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*Attribute\s+'],
                                 [ 'remove_matches'      , '^\s*\47'], ],  # \47 = '
     # http://www.altium.com/files/learningguides/TR0114%20VHDL%20Language%20Reference.pdf
+    'Vala'               => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
+                            ],
     'VHDL'               => [   
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -4431,6 +4437,7 @@ sub set_constants {                          # {{{1
     'Korn Shell'         =>     '\\\\$'         ,
     'Tcl/Tk'             =>     '\\\\$'         ,
     'lex'                =>     '\\\\$'         ,
+    'Vala'               =>     '\\\\$'         ,
     );
 # 1}}}
 %{$rh_Not_Code_Extension}    = (             # {{{1
@@ -5064,6 +5071,7 @@ sub set_constants {                          # {{{1
     'uhelp'                        =>   2.50,
     'uniface'                      =>   5.00,
     # 'unix shell scripts'           =>   3.81,
+    'Vala'                         =>   1.50,
     'vax acms'                     =>   1.38,
     'vax ade'                      =>   2.00,
     'vbscript'                     =>   2.35,
