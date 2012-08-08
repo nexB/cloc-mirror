@@ -1,0 +1,252 @@
+                Release Notes for cloc version 1.56
+                   http://cloc.sourceforge.net
+                           April 3, 2012   
+
+Version 1.56 introduces an additional documentation file, cloc.1.pod, which
+can be used to produce cloc's documentation in the style of a Unix man page,
+plain text, HTML, or LaTeX.
+
+New Languages:
+    o Clojure
+    o ClojureScript
+    o AutoHotkey
+    o QML
+    o CFScript
+    o OpenCL
+
+New options and features:
+
+  --unix
+      o Override the operating system autodetection logic and run in 
+        UNIX mode.
+
+  --windows
+      o Override the operating system autodetection logic and run in 
+        Microsoft Windows mode.
+
+  --show-os
+      o Print the name of the of the operating system mode and exit.
+
+  --csv-delimiter
+      o Use the provided delimiter instead of a comma when generating 
+        csv output.
+
+  --stdin-name
+      o On UNIX systems, enables cloc to count code piped in via STDIN.
+        This switch provides a filename for to use to infer the language.
+
+  .git subdirectories are now ignored.
+
+  Updated yacc counter to recognize C99 comments.
+
+  Improved detection and reporting of ignored zero sized files.
+
+  Removed spurious <languages> from YAML output.
+
+  Fixed handling of multi-line Ruby comments surrounded by =begin/=end.
+
+  Associated .ctl and .dsr extensions with Visual Basic
+
+Bug Fixes:
+
+  Produce correct diff results when comparing empty files with populated 
+  files.
+
+  Remove temporary directory names from --by-file output when working
+  with archive files.
+
+  Honor user's requested scratch directory if given --sdir.
+
+============================================================================
+                Release Notes for cloc version 1.55
+                   http://cloc.sourceforge.net
+                          October 14, 2011
+
+Version 1.55 is a bugfix release to correct malformed XML output 
+that was introduced in the 1.54 release.  Two minor enhancements
+were added:
+
+New Languages:
+    o Dart
+
+New options and features:
+
+  --sum-one
+      o Force printing of the SUM: line even if only one source
+        file is counted.
+
+============================================================================
+                Release Notes for cloc version 1.54
+                   http://cloc.sourceforge.net
+                          October 1, 2011
+
+
+New Languages:
+    o CMake
+    o Cython
+    o Objective C++
+    o Ocaml
+    o Smarty
+
+New options and features:
+
+  --autoconf
+      o Count files of recognized languages that end with ".in"
+        (for example, code.h.in, Makefile.in) as used by GNU
+        automake/autoconf.
+
+  --match-d, --not-match-d
+      o Include, or skip over, directories whose names match
+        provided regular expressions.
+
+  --follow-links
+      o Follow symbolic links (on Unix-like OS's).
+
+  YAML and XML output:  header lines now include the cloc URL,
+  version, # lines and files counted, etc.
+
+  YAML and XML output:  if writing to a file (rather than STDOUT),
+  save the file name as an element inside the file.
+
+  Include support for languages with double extensions.  First
+  implementation of these uses .spc.sql for SQL Stored Procedures 
+  and .data.sql as SQL Data as distinct from just SQL.
+
+  Handle archive files (tar files, zip files, etc) with spaces
+  in their names.
+
+Bug Fixes:
+
+  Lisp:  Include .lisp as a valid file extension.
+
+  Correctly identify operating system as Windows if MKS Toolkit is 
+  installed.
+
+  Fix incorrectly handled .inc files (could be PHP or Pascal).
+
+  --counted
+      o Correct output to show only files which were actually
+        used to produce the code count.  Also show the output
+        by language rather than by filename.
+
+  --diff
+      o Fixed null output when one input has a single file while
+        the comparison input has multiple files.
+      o Fixed null output when no lines of code are modified in
+        common files (only entire files were added or removed).
+      o Handle cases where one of the two inputs is an empty
+        file or directory.
+
+  --diff + --exclude-file-list
+      o --diff now skips files defined by --exclude-file-list
+
+  --diff + --exclude-lang
+      o --diff now skips languages defined by --exclude-lang
+
+  --diff + --xml   
+      o Include user-provided xsl file name in XML --diff output.
+      o XML output for --by-file and --by-file-by-lang.
+  
+  --diff + --csv
+      o Added comma separated value output for --diff.
+  
+  --diff + --sum-reports
+      o Can now use the --sum-reports option with --diff.
+
+  --exclude-dir
+      o Quote metacharacters when comparing directory names against 
+      --exclude-dir value.
+
+  --strip-comments
+      o Do not remove blank lines if they follow lines with
+        (language-dependent) continuation markers.
+
+  --sum-reports + --list-file
+      o Allow the --sum-reports option to take its inputs from
+        files defined by --list-file
+
+Outstanding issues:
+  --sql output formats remain unimplemented for --diff.
+
+============================================================================
+                Release Notes for cloc version 1.53
+                   http://cloc.sourceforge.net
+
+New Languages:
+    o Go
+    o MXML
+
+New options:
+
+  --lang-no-ext
+      o Alternate method to count files without file
+        extension.
+  --ignore-case  
+      o Works with --diff; treat uppercase and lowercase text
+        as equivalent.
+
+Bug Fixes:
+
+  Pascal:  Add // as a comment marker.
+  IDL:     Include .pro as a recognized file extension.
+
+  --3:   
+      o Correct XSLT syle when running with --3.
+  
+  --diff:   
+      o Implemented YAML output option.
+      o Implemented XML output option.  Includes an optional
+        default XSLT style file.
+      o Include code/comment/blank counts of added files to  
+        total added material and include code/comment/blank
+        counts of removed files to total removed material.
+      o Ignore unrecognized languages.
+  
+  --exclude-ext
+      o Was inadvertently disabled in v1.52; works now.
+
+Outstanding issues:
+  --csv, --sql output formats remain unimplemented for --diff.
+
+============================================================================
+                Release Notes for cloc version 1.52
+                   http://cloc.sourceforge.net
+
+New Languages:
+    o Groovy
+    o Scala
+    o XAML
+
+New options:
+
+  --exclude-ext 
+      o Ignore files with the given file extension.
+  
+  --ignore-whitespace  
+      o Works with --diff; ignore whitespace in code and comments
+        when computing differences.
+
+Bug Fixes:
+
+  Fortran:  Treat line starting with an exclamation mark as a comment.
+  Cobol:    Treat page eject directive and any line with characters
+            in columns 1-6 as a blank line.
+  
+  --diff:   
+      o Fix negative value of removed blank lines.
+      o Better output column alignment when running with --by-file.
+      o Bug fixes when dealing with fully qualified Windows paths.
+  
+  --exclude-list-file  
+      o Can now also include directories to ignore in the supplied 
+        input file.
+
+Other Improvements:
+    o Better logic to select the file whose name identifies it as
+      containing source code when the file is one of several having 
+      identical contents (for example, if main.c and main.c.bak have
+      identical contents, choose main.c for counting instead of 
+      main.c.bak, which would be rejected because the filename
+      does not match any recognized language).
+    o Contents of .hg/ (Mercurial) directories are ignored.
+    o On Windows: Ignore case in file name extensions.

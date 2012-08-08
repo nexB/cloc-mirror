@@ -1,0 +1,7 @@
+Adjust prefix variables to install to other than system default:
+
+	make [-n] [prefix=/usr/local] install
+
+For more information, use:
+
+	make help
