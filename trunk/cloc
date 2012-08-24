@@ -115,6 +115,9 @@ if (defined $Algorithm::Diff::VERSION) {
 use Text::Tabs qw { expand };
 use Cwd qw { cwd };
 use File::Glob;
+my $PERL_516 = $] >= 5.016 ? 1 : 0;  # 5.16 deprecates defined(@array)
+no warnings 'deprecated';            # will need to comment this out to test
+                                     # each new Perl version
 # 1}}}
 # Usage information, options processing.       {{{1
 my $ON_WINDOWS = 0;
@@ -1051,9 +1054,19 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             $Ignored{$file_R} = "--exclude-lang=$Lang_R}";
             next;
         }
-        if (!defined @{$Filters_by_Language{$Lang_L} } or
-            !defined @{$Filters_by_Language{$Lang_R} }
-           ) {
+        my $not_Filters_by_Language_Lang_LR = 0;
+        if ($PERL_516) {
+            if (!(@{$Filters_by_Language{$Lang_L} }) or
+                !(@{$Filters_by_Language{$Lang_R} })) {
+                $not_Filters_by_Language_Lang_LR = 1;
+            }
+        } else {
+            if (!defined(@{$Filters_by_Language{$Lang_L} }) or
+                !defined(@{$Filters_by_Language{$Lang_R} })) {
+                $not_Filters_by_Language_Lang_LR = 1;
+            }
+        }
+        if ($not_Filters_by_Language_Lang_LR) {
             if (($Lang_L eq "(unknown)") or ($Lang_R eq "(unknown)")) {
                 $Ignored{$fh[$F  ]}{$file_L} = "language unknown (#1)";
                 $Ignored{$fh[$F+1]}{$file_R} = "language unknown (#1)";
@@ -1376,7 +1389,13 @@ foreach my $file (sort keys %unique_source_file) {
         $Ignored{$file} = "--exclude-lang=$Language{$file}";
         next;
     }
-    if (!defined @{$Filters_by_Language{$Language{$file}} }) {
+    my $Filters_by_Language_Language_file = undef;
+    if ($PERL_516) {
+        $Filters_by_Language_Language_file = !        @{$Filters_by_Language{$Language{$file}} };
+    } else {
+        $Filters_by_Language_Language_file = !defined @{$Filters_by_Language{$Language{$file}} };
+    }
+    if ($Filters_by_Language_Language_file) {
         if ($Language{$file} eq "(unknown)") {
             $Ignored{$file} = "language unknown (#1)";
         } else {
@@ -1507,7 +1526,11 @@ sub combine_results {                        # {{{1
                    )?
                    $}x) {
                 if ($report_type eq "by language") {
-                    next unless defined @{$rhaa_Filters_by_Language->{$1}};
+                    if ($PERL_516) {
+                        next unless         @{$rhaa_Filters_by_Language->{$1}};
+                    } else {
+                        next unless defined @{$rhaa_Filters_by_Language->{$1}};
+                    }
                     # above test necessary to avoid trying to sum reports
                     # of reports (which have no language breakdown).
                     $found_language = 1;
