@@ -2644,10 +2644,9 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'Lisp'}}  , "cl";
         push @{$extensions{'OpenCL'}}, "cl";
         delete $extensions{'Lisp/OpenCL'};
-    } elsif ($language =~ /^(Ant|Maven)$/i) {
+    } elsif ($language =~ /^(Ant)$/i) {
         push @{$extensions{'Ant'}}  , "build.xml";
-        push @{$extensions{'Maven'}}, "build.xml";
-        delete $extensions{'Ant/Maven/XML'};
+        delete $extensions{'Ant/XML'};
     }
 
     if (%extensions) {
@@ -2924,8 +2923,10 @@ sub classify_file {                          # {{{1
     return $language if $Not_Code_Filename{$file}; # (unknown)
     return $language if $file =~ m{~$}; # a temp edit file (unknown)
     if (defined $Language_by_File{$file}) {
-        if ($Language_by_File{$file} eq "Ant/Maven/XML") {
-            return Ant_or_Maven_or_XML($full_file, $rh_Err, $raa_errors);
+        if      ($Language_by_File{$file} eq "Ant/XML") {
+            return Ant_or_XML(  $full_file, $rh_Err, $raa_errors);
+        } elsif ($Language_by_File{$file} eq "Maven/XML") {
+            return Maven_or_XML($full_file, $rh_Err, $raa_errors);
         } else {
             return $Language_by_File{$file};
         }
@@ -3867,7 +3868,6 @@ sub set_constants {                          # {{{1
             'bat'         => 'DOS Batch'             ,
             'BAT'         => 'DOS Batch'             ,
             'build.xml'   => 'Ant'                   ,
-            'build.xml'   => 'Maven'                 ,
             'cbl'         => 'COBOL'                 ,
             'CBL'         => 'COBOL'                 ,
             'c'           => 'C'                     ,
@@ -3978,6 +3978,8 @@ sub set_constants {                          # {{{1
             'PL'          => 'Perl'                  ,
             'plx'         => 'Perl'                  ,
             'pm'          => 'Perl'                  ,
+            'pom.xml'     => 'Maven'                 ,
+            'pom'         => 'Maven'                 ,
             'p'           => 'Pascal'                ,
             'pp'          => 'Pascal'                ,
             'psql'        => 'SQL'                   ,
@@ -4073,7 +4075,8 @@ sub set_constants {                          # {{{1
             'gnumakefile'    => 'make'               ,
             'Gnumakefile'    => 'make'               ,
             'CMakeLists.txt' => 'CMake'              ,
-            'build.xml'      => 'Ant/Maven/XML'      ,
+            'build.xml'      => 'Ant/XML'            ,
+            'pom.xml'        => 'Maven/XML'          ,
             );
 # 1}}}
 %{$rhaa_Filters_by_Language} = (             # {{{1
@@ -4088,15 +4091,11 @@ sub set_constants {                          # {{{1
     'Ada'                => [   [ 'remove_matches'      , '^\s*--' ], ],
     'ADSO/IDSM'          => [   [ 'remove_matches'      , '^\s*\*[\+\!]' ], ],
     'AMPLE'              => [   [ 'remove_matches'      , '^\s*//' ], ],
-    'Ant/Maven/XML'      => [
+    'Ant/XML'            => [
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
     'Ant'                => [
-                                [ 'remove_html_comments',          ],
-                                [ 'call_regexp_common'  , 'HTML'   ], 
-                            ],
-    'Maven'              => [
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
@@ -4254,6 +4253,14 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*%'  ], 
                                 [ 'remove_inline'       , '%.*$'   ],
                             ], 
+    'Maven/XML'          => [
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
+    'Maven'              => [
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
     'Modula3'            => [   [ 'call_regexp_common'  , 'Pascal' ], ],
         # Modula 3 comments are (* ... *) so applying the Pascal filter
         # which also treats { ... } as a comment is not really correct.
@@ -4607,9 +4614,8 @@ sub set_constants {                          # {{{1
     'ambush'                       =>   2.50,
     'aml'                          =>   1.63,
     'AMPLE'                        =>   2.00,
-    'Ant/Maven/XML'                =>   1.90,
+    'Ant/XML'                      =>   1.90,
     'Ant'                          =>   1.90,
-    'Maven'                        =>   1.90,
     'amppl ii'                     =>   1.25,
     'ansi basic'                   =>   1.25,
     'ansi cobol 74'                =>   0.75,
@@ -4912,6 +4918,7 @@ sub set_constants {                          # {{{1
     'mark iv'                      =>   2.00,
     'mark v'                       =>   2.22,
     'mathcad'                      =>  16.00,
+    'Maven'                        =>   1.90,
     'mdl'                          =>   2.22,
     'mentor'                       =>   1.51,
     'mesa'                         =>   0.75,
@@ -7032,13 +7039,13 @@ sub Lisp_or_OpenCL {                         # {{{1
     print "<- Lisp_or_OpenCL\n" if $opt_v > 2;
     return $lang;
 } # 1}}}
-sub Ant_or_Maven_or_XML {                    # {{{1
+sub Ant_or_XML {                             # {{{1
     my ($file        , # in
         $rh_Err      , # in   hash of error codes
         $raa_errors  , # out
        ) = @_;
 
-    print "-> Ant_or_Maven_or_XML\n" if $opt_v > 2;
+    print "-> Ant_or_XML($file)\n" if $opt_v > 2;
 
     my $lang = "XML";
     my $IN = new IO::File $file, "r";
@@ -7047,42 +7054,65 @@ sub Ant_or_Maven_or_XML {                    # {{{1
         return $lang;
     }
     my $Ant_points   = 0;
-    my $Maven_points = 0;
     my $XML_points   = 1;
     while (<$IN>) {
         if (/^\s*<project\s+/) {
             ++$Ant_points  ;
-            ++$Maven_points;
             --$XML_points  ;
         }
         if (/xmlns:artifact="antlib:org.apache.maven.artifact.ant"/) {
             ++$Ant_points  ;
-            --$Maven_points;
-            --$XML_points  ;
-        }
-        if (/xmlns:artifact="urn:maven-artifact-ant"/) {
-            ++$Maven_points;
-            --$XML_points  ;
-        }
-        if (/<property\s+name="mvn.repo"/) {
-            ++$Maven_points;
-            --$Ant_points  ;
             --$XML_points  ;
         }
     }
     $IN->close;
 
-    if (($XML_points >= $Ant_points) and ($XML_points >= $Maven_points)) {
+    if ($XML_points >= $Ant_points) {
         # tie or better goes to XML
         $lang = "XML";
-    } elsif ($Ant_points >= $Maven_points) {
-        # Ant/Maven tie goes to Ant
+    } else {
         $lang = "Ant";
+    }
+
+    print "<- Ant_or_XML($lang)\n" if $opt_v > 2;
+    return $lang;
+} # 1}}}
+sub Maven_or_XML {                           # {{{1
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+       ) = @_;
+
+    print "-> Maven_or_XML($file)\n" if $opt_v > 2;
+
+    my $lang = "XML";
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
+        return $lang;
+    }
+    my $Mvn_points   = 0;
+    my $XML_points   = 1;
+    while (<$IN>) {
+        if (/^\s*<project\s+/) {
+            ++$Mvn_points  ;
+            --$XML_points  ;
+        }
+        if (m{xmlns="http://maven.apache.org/POM/}) {
+            ++$Mvn_points  ;
+            --$XML_points  ;
+        }
+    }
+    $IN->close;
+
+    if ($XML_points >= $Mvn_points) {
+        # tie or better goes to XML
+        $lang = "XML";
     } else {
         $lang = "Maven";
     }
 
-    print "<- Ant_or_Maven_or_XML\n" if $opt_v > 2;
+    print "<- Maven_or_XML($lang)\n" if $opt_v > 2;
     return $lang;
 } # 1}}}
 sub html_colored_text {                      # {{{1
