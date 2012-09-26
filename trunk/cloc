@@ -2315,9 +2315,11 @@ sub generate_report {                        # {{{1
                     warn "No scale factor for $lang_or_file; using 1.00";
                 }
             } else { # by individual code file
-                next unless defined $rhh_count->{$lang_or_file}{'lang'};
-                next unless defined $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
-                $factor = $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
+                if ($report_type ne "by report file") {
+                    next unless defined $rhh_count->{$lang_or_file}{'lang'};
+                    next unless defined $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
+                    $factor = $rh_scale->{$rhh_count->{$lang_or_file}{'lang'}};
+                }
             }
             $scaled = $factor*$rhh_count->{$lang_or_file}{'code'};
         } else {
