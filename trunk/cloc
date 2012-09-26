@@ -7874,9 +7874,9 @@ sub external_utility_exists {                # {{{1
     if ($ON_WINDOWS) {
         $success = 1 unless system $exe . ' > nul';
     } else {
-        $success = 1 unless system $exe . ' >& /dev/null';
+        $success = 1 unless system $exe . ' >/dev/null 2>&1';
         if (!$success) {
-            $success = 1 unless system "which" . " $exe" . ' >& /dev/null';
+            $success = 1 unless system "which" . " $exe" . ' >/dev/null 2>&1';
         }
     }
     
