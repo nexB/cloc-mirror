@@ -3993,6 +3993,7 @@ sub set_constants {                          # {{{1
             'rex'         => 'Oracle Reports'        ,
             'rexx'        => 'Rexx'                  ,
             'rhtml'       => 'Ruby HTML'             ,
+            'rs'          => 'Rust'                  ,
             's'           => 'Assembly'              ,
             'S'           => 'Assembly'              ,
             'scala'       => 'Scala'                 ,
@@ -4339,6 +4340,11 @@ sub set_constants {                          # {{{1
                             ], 
     'Ruby HTML'          => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
+    'Rust'               => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                            ],
     'Scala'              => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
@@ -5042,6 +5048,7 @@ sub set_constants {                          # {{{1
     'rpg ii'                       =>   1.63,
     'rpg iii'                      =>   1.63,
     'rtexpert 1.4'                 =>   1.38,
+    'Rust'                         =>   1.00,
     'sabretalk'                    =>   0.90,
     'sail'                         =>   0.75,
     'sapiens'                      =>   5.00,
