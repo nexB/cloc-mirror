@@ -8353,7 +8353,7 @@ sub combine_diffs {                          # {{{1
         my $sec;
         while (<$IN>) {
             next if /^(http|Language|-----)/;
-            if (/^[A-Z][a-z]*/) {        # section title
+            if (/^[A-Za-z0-9]+/) {        # section title
                 $sec = $_;
                 chomp($sec);
                 $HoH{$sec} = () if ! exists $HoH{$sec};
@@ -8375,7 +8375,7 @@ sub combine_diffs {                          # {{{1
         }
         $IN->close;
     }
-  
+
     # rows are in this order
     my @rows = ('same', 'modified', 'added', 'removed');
   
