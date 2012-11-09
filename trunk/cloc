@@ -960,6 +960,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             $Delta_by_Language{$Lang}{'code'   }{$status} += $code_count   ;
             $Delta_by_Language{$Lang}{'blank'  }{$status} += $blank_count  ;
             $Delta_by_Language{$Lang}{'comment'}{$status} += $comment_count;
+            $Delta_by_Language{$Lang}{'nFiles' }{$status} += 1             ;
         }
     }
    #use Data::Dumper::Simple;
