@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = sprintf("%.2f", 1.57);
+my $VERSION = "1.56.5";
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -1673,7 +1673,7 @@ sub diff_report     {                        # {{{1
         $first_column = "Report File";
     }
 
-    my $header_line  = sprintf "%s v %4.2f", $URL, $version;
+    my $header_line  = sprintf "%s v %s", $URL, $version;
     my $sum_files    = 1;
     my $sum_lines    = 1;
        $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
@@ -2234,7 +2234,7 @@ sub generate_report {                        # {{{1
         $first_column = "Report File";
     }
 
-    my $header_line  = sprintf "%s v %4.2f", $URL, $version;
+    my $header_line  = sprintf "%s v %s", $URL, $version;
        $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
