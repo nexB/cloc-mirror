@@ -1,7 +1,7 @@
 #   Copyright
 #
 #      Copyright (C) 2012 Al Danial <al.danial@gmail.com>.
-#      Original version written by Jari Aalto <jari.aalto@cante.net>.
+#      Copyright (C) 2010-2012 Jari Aalto <jari.aalto@cante.net>
 #
 #   License
 #
@@ -452,17 +452,17 @@ None.
 
 =head1 SEE ALSO
 
-
 sloccount(1)
 
 =head1 AUTHORS
 
-The cloc program was written by Al Danial <al.danial@gmail.com> and 
+The cloc program was written by Al Danial <al.danial@gmail.com> and
 is Copyright (C) 2006-2012 Northrop Grumman Corporation.
 
-The manual page was originaly written by Jari Aalto <jari.aalto@cante.net>.
+The manual page was originally written by Jari Aalto <jari.aalto@cante.net>.
 
 Both the code and documentation is released under the GNU GPL version 2
 or (at your option) any later version. For more information about
 license, visit <http://www.gnu.org/copyleft/gpl.html>.
+
 =cut
