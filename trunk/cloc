@@ -3958,10 +3958,10 @@ sub set_constants {                          # {{{1
             'mg'          => 'Modula3'               , 
 #           'mli'         => 'ML'                    , # ML not implemented
 #           'ml'          => 'ML'                    , 
-            'ml'          => 'Ocaml'                 , 
-            'mli'         => 'Ocaml'                 , 
-            'mly'         => 'Ocaml'                 , 
-            'mll'         => 'Ocaml'                 , 
+            'ml'          => 'OCaml'                 , 
+            'mli'         => 'OCaml'                 , 
+            'mly'         => 'OCaml'                 , 
+            'mll'         => 'OCaml'                 , 
             'm'           => 'MATLAB/Objective C/MUMPS' ,
             'mm'          => 'Objective C++'         ,
             'wdproj'      => 'MSBuild scripts'       ,
@@ -4281,7 +4281,7 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ], 
-    'Ocaml'              => [   
+    'OCaml'              => [   
                                 [ 'call_regexp_common'  , 'Pascal' ], 
                             ],
     'OpenCL'             => [   
@@ -4488,7 +4488,7 @@ sub set_constants {                          # {{{1
     'MATLAB'             =>     '\.\.\.\s*$'    ,
     'Objective C'        =>     '\\\\$'         ,
     'Objective C++'      =>     '\\\\$'         ,
-    'Ocaml'              =>     '\\\\$'         ,
+    'OCaml'              =>     '\\\\$'         ,
     'Octave'             =>     '\.\.\.\s*$'    ,
     'Patran Command Language'=> '\\\\$'         ,
     'PowerShell'         =>     '\\\\$'         ,
@@ -4969,7 +4969,7 @@ sub set_constants {                          # {{{1
     'Objective C++'                =>   2.96,
     'objectoriented default'       =>   2.76,
     'objectview'                   =>   3.20,
-    'Ocaml'                        =>   3.00,
+    'OCaml'                        =>   3.00,
     'ogl'                          =>   1.00,
     'omnis 7'                      =>   2.00,
     'oodl'                         =>   2.76,
