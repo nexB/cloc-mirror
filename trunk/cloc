@@ -3959,6 +3959,9 @@ sub set_constants {                          # {{{1
 #           'mli'         => 'ML'                    , # ML not implemented
 #           'ml'          => 'ML'                    , 
             'ml'          => 'Ocaml'                 , 
+            'mli'         => 'Ocaml'                 , 
+            'mly'         => 'Ocaml'                 , 
+            'mll'         => 'Ocaml'                 , 
             'm'           => 'MATLAB/Objective C/MUMPS' ,
             'mm'          => 'Objective C++'         ,
             'wdproj'      => 'MSBuild scripts'       ,
