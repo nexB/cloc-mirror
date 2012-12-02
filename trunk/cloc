@@ -7507,8 +7507,10 @@ sub remove_leading_dir {                     # {{{1
     }
     if (scalar @filenames == 1) {
         # special case:  with only one filename
-        # cannot determine a baseline
-        return ( basename $filenames[0] );
+        # cannot determine a baseline, just remove first directory level
+        $filenames[0] =~ s{^.*?/}{};
+        print "-> $filenames[0]\n";
+        return $filenames[0];
     }
     foreach my $F (@filenames) {
         my ($Vol, $Dir, $File) = File::Spec->splitpath($F);
