@@ -178,6 +178,10 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              Use --diff-alignment to generate a list showing
                              which file pairs where compared.  See also
                              --ignore-case, --ignore-whitespace.
+   --diff-timeout <N>        Ignore files which take more than <N> seconds
+                             to process.  Default is 10 seconds.
+                             (Large files with many repeated lines can cause 
+                             Algorithm::Diff::sdiff() to take hours.)
    --follow-links            [Unix only] Follow symbolic links to directories
                              (sym links to files are always followed).
    --force-lang=<lang>[,<ext>]
@@ -363,6 +367,7 @@ my (
     @opt_script_lang          ,
     $opt_diff                 ,
     $opt_diff_alignment       ,
+    $opt_diff_timeout         ,
     $opt_html                 ,
     $opt_ignored              ,
     $opt_counted              ,
@@ -430,6 +435,7 @@ my $getopt_success = GetOptions(
    "found=s"                                 => \$opt_found               ,
    "diff"                                    => \$opt_diff                ,
    "diff-alignment|diff_alignment=s"         => \$opt_diff_alignment      ,
+   "diff-timeout|diff_timeout=i"             => \$opt_diff_timeout        ,
    "html"                                    => \$opt_html                ,
    "ignored=s"                               => \$opt_ignored             ,
    "quiet"                                   => \$opt_quiet               ,
@@ -507,6 +513,7 @@ $opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
 $opt_ignore_case       = 0  unless $opt_ignore_case;
 $opt_lang_no_ext       = 0  unless $opt_lang_no_ext;
 $opt_follow_links      = 0  unless $opt_follow_links;
+$opt_diff_timeout      =10  unless $opt_diff_timeout;
 $opt_csv               = 1  if $opt_csv_delimiter;
 $ON_WINDOWS            = 1  if $opt_force_on_windows;
 $ON_WINDOWS            = 0  if $opt_force_on_unix;
@@ -563,6 +570,7 @@ my $ALREADY_SHOWED_XML_SECTION = 0;
 my %Error_Codes = ( 'Unable to read'                => -1,
                     'Neither file nor directory'    => -2, 
                     'Diff error (quoted comments?)' => -3, 
+                    'Diff error, exceeded timeout'  => -4, 
                   );
 if ($opt_read_lang_def) {
     read_lang_def(
@@ -7346,6 +7354,9 @@ sub array_diff {                             # {{{1
     #        {char}{type}    = [ disposition (added, removed, etc)]
     #
 
+    @{$rah_diff_L} = ();
+    @{$rah_diff_R} = ();
+
     print "-> array_diff()\n" if $opt_v > 2;
     my $COMMENT_MODE = 0;
        $COMMENT_MODE = 1 if $mode eq "comment";
@@ -7354,7 +7365,24 @@ sub array_diff {                             # {{{1
 #print Dumper("block left:" , $ra_lines_L);
 #print Dumper("block right:", $ra_lines_R);
 
-    my @sdiffs = sdiff($ra_lines_L, $ra_lines_R);
+    my @sdiffs = ();
+    eval {
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        alarm $opt_diff_timeout;
+        @sdiffs = sdiff($ra_lines_L, $ra_lines_R);
+        alarm 0;
+    };
+    if ($@) {
+        # timed out
+        die unless $@ eq "alarm\n"; # propagate unexpected errors
+        push @{$raa_Errors}, 
+             [ $Error_Codes{'Diff error, exceeded timeout'}, $file ];
+        if ($opt_v) {
+          warn "array_diff: diff timeout failure for $file--ignoring\n";
+        }
+        return;
+    }
+
 #use Data::Dumper::Simple;
 #print Dumper($ra_lines_L, $ra_lines_R, @sdiffs);
 #die;
@@ -7362,8 +7390,6 @@ sub array_diff {                             # {{{1
     my $n_L        = 0;
     my $n_R        = 0;
     my $n_sdiff    = 0;  # index to $rah_diff_L, $rah_diff_R
-    @{$rah_diff_L} = ();
-    @{$rah_diff_R} = ();
     foreach my $triple (@sdiffs) {
         my $flag   = $triple->[0];
         my $line_L = $triple->[1];
