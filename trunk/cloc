@@ -278,9 +278,9 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              match the Perl regex.
    --match-d=<regex>         Only count files in directories matching the Perl
                              regex.  For example
-                               --match-d=/src/
+                               --match-d=/(src|include)/
                              only counts files in directories containing
-                             /src/
+                             /src/ or /include/.
    --not-match-d=<regex>     Count all files except those in directories
                              matching the Perl regex.
    --skip-win-hidden         On Windows, ignore hidden files.
