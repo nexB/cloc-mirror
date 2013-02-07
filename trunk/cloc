@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = "1.56.5";
+my $VERSION = "1.57";  # odd number == beta; even number == stable
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -274,12 +274,6 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              per line.  Relative path names will be resolved
                              starting from the directory where cloc is
                              invoked.  See also --list-file.
-   --match-f=<regex>         Only count files whose basenames match the Perl
-                             regex.  For example
-                               --match-f=^[Ww]idget
-                             only counts files that start with Widget or widget.
-   --not-match-f=<regex>     Count all files except those whose basenames
-                             match the Perl regex.
    --match-d=<regex>         Only count files in directories matching the Perl
                              regex.  For example
                                --match-d='/(src|include)/'
@@ -287,6 +281,12 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              /src/ or /include/.
    --not-match-d=<regex>     Count all files except those in directories
                              matching the Perl regex.
+   --match-f=<regex>         Only count files whose basenames match the Perl
+                             regex.  For example
+                               --match-f='^[Ww]idget'
+                             only counts files that start with Widget or widget.
+   --not-match-f=<regex>     Count all files except those whose basenames
+                             match the Perl regex.
    --skip-win-hidden         On Windows, ignore hidden files.
 
  ${BB}Debug Options${NN}

@@ -120,6 +120,13 @@ archives.  Use B<--diff-alignment> to generate a list showing
 which file pairs where compared.  See also B<--ignore-case>, 
 B<--ignore-whitespace>.
 
+=item B<--diff-timeout <N>>
+
+Ignore files which take more than <N> seconds
+to process.  Default is 10 seconds.
+(Large files with many repeated lines can cause 
+Algorithm::Diff::sdiff() to take hours.)
+
 =item B<--follow-links>
 
 [Unix only] Follow symbolic links to directories (sym links to files 
@@ -136,7 +143,8 @@ default Fortran 77 counter, use:
 
 If <ext> is omitted, every file will be counted with the <lang> counter.
 This option can be specified multiple times (but that is only useful
-when <ext> is given each time). See also B<--script-lang>.
+when <ext> is given each time). See also B<--script-lang>,
+B<--lang-no-ext>.
 
 =item B<--ignore-whitespace>
 
@@ -155,10 +163,6 @@ overrides internal logic for files without extensions (where such files
 are checked against known scripting languages by examining the first 
 line for C<#!>).  See also B<--force-lang>, B<--script-lang>.
 
-=item B<--stdin-name=<file>>
-
-Count lines streamed via I<STDIN> as if they came from a file named <file>.
-
 =item B<--read-binary-files>
 
 Process binary files in addition to text files. This is usually a bad
@@ -171,10 +175,10 @@ Load from <file> the language processing filters. (see also
 B<--write-lang-def>) then use these filters instead of the built-in
 filters.
 
-=item B<--script-lang=LANG,<s>>
+=item B<--script-lang=<lang>,<s>>
 
 Process all files that invoke <s> as a C<#!> scripting language with the
-counter for language LANG. For example, files that begin with
+counter for language <lang>. For example, files that begin with
 C<#!/usr/local/bin/perl5.8.8> will be counted with the Perl counter by
 using
 
@@ -195,6 +199,10 @@ end of the run (as they are with I<File::Temp>).
 Skip the file uniqueness check. This will give a performance boost at
 the expense of counting files with identical contents multiple times
 (if such duplicates exist).
+
+=item B<--stdin-name=<file>>
+
+Count lines streamed via I<STDIN> as if they came from a file named <file>.
 
 =item B<--strip-comments=<ext>>
 
@@ -241,6 +249,10 @@ will skip all files that match C</.cache/> or C</test/> as part of
 their path. Directories named C<.bzr>, C<.cvs>, C<.hg>, C<.git>,
 C<.hg>, and C<.svn> are always excluded.
 
+=item B<--exclude-ext=<ext1>[,<ext2> ...]>
+
+Do not count files having the given file name extensions.
+
 =item B<--exclude-lang=<L1>[,<L2> ...]>
 
 Exclude the given comma separated languages from being counted.
@@ -255,9 +267,10 @@ directory where cloc is invoked. See also B<--list-file>.
 
 Only count files in directories matching the Perl regex.  For example
 
-     --match-d=/src/
+     --match-d='/(src|include)/'
 
-only counts files in directories containing C<src>.
+only counts files in directory paths containing C</src/>
+or C</include/>.
 
 =item B<--not-match-d=<regex>>
 
@@ -268,7 +281,7 @@ Count all files except in directories matching the Perl regex.
 Only count files whose basenames match the Perl regex. For example
 this only counts files at start with Widget or widget:
 
-     --match-f="^[Ww]idget"
+     --match-f='^[Ww]idget'
 
 =item B<--not-match-f=<regex>>
 
@@ -291,6 +304,13 @@ Save names of categorized files to <file>.
 =item B<--counted=<file>>
 
 Save names of processed source files to <file>.
+
+=item B<--diff-alignment=<file>>
+
+Write to <file> a list of files and file pairs
+showing which files were added, removed, and/or
+compared during a run with B<--diff>.  This switch
+forces the B<--diff> mode on.
 
 =item B<--help>
 
@@ -319,7 +339,7 @@ and exit.
 Print information about all known (or just the given) languages and
 exit.
 
-=item B<--show-os>]>
+=item B<--show-os>
 
 Print the value of the operating system mode and exit.  See also
 B<--unix>, B<--windows>.
@@ -350,7 +370,7 @@ Print third-generation language output.  (This option can cause report
 summation to fail if some reports were produced with this option while 
 others were produced without it.)
 
-=item B<--progress-rate=<number>>
+=item B<--progress-rate=<n>>
 
 Show progress update after every <n> files are processed (default
 <n>=100). Set <n> to 0 to suppress progress output; useful when
@@ -457,7 +477,7 @@ sloccount(1)
 =head1 AUTHORS
 
 The cloc program was written by Al Danial <al.danial@gmail.com> and
-is Copyright (C) 2006-2012 Northrop Grumman Corporation.
+is Copyright (C) 2006-2013 Northrop Grumman Corporation.
 
 The manual page was originally written by Jari Aalto <jari.aalto@cante.net>.
 
