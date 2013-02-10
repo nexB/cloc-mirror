@@ -3945,6 +3945,8 @@ sub set_constants {                          # {{{1
             'il'          => 'SKILL'                 ,
             'ils'         => 'SKILL++'               ,
             'inc'         => 'PHP/Pascal'            , # might be PHP or Pascal
+            'ino'         => 'Arduino Sketch'        ,
+            'pde'         => 'Arduino Sketch'        , # pre 1.0
             'itk'         => 'Tcl/Tk'                ,
             'java'        => 'Java'                  ,
             'jcl'         => 'JCL'                   , # IBM Job Control Lang.
@@ -4114,6 +4116,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
+    'Arduino Sketch'     => [   # same as C
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ],
+                            ], 
     'Assembly'           => [  
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'remove_matches'      , '^\s*;'  ],
@@ -4678,6 +4685,7 @@ sub set_constants {                          # {{{1
 'CCS'                         =>   5.33,
 
 #   'assembler (basic)'            =>   0.25,
+    'Arduino Sketch'               =>   1.00,
     'Assembly'                     =>   0.25,
 
     'Assembly (macro)'             =>   0.51,
