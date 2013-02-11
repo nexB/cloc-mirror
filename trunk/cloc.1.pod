@@ -1,7 +1,7 @@
 #   Copyright
 #
-#      Copyright (C) 2012 Al Danial <al.danial@gmail.com>.
-#      Copyright (C) 2010-2012 Jari Aalto <jari.aalto@cante.net>
+#      Copyright (C) 2013 Al Danial <al.danial@gmail.com>.
+#      Copyright (C) 2010-2013 Jari Aalto <jari.aalto@cante.net>
 #
 #   License
 #
@@ -63,7 +63,7 @@ To count standard input, use the special filename B<->.
 
 =over 4
 
-=item B<--extract-with=<cmd>>
+=item B<--extract-with=CMD>
 
 This option is only needed if cloc is unable to figure out how to
 extract the contents of the input file(s) by itself. Use <cmd> to
@@ -82,9 +82,9 @@ and on Windows, use:
 
     --extract-with="\"c:\Program Files\WinZip\WinZip32.exe\" -e -o >FILE<
 
-=item B<--list-file=<file>>
+=item B<--list-file=FILE>
 
-Take the list of file and/or directory names to process from <file>
+Take the list of file and/or directory names to process from FILE
 which has one file/directory name per line. See also
 B<--exclude-list-file>
 
@@ -112,17 +112,17 @@ Report results for every source file encountered.
 Report results for every source file encountered in addition to
 reporting by language.
 
-=item B<--diff <set1> <set2>>
+=item B<--diff SET1 SET2>
 
 Compute differences in code and comments between source file(s) of 
-<set1> and <set2>.  The inputs may be pairs of files, directories, or 
+SET1 and SET2.  The inputs may be pairs of files, directories, or 
 archives.  Use B<--diff-alignment> to generate a list showing
 which file pairs where compared.  See also B<--ignore-case>, 
 B<--ignore-whitespace>.
 
-=item B<--diff-timeout <N>>
+=item B<--diff-timeout N>
 
-Ignore files which take more than <N> seconds
+Ignore files which take more than N seconds
 to process.  Default is 10 seconds.
 (Large files with many repeated lines can cause 
 Algorithm::Diff::sdiff() to take hours.)
@@ -132,7 +132,7 @@ Algorithm::Diff::sdiff() to take hours.)
 [Unix only] Follow symbolic links to directories (sym links to files 
 are always followed).
 
-=item B<--force-lang=<lang>[,<ext>]>
+=item B<--force-lang=LANG[,EXT]>
 
 Process all files that have a <ext> extension with the counter for
 language <lang>. For example, to count all .f files with the Fortran
@@ -156,7 +156,7 @@ with B<--diff>.  See also B<--ignore-case>.
 Ignore changes in case; consider upper- and lowercase letters equivalent 
 when comparing files with B<--diff>.  See also B<--ignore-whitespace>.
 
-=item B<--lang-no-ext=<lang>>
+=item B<--lang-no-ext=LANG>
 
 Count files without extensions using the <lang> counter.  This option 
 overrides internal logic for files without extensions (where such files 
@@ -169,13 +169,13 @@ Process binary files in addition to text files. This is usually a bad
 idea and should only be attempted with text files that have embedded
 binary data.
 
-=item B<--read-lang-def=<file>>
+=item B<--read-lang-def=FILE>
 
-Load from <file> the language processing filters. (see also
+Load from FILE the language processing filters. (see also
 B<--write-lang-def>) then use these filters instead of the built-in
 filters.
 
-=item B<--script-lang=<lang>,<s>>
+=item B<--script-lang=LANG,S>
 
 Process all files that invoke <s> as a C<#!> scripting language with the
 counter for language <lang>. For example, files that begin with
@@ -185,12 +185,12 @@ using
 	--script-lang=Perl,perl5.8.8
 
 The language name is case insensitive but the name of the script
-language executable, <s>, must have the right case. This option can be
+language executable, S, must have the right case. This option can be
 specified multiple times. See also B<--force-lang>.
 
-=item B<--sdir=<dir>>
+=item B<--sdir=DIR>
 
-Use <dir> as the scratch directory instead of letting I<File::Temp> chose
+Use DIR as the scratch directory instead of letting I<File::Temp> chose
 the location. Files written to this location are not removed at the
 end of the run (as they are with I<File::Temp>).
 
@@ -200,15 +200,15 @@ Skip the file uniqueness check. This will give a performance boost at
 the expense of counting files with identical contents multiple times
 (if such duplicates exist).
 
-=item B<--stdin-name=<file>>
+=item B<--stdin-name=FILE>
 
-Count lines streamed via I<STDIN> as if they came from a file named <file>.
+Count lines streamed via I<STDIN> as if they came from a file named FILE.
 
-=item B<--strip-comments=<ext>>
+=item B<--strip-comments=EXT>
 
 For each file processed, write to the current directory a version of
 the file which has blank lines and comments removed. The name of each
-stripped file is the original file name with C<.<ext>> appended to it.
+stripped file is the original file name with C<.EXT> appended to it.
 It is written to the current directory unless B<--original-dir> is on.
 
 =item B<--original-dir>
@@ -257,13 +257,13 @@ Do not count files having the given file name extensions.
 
 Exclude the given comma separated languages from being counted.
 
-=item B<--exclude-list-file=<file>>
+=item B<--exclude-list-file=FILE>
 
-Ignore files whose names appear in <file>. <file> should have one entry
+Ignore files whose names appear in FILE. FILE should have one entry
 per line. Relative path names will be resolved starting from the
 directory where cloc is invoked. See also B<--list-file>.
 
-=item B<--match-d=<regex>>
+=item B<--match-d=REGEX>
 
 Only count files in directories matching the Perl regex.  For example
 
@@ -272,20 +272,29 @@ Only count files in directories matching the Perl regex.  For example
 only counts files in directory paths containing C</src/>
 or C</include/>.
 
-=item B<--not-match-d=<regex>>
+=item B<--not-match-d=REGEX>
 
 Count all files except in directories matching the Perl regex.
 
-=item B<--match-f=<regex>>
+=item B<--match-f=REGEX>
 
 Only count files whose basenames match the Perl regex. For example
 this only counts files at start with Widget or widget:
 
      --match-f='^[Ww]idget'
 
-=item B<--not-match-f=<regex>>
+=item B<--not-match-f=REGEX>
 
 Count all files except those whose basenames match the Perl regex.
+
+=item B<--skip-archive=REGEX>
+
+Ignore files that end with the given Perl regular
+expression.  For example, if given
+  --skip-archive='(zip|tar(\.(gz|Z|bz2|xz|7z))?)'
+the code will skip files that end with .zip,
+.tar, .tar.gz, .tar.Z, .tar.bz2, .tar.xz, and
+.tar.7z.
 
 =item B<--skip-win-hidden>
 
@@ -297,17 +306,17 @@ On Windows, ignore hidden files.
 
 =over 4
 
-=item B<--categorized=<file>>
+=item B<--categorized=FILE>
 
-Save names of categorized files to <file>.
+Save names of categorized files to FILE.
 
-=item B<--counted=<file>>
+=item B<--counted=FILE>
 
-Save names of processed source files to <file>.
+Save names of processed source files to FILE.
 
-=item B<--diff-alignment=<file>>
+=item B<--diff-alignment=FILE>
 
-Write to <file> a list of files and file pairs
+Write to FILE a list of files and file pairs
 showing which files were added, removed, and/or
 compared during a run with B<--diff>.  This switch
 forces the B<--diff> mode on.
@@ -316,13 +325,13 @@ forces the B<--diff> mode on.
 
 Print this usage information and exit.
 
-=item B<--found=<file>>
+=item B<--found=FILE>
 
-Save names of every file found to <file>.
+Save names of every file found to FILE.
 
-=item B<--ignored=<file>>
+=item B<--ignored=FILE>
 
-Save names of ignored files and the reason they were ignored to <file>.
+Save names of ignored files and the reason they were ignored to FILE.
 
 =item B<--print-filter-stages>
 
@@ -352,9 +361,9 @@ Turn on verbose with optional numeric value.
 
 Print the version of this program and exit.
 
-=item B<--write-lang-def=<file>>
+=item B<--write-lang-def=FILE>
 
-Writes to <file> the language processing filters then exits. Useful as a
+Writes to FILE the language processing filters then exits. Useful as a
 first step to creating custom language definitions. See also
 B<--read-lang-def>.
 
@@ -370,40 +379,40 @@ Print third-generation language output.  (This option can cause report
 summation to fail if some reports were produced with this option while 
 others were produced without it.)
 
-=item B<--progress-rate=<n>>
+=item B<--progress-rate=N>
 
-Show progress update after every <n> files are processed (default
-<n>=100). Set <n> to 0 to suppress progress output; useful when
+Show progress update after every N files are processed (default
+N=100). Set N to 0 to suppress progress output; useful when
 redirecting output to I<STDOUT>.
 
 =item B<--quiet>
 
 Suppress all information messages except for the final report.
 
-=item B<--report-file=<file>>
+=item B<--report-file=FILE>
 
-Write the results to <file> instead of standard output.
+Write the results to FILE instead of standard output.
 
-=item B<--out=<file>>
+=item B<--out=FILE>
 
-Synonym for B<--report-file=<file>>.
+Synonym for B<--report-file=FILE>.
 
 =item B<--csv>
 
 Write the results as comma separated values.
 
-=item B<--csv-delimiter=<C>>
+=item B<--csv-delimiter=C>
 
-Use the character <C> as the delimiter for comma separated files 
+Use the character C as the delimiter for comma separated files 
 instead of ,.  This switch forces B<--csv> to be on.
 
-=item B<--sql=<file>>
+=item B<--sql=FILE>
 
 Write results as SQL CREATE and INSERT statements which can be read by
-a database program such as SQLite. If <file> is B<->, output is sent to
+a database program such as SQLite. If FILE is B<->, output is sent to
 I<STDOUT>.
 
-=item B<--sql-project=<name>>
+=item B<--sql-project=NAME>
 
 Use <name> as the project identifier for the current run. Only valid
 with the B<--sql> option.
@@ -422,9 +431,9 @@ one input file is processed.
 
 Write the results in XML.
 
-=item B<--xsl[=<file>]>
+=item B<--xsl[=FILE]>
 
-Reference <file> as an XSL stylesheet within the XML output. If <file> is
+Reference FILE as an XSL stylesheet within the XML output. If FILE is
 not given, writes a default stylesheet, cloc.xsl. This switch forces
 B<--xml> to be on.
 
@@ -447,7 +456,7 @@ releases 2.6.6 and 2.7:
   cloc --diff Python-2.6.6.tar.bz  Python-2.7.tar.bz2
 
 To see how cloc aligns files for comparison between two code
-bases, use the B<--diff-alignment=<file>> option.  Here the
+bases, use the B<--diff-alignment=FILE> option.  Here the
 alignment information is written to C<align.txt>:
 
   cloc --diff-aligment=align.txt gcc-4.4.0.tar.bz2  gcc-4.5.0.tar.bz2
