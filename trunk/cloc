@@ -287,6 +287,12 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              only counts files that start with Widget or widget.
    --not-match-f=<regex>     Count all files except those whose basenames
                              match the Perl regex.
+   --skip-archive=<regex>    Ignore files that end with the given Perl regular
+                             expression.  For example, if given
+                               --skip-archive='(zip|tar(\.(gz|Z|bz2|xz|7z))?)'
+                             the code will skip files that end with .zip,
+                             .tar, .tar.gz, .tar.Z, .tar.bz2, .tar.xz, and
+                             .tar.7z.
    --skip-win-hidden         On Windows, ignore hidden files.
 
  ${BB}Debug Options${NN}
@@ -422,6 +428,7 @@ my (
     $opt_force_on_windows     ,
     $opt_force_on_unix        ,   # actually forces !$ON_WINDOWS
     $opt_show_os              ,
+    $opt_skip_archive         ,
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -487,6 +494,7 @@ my $getopt_success = GetOptions(
    "windows"                                 => \$opt_force_on_windows    ,
    "unix"                                    => \$opt_force_on_unix       ,
    "show_os|show-os"                         => \$opt_show_os             ,
+   "skip_archive|skip-archive=s"             => \$opt_skip_archive        ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -542,6 +550,7 @@ if ($opt_sql eq "-" || $opt_sql eq "1") { # stream SQL output to STDOUT
     $skip_generate_report = 1;
     $opt_sum_reports      = 0;
 }
+
 die $usage unless defined $opt_version         or
                   defined $opt_show_lang       or
                   defined $opt_show_ext        or
@@ -673,6 +682,18 @@ exit if (defined $opt_show_ext) or (defined $opt_show_lang);
 #print "Before glob have [", join(",", @ARGV), "]\n";
 @ARGV = windows_glob(@ARGV) if $ON_WINDOWS;
 #print "after  glob have [", join(",", @ARGV), "]\n";
+
+# filter out archive files if requested to do so
+if (defined $opt_skip_archive) {
+    my @non_archive = ();
+    foreach my $candidate (@ARGV) {
+        if ($candidate !~ m/${opt_skip_archive}$/) {
+            push @non_archive, $candidate;
+
+        } 
+    }
+    @ARGV = @non_archive;
+}
 
 if ($opt_sum_reports and $opt_diff) {
     my @results = ();
