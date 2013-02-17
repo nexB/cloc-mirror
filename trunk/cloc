@@ -668,6 +668,10 @@ my $TEMP_OFF =  0;  # Needed for --sdir; keep track of the number of
                     # scratch directories made in this run to avoid
                     # file overwrites by multiple extractions to same
                     # sdir.
+# Also track locations where temporary installations, if necessary, of
+# Algorithm::Diff and/or Regexp::Common are done.  Make sure these 
+# directories are not counted as inputs (ref bug #80 2012-11-23).
+my %TEMP_INST = ();
 
 # invert %Language_by_Script hash to get an easy-to-look-up list of known
 # scripting languages
@@ -891,6 +895,25 @@ if ($opt_extract_with) {
         }
     }
     @ARGV = @updated_ARGS;
+
+    # make sure we're not counting any directory containing
+    # temporary installations of Regexp::Common, Algorithm::Diff
+    foreach my $d (sort keys %TEMP_INST) {
+        foreach my $a (@ARGV) {
+            next unless is_dir($a);
+            if ($opt_v > 2) {
+                printf "Comparing %s (location of %s) to input [%s]\n",
+                        $d, $TEMP_INST{$d}, $a;
+            }
+            if ($a eq $d) {
+                die "File::Temp::tempdir chose directory ",
+                    $d, " to install ", $TEMP_INST{$d}, " but this ",
+                    "matches one of your input directories.  Rerun ",
+                    "with --sdir and supply a different temporary ",
+                    "directory for ", $TEMP_INST{$d}, "\n";
+            }
+        }
+    }
 }
 # 1}}}
 my @Errors    = ();
@@ -3382,7 +3405,7 @@ sub rm_comments {                            # {{{1
         # then remove blank lines which are created by comment removal
         if (defined $rh_EOL_continuation_re->{$language}) {
             @lines = remove_matches_2re(\@lines, '^\s*$',
-                                        $rh_EOL_continuation_re);
+                                        $rh_EOL_continuation_re->{$language});
         } else {
             @lines = remove_matches(\@lines, '^\s*$');
         }
@@ -6034,6 +6057,7 @@ EOD
     } else {
         # let File::Temp create a suitable temporary directory
         $dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+        $TEMP_INST{ $dir } = "Regexp::Common";
     }
     print "Using temp dir [$dir] to install Regexp::Common\n" if $opt_v;
     my $Regexp_dir        = "$dir/Regexp";
@@ -6900,6 +6924,7 @@ EOAlgDiff
     } else {
         # let File::Temp create a suitable temporary directory
         $dir = tempdir( CLEANUP => 1 );  # 1 = delete on exit
+        $TEMP_INST{ $dir } = "Algorithm::Diff";
     }
     print "Using temp dir [$dir] to install Algorithm::Diff\n" if $opt_v;
     my $Algorithm_dir      = "$dir/Algorithm";
