@@ -5252,6 +5252,7 @@ sub set_constants {                          # {{{1
 'inc'     => 1.00,
 'lex'     => 1.00,
 'MATLAB'  => 4.00,
+'Maven/XML' => 2.5,
 'IDL'     => 3.80,
 'Octave'  => 4.00,
 'ML'      => 3.00,
