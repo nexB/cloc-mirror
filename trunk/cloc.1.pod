@@ -66,7 +66,7 @@ To count standard input, use the special filename B<->.
 =item B<--extract-with=CMD>
 
 This option is only needed if cloc is unable to figure out how to
-extract the contents of the input file(s) by itself. Use <cmd> to
+extract the contents of the input file(s) by itself. Use CMD to
 extract binary archive files (e.g.: .tar.gz, .zip, .Z). Use the
 literal 'E<gt>FILEE<lt>' as a stand-in for the actual file(s) to be
 extracted. For example, to count lines of code in the input files
@@ -78,7 +78,7 @@ or, if you have GNU tar:
 
     --extract-with='tar zxf >FILE<'
 
-and on Windows, use:
+and on Windows, use, for example:
 
     --extract-with="\"c:\Program Files\WinZip\WinZip32.exe\" -e -o >FILE<
 
@@ -134,17 +134,31 @@ are always followed).
 
 =item B<--force-lang=LANG[,EXT]>
 
-Process all files that have a <ext> extension with the counter for
-language <lang>. For example, to count all .f files with the Fortran
+Process all files that have a EXT extension with the counter for
+language LANG. For example, to count all .f files with the Fortran
 90 counter (which expects files to end with .f90) instead of the
 default Fortran 77 counter, use:
 
 	--force-lang="Fortran 90",f
 
-If <ext> is omitted, every file will be counted with the <lang> counter.
+If EXT is omitted, every file will be counted with the LANG counter.
 This option can be specified multiple times (but that is only useful
-when <ext> is given each time). See also B<--script-lang>,
+when EXT is given each time). See also B<--script-lang>,
 B<--lang-no-ext>.
+
+=item B<--force-lang-def=FILE>
+
+Load language processing filters from FILE,
+then use these filters instead of the built-in
+filters.  Note:  languages which map to the same 
+file extension (for example:
+MATLAB/Objective C/MUMPS;  Pascal/PHP; 
+Lisp/OpenCL) will be ignored as these require 
+additional processing that is not expressed in 
+language definition files.
+Use B<--read-lang-def> to define new language
+filters without replacing built-in filters
+(see also B<--write-lang-def>).
 
 =item B<--ignore-whitespace>
 
@@ -158,7 +172,7 @@ when comparing files with B<--diff>.  See also B<--ignore-whitespace>.
 
 =item B<--lang-no-ext=LANG>
 
-Count files without extensions using the <lang> counter.  This option 
+Count files without extensions using the LANG counter.  This option 
 overrides internal logic for files without extensions (where such files 
 are checked against known scripting languages by examining the first 
 line for C<#!>).  See also B<--force-lang>, B<--script-lang>.
@@ -171,14 +185,18 @@ binary data.
 
 =item B<--read-lang-def=FILE>
 
-Load from FILE the language processing filters. (see also
-B<--write-lang-def>) then use these filters instead of the built-in
-filters.
+Load new language processing filters from FILE
+and merge them with those
+already known to cloc.  If FILE defines a
+language cloc already knows about, cloc's 
+definition will take precedence.  Use
+B<--force-lang-def> to over-ride cloc's definitions.
+(see also B<--write-lang-def>).
 
 =item B<--script-lang=LANG,S>
 
 Process all files that invoke <s> as a C<#!> scripting language with the
-counter for language <lang>. For example, files that begin with
+counter for language LANG. For example, files that begin with
 C<#!/usr/local/bin/perl5.8.8> will be counted with the Perl counter by
 using
 
@@ -249,7 +267,7 @@ will skip all files that match C</.cache/> or C</test/> as part of
 their path. Directories named C<.bzr>, C<.cvs>, C<.hg>, C<.git>,
 C<.hg>, and C<.svn> are always excluded.
 
-=item B<--exclude-ext=<ext1>[,<ext2> ...]>
+=item B<--exclude-ext=EXT1[,EXT2 ...]>
 
 Do not count files having the given file name extensions.
 
@@ -338,12 +356,12 @@ Save names of ignored files and the reason they were ignored to FILE.
 Print to I<STDOUT> processed source code before and after each filter is
 applied.
 
-=item B<--show-ext[=<ext>]>
+=item B<--show-ext[=EXT]>
 
 Print information about all known (or just the given) file extensions
 and exit.
 
-=item B<--show-lang[=<lang>]>
+=item B<--show-lang[=LANG]>
 
 Print information about all known (or just the given) languages and
 exit.
@@ -365,7 +383,7 @@ Print the version of this program and exit.
 
 Writes to FILE the language processing filters then exits. Useful as a
 first step to creating custom language definitions. See also
-B<--read-lang-def>.
+B<--force-lang-def>, B<--read-lang-def>.
 
 =back
 
