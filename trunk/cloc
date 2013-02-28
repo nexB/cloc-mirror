@@ -2965,7 +2965,14 @@ sub remove_duplicate_files {                 # {{{1
             next;
         } else {
 #print "equally sized files: ",join(", ", @{$files_by_size{$bytes}}), "\n";
-            foreach my $F (different_files(\@{$files_by_size{$bytes}},
+            # Files in the list @{$files_by_size{$bytes} all are
+            # $bytes long.  Sort the list by file basename.
+            my @sorted_bn = ();
+            my %BN = map { basename($_) => $_ } @{$files_by_size{$bytes}};
+            foreach my $F (sort keys %BN) {
+                push @sorted_bn, $BN{$F};
+            }
+            foreach my $F (different_files(\@sorted_bn  ,
                                             $rh_Err     ,
                                             $raa_errors ,
                                             $rh_ignored ) ) {
