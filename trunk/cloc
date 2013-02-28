@@ -1118,9 +1118,14 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
     }
     push @alignment, "\n";
 
-    push @alignment, sprintf "File pairs compared: %d\n", scalar @file_pairs
+    my $alignment_pairs_index = scalar @alignment;
+    my $n_file_pairs_compared = 0;
+    # Don't know ahead of time how many file pairs will be compared
+    # since duplicates are weeded out below.  The answer is
+    # scalar @file_pairs only if there are no duplicates.
+    push @alignment, sprintf "File pairs compared: UPDATE_ME\n"
         if $opt_diff_alignment;
-#print "Language=\n", Dumper(\%Language);
+
     foreach my $pair (@file_pairs) {
         my $file_L = $pair->[0];
         my $file_R = $pair->[1];
@@ -1198,6 +1203,7 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
             } else {
                 push @alignment, "  != $str";
             }
+            ++$n_file_pairs_compared;
         }
 
         # step 1: identify comments in both files
@@ -1369,7 +1375,10 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         $Results_by_Language{$Lang_L}{'blank'}   += $blank_count_L  ;
         $Results_by_Language{$Lang_L}{'comment'} += $comment_count_L;
     }
-    write_file($opt_diff_alignment, @alignment) if $opt_diff_alignment;
+    if ($opt_diff_alignment) {
+        $alignment[$alignment_pairs_index] =~ s/UPDATE_ME/$n_file_pairs_compared/;
+        write_file($opt_diff_alignment, @alignment);
+    }
 
 }
 #use Data::Dumper;
