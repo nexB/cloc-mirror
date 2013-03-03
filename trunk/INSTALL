@@ -1,8 +1,10 @@
-To install cloc, copy either the Perl source file or executable 
-to the desired installation directory.  For example, installing
-the source file on Unix/Linux:
+Adjust prefix variables to install to other than system default:
 
-    cp cloc  /usr/local/bin/cloc
+	make [-n] [prefix=/usr/local] install
+
+For more information, use:
+
+	make help
 
 
 Dependencies:
