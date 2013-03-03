@@ -1,3 +1,96 @@
+                Release Notes for cloc version 1.58
+                   http://cloc.sourceforge.net
+                           March 3, 2013
+
+Version 1.58 introduces a new version numbering scheme:  odd numbers 
+represent development versions while even numbers represent stable,
+released versions.  There was no release 1.57 as it was the development
+version leading to this release.
+
+New Languages:
+    o Ant
+    o Arduino Sketch
+    o InstallShield
+    o Maven
+    o PowerShell
+    o Rust
+    o Vala
+
+Updates:
+    o OCaml                Added extensions .mli, .mly, .mll
+    o --read-lang-def      See the section --read-lang-def v. 
+                           --force-lang-def below.
+
+New options and features:
+
+  --diff-timeout N
+      o Running diff on large files with many repeated lines may
+        cause Algorithm::Diff::sdiff() to run for hours.  This
+        option sets the upper time limit on the duration of this
+        operation for a single file pair.  Default is 10 seconds.
+
+  --force-lang-def FILE
+      o See the section --read-lang-def v. --force-lang-def below.
+
+  --skip-archive REGEX
+      o Ignore files that end with the given Perl regular expression.  
+        For example, if given --skip-archive='(zip|tar(.(gz|Z|bz2|xz|7z))?)'
+        the code will skip files that end with .zip, .tar, .tar.gz, 
+        .tar.Z, .tar.bz2, .tar.xz, and .tar.7z (feature req. 32).
+
+    Prevent "defined(@array) is deprecated" warnings with Perl 5.16.1.
+
+    Show an example of alternation in the documentation for the --match-d
+    switch.
+
+
+--read-lang-def v. --force-lang-def
+      
+    The --read-lang-def option allows one to replace cloc's language
+    processing filters with custom settings.  The problem with this
+    option is that it overwrites internal logic that handles languages
+    which map to the same file extension.  Currently these are
+        MATLAB/Objective C/MUMPS   -> .m
+        Pascal/PHP                 -> .inc
+        Lisp/OpenCL                -> .cl
+    The logic needed to handle these extension collisions is not
+    easily expressed in an input text file.  In any event, in most
+    instances one merely wishes to augment cloc's language definitions
+    with entries for new languages rather than replace definitions
+    for known languages.
+
+    For this reason, the behavior of --read-lang-def has been changed
+    to merge new language definitions found in the given file with
+    cloc's existing languages.  Where there are conflicts, cloc's
+    built-in definitions take precedence.  This new behavior allows
+    one to add new language definitions without sacrificing cloc's
+    ability to count files languages ending with .m, .inc, or .cl.
+
+    The new option --force-lang-def behaves exactly like --read-lang-def
+    did in cloc versions 1.56 and earlier--it completely ignores
+    cloc's internal language definitions and repaces them with definitions
+    in the given file.  However, one will no longer be able to count
+    files with the extensions .m, .inc, or .cl.
+
+Bug Fixes:
+
+    Suppress "Wrote <file>" messages when running with --quiet.
+
+    Create .file output when running with --sum-reports (id 3571353).
+
+    Correct output for languages starting with a lower case letter when 
+    running with --diff --sum-reports.
+
+    Show correct count of files added/deleted with --diff (id 78).
+
+    Handle special case of --diff between one file and a set of files (id 82).
+
+    Prevent cloc from inadvertently counting lines from temporary
+    installations of Algorithm::Diff and/or Regexp::Common.  This happens
+    on faulty Perl installations (eg. MinGW MSYS Perl) which cause 
+    File::Temp::tempdir() to return the current working directory.
+
+============================================================================
                 Release Notes for cloc version 1.56
                    http://cloc.sourceforge.net
                            April 3, 2012   
