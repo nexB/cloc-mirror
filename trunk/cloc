@@ -33,7 +33,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # 1}}}
-my $VERSION = "1.57";  # odd number == beta; even number == stable
+my $VERSION = "1.59";  # odd number == beta; even number == stable
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
