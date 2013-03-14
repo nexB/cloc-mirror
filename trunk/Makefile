@@ -49,7 +49,7 @@ MANDIR6		= $(MANDIR)/man6
 MANDIR8		= $(MANDIR)/man8
 
 BIN		= $(PACKAGE)
-PL_SCRIPT	= $(BIN).pl
+PL_SCRIPT	= $(BIN)
 
 INSTALL_OBJS_BIN = $(PL_SCRIPT)
 INSTALL_OBJS_MAN = *.1
@@ -58,8 +58,8 @@ INSTALL		= /usr/bin/install
 INSTALL_BIN	= $(INSTALL) -m 755
 INSTALL_DATA	= $(INSTALL) -m 644
 
-all:
-	@echo "Nothing to compile."
+all: man
+	@echo "Nothing to compile for a Perl script."
 	@echo "Try 'make help' or 'make -n DESTDIR= prefix=/usr/local install'"
 
 # Rule: help - display Makefile rules
@@ -118,7 +118,7 @@ install-test:
 	make DESTDIR=$$(pwd)/tmp prefix=/usr install
 	find tmp | sort
 
-# Rule: install-test - for Maintainer only, make distribution
+# Rule: dist - for Maintainer only, make distribution
 dist: clean
 	[ -f version ] || fail-version-file-is-missing
 
@@ -126,6 +126,8 @@ dist: clean
 	rm -rf /tmp/$$release ; \
 	mkdir -vp /tmp/$$release ; \
 	cp -rav . /tmp/$$release/ ; \
+    find /tmp/$$release/ -type d \
+      \( -name .svn -o -name .git -o -name .hg \) | xargs -r rm -r; \
 	tar -C /tmp -zvcf /tmp/$$release.tar.gz $$release ; \
 	echo "DONE: /tmp/$$release.tag.gz"
 
