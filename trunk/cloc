@@ -7947,51 +7947,59 @@ sub unicode_file {                           # {{{1
 sub unicode_to_ascii {                       # {{{1
     my $string = shift @_; 
 
-    # A trivial attempt to convert Microsoft Windows style Unicode
+    # A trivial attempt to convert UTF-16 little or big endian
     # files into ASCII.  These files exhibit the following byte
     # sequence:
-    # byte   1:  255
-    # byte   2:  254
-    # byte   3:  ord of ASCII character
-    # byte   4:    0
-    # byte 3+i:  ord of ASCII character
-    # byte 4+i:    0
+    #   byte   1:  255
+    #   byte   2:  254
+    #   byte   3:  ord of ASCII character
+    #   byte   4:    0
+    #   byte 3+i:  ord of ASCII character
+    #   byte 4+i:    0
+    # or
+    #   byte   1:  255
+    #   byte   2:  254
+    #   byte   3:    0
+    #   byte   4:  ord of ASCII character
+    #   byte 3+i:    0
+    #   byte 4+i:  ord of ASCII character
+
+    my $length  = length $string;
+#print "length=$length\n";
+    return '' if $length <= 3;
+    my @unicode = split(//, $string);
+
+    # check the first 100 characters for big or little endian UTF-16 encoding
+    my $max_peek = $length < 200 ? $length : 200;
+    my @view_1   = ();
+    for (my $i = 2; $i < $max_peek; $i += 2) { push @view_1, $unicode[$i] }
+    my @view_2   = ();
+    for (my $i = 3; $i < $max_peek; $i += 2) { push @view_2, $unicode[$i] }
+
+    my $points_1 = 0;
+    foreach my $C (@view_1) {
+        ++$points_1 if (32 <= ord($C) and ord($C) <= 127) or ord($C) == 13
+                                                          or ord($C) == 10
+                                                          or ord($C) ==  9;
+    }
+
+    my $points_2 = 0;
+    foreach my $C (@view_2) {
+        ++$points_2 if (32 <= ord($C) and ord($C) <= 127) or ord($C) == 13
+                                                          or ord($C) == 10
+                                                          or ord($C) ==  9;
+    }
+#print "points 1: $points_1\n";
+#print "points 2: $points_2\n";
+
+    my $offset = undef;
+    if    ($points_1 > 90) { $offset = 2; }
+    elsif ($points_2 > 90) { $offset = 3; }
+    else                   { return '' }  # neither big or little endian UTF-16
 
     my @ascii              = ();
-    my $looks_like_unicode = 1;
-    my $length             = length $string;
-# print "length=$length\n";
-    if ($length <= 3) {
-        $looks_like_unicode = 0;
-        return '';
-    }
-    my @unicode            = split(//, $string);
-
-    for (my $i = 2; $i < $length; $i += 2) {
-# print "examining [$unicode[$i]]  ord ", ord($unicode[$i]), "\n";
-        if (32 <= ord($unicode[$i]) and ord($unicode[$i]) <= 127
-            or ord($unicode[$i]) == 13
-            or ord($unicode[$i]) == 10
-            or ord($unicode[$i]) ==  9
-            ) {
-            push @ascii, $unicode[$i];
-# print "adding [$unicode[$i]]\n";
-        } else {
-            $looks_like_unicode = 0;
-            last;
-        }
-        if ($i+1 < $length) {
-            if (!$unicode[$i+1]) {
-                $looks_like_unicode = 0;
-                last;
-            }
-        }
-    }
-    if ($looks_like_unicode) {
-        return join("", @ascii);
-    } else {
-        return '';
-    }
+    for (my $i = $offset; $i < $length; $i += 2) { push @ascii, $unicode[$i]; }
+    return join("", @ascii);
 } # 1}}}
 sub uncompress_archive_cmd {                 # {{{1
     my ($archive_file, ) = @_;
