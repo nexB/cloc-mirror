@@ -4197,6 +4197,7 @@ sub set_constants {                          # {{{1
             'tk'          => 'Tcl/Tk'                ,
             'tpl'         => 'Smarty'                ,
             'vala'        => 'Vala'                  ,
+            'vapi'        => 'Vala Header'           ,
             'vhd'         => 'VHDL'                  ,
             'VHD'         => 'VHDL'                  ,
             'vhdl'        => 'VHDL'                  ,
@@ -4607,6 +4608,11 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
+    'Vala Header'        => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
+                            ],
     'VHDL'               => [   
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -4688,6 +4694,7 @@ sub set_constants {                          # {{{1
     'Tcl/Tk'             =>     '\\\\$'         ,
     'lex'                =>     '\\\\$'         ,
     'Vala'               =>     '\\\\$'         ,
+    'Vala Header'        =>     '\\\\$'         ,
     );
 # 1}}}
 %{$rh_Not_Code_Extension}    = (             # {{{1
@@ -5328,6 +5335,7 @@ sub set_constants {                          # {{{1
     'uniface'                      =>   5.00,
     # 'unix shell scripts'           =>   3.81,
     'Vala'                         =>   1.50,
+    'Vala Header'                  =>   1.40,
     'vax acms'                     =>   1.38,
     'vax ade'                      =>   2.00,
     'vbscript'                     =>   2.35,
