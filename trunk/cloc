@@ -4054,6 +4054,7 @@ sub set_constants {                          # {{{1
             'cljs'        => 'ClojureScript'         ,
             'cls'         => 'Visual Basic'          ,
             'CMakeLists.txt' => 'CMake'              ,
+            'cmake'       => 'CMake'                 ,
             'cob'         => 'COBOL'                 ,
             'COB'         => 'COBOL'                 ,
             'coffee'      => 'CoffeeScript'          ,
