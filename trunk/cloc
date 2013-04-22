@@ -4067,6 +4067,7 @@ sub set_constants {                          # {{{1
             'aspx'        => 'ASP.Net'               ,
             'master'      => 'ASP.Net'               ,
             'sitemap'     => 'ASP.Net'               ,
+            'cshtml'      => 'Razor'                 ,
             'awk'         => 'awk'                   ,
             'bash'        => 'Bourne Again Shell'    ,
             'bas'         => 'Visual Basic'          ,
@@ -4554,6 +4555,12 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
+    'Razor'              => [
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'remove_between_general', '@*', '*@' ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ],
+                            ], 
     'Rexx'               => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Ruby'               => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -5269,6 +5276,7 @@ sub set_constants {                          # {{{1
     'realizer 2.0'                 =>   2.22,
     'relate/3000'                  =>   2.00,
     'reuse default'                =>  16.00,
+    'Razor'                        =>   2.00,
     'Rexx'                         =>   1.19,
     'Rexx (mvs)'                   =>   1.00,
     'Rexx (os/2)'                  =>   1.74,
