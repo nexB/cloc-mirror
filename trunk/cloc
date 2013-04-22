@@ -3745,6 +3745,38 @@ sub remove_between {                         # {{{1
     print "<- remove_between\n" if $opt_v > 2;
     return split("\n", $all_lines);
 } # 1}}}
+sub remove_between_general {                 # {{{1
+    my ($ra_lines, $start_marker, $end_marker, ) = @_;
+    # Start and end markers may be any length strings.
+
+    print "-> remove_between_general(start=$start_marker, end=$end_marker)\n"
+        if $opt_v > 2;
+
+    my $all_lines = join("", @{$ra_lines});
+
+    my @save_lines = ();
+    my $in_comment = 0;
+    foreach (@{$ra_lines}) {
+
+        next if /^\s*$/;
+        s/\Q$start_marker\E.*?\Q$end_marker\E//g;  # strip one-line comments
+        next if /^\s*$/;
+        if ($in_comment) {
+            if (/\Q$end_marker\E/) {
+                s/^.*?\Q$end_marker\E//;
+                $in_comment = 0;
+            }
+        }
+        next if /^\s*$/;
+        $in_comment = 1 if /^(.*?)\Q$start_marker\E/;
+        next if defined $1 and $1 =~ /^\s*$/;
+        next if ($in_comment);
+        push @save_lines, $_;
+    }
+
+    print "<- remove_between_general\n" if $opt_v > 2;
+    return @save_lines;
+} # 1}}}
 sub remove_cobol_blanks {                    # {{{1
     # subroutines derived from SLOCCount
     my ($ra_lines, ) = @_;
@@ -4354,6 +4386,7 @@ sub set_constants {                          # {{{1
     'Crystal Reports'    => [   [ 'remove_matches'      , '^\s*//' ], ],
     'D'                  => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_between_general', '/+', '+/' ],
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
