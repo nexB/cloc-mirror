@@ -4125,6 +4125,7 @@ sub set_constants {                          # {{{1
             'Gnumakefile' => 'make'                  ,
             'go'          => 'Go'                    ,
             'groovy'      => 'Groovy'                ,
+            'gant'        => 'Groovy'                ,
             'h'           => 'C/C++ Header'          ,
             'H'           => 'C/C++ Header'          ,
             'hh'          => 'C/C++ Header'          ,
