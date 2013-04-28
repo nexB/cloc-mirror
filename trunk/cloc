@@ -1479,12 +1479,7 @@ foreach my $file (sort keys %unique_source_file) {
         $Ignored{$file} = "--exclude-lang=$Language{$file}";
         next;
     }
-    my $Filters_by_Language_Language_file = undef;
-    if ($PERL_516) {
-        $Filters_by_Language_Language_file = !        @{$Filters_by_Language{$Language{$file}} };
-    } else {
-        $Filters_by_Language_Language_file = !defined @{$Filters_by_Language{$Language{$file}} };
-    }
+    my $Filters_by_Language_Language_file = !defined @{$Filters_by_Language{$Language{$file}} };
     if ($Filters_by_Language_Language_file) {
         if ($Language{$file} eq "(unknown)") {
             $Ignored{$file} = "language unknown (#1)";
