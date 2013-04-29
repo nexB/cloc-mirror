@@ -4149,6 +4149,8 @@ sub set_constants {                          # {{{1
             'jcl'         => 'JCL'                   , # IBM Job Control Lang.
             'jl'          => 'Lisp'                  ,
             'js'          => 'Javascript'            ,
+            'jsf'         => 'JavaServer Faces'      ,
+            'xhtml'       => 'JavaServer Faces'      ,
             'jsp'         => 'JSP'                   , # Java server pages
             'ksc'         => 'Kermit'                ,
             'ksh'         => 'Korn Shell'            ,
@@ -4450,6 +4452,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'add_newlines'        ,          ],
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],
+    'JavaServer Faces'   => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Java'               => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -5123,8 +5130,9 @@ sub set_constants {                          # {{{1
     'j2ee'                         =>   1.60,
     'janus'                        =>   1.13,
     'Java'                         =>   1.36,
-'Javascript'                   =>   1.48,
-'JSP'                          =>   1.48,
+    'Javascript'                   =>   1.48,
+    'JavaServer Faces'             =>   1.5 ,
+    'JSP'                          =>   1.48,
     'JCL'                          =>   1.67,
     'joss'                         =>   0.75,
     'jovial'                       =>   0.75,
