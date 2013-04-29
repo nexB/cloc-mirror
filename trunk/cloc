@@ -54,6 +54,11 @@ if (defined $Digest::MD5::VERSION) {
     warn "Digest::MD5 not installed; will skip file uniqueness checks.\n";
 }
 
+# Time::HiRes became standard with Perl 5.8
+my $HAVE_Time_HiRes = 0;
+eval "use Time::HiRes;";
+$HAVE_Time_HiRes = 1 if defined $Time::HiRes::VERSION;
+
 my $HAVE_Rexexp_Common;
 # Regexp::Common isn't in the standard distribution.  It will
 # be installed in a temp directory if necessary.
@@ -374,7 +379,7 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
 #                            comment and code lines in different colors.
 
 $| = 1;  # flush STDOUT
-my $start_time = time();
+my $start_time = get_time();
 my (
     $opt_categorized          ,
     $opt_found                ,
@@ -759,7 +764,7 @@ if ($opt_sum_reports) {
                                           \%Filters_by_Language );
         }
         next unless %Results;
-        my $end_time = time();
+        my $end_time = get_time();
         my @results  = generate_report($VERSION, $end_time - $start_time,
                                        $type,
                                       \%{$Results{ $type }}, \%Scale_Factor);
@@ -1390,7 +1395,7 @@ write_file($opt_counted, sort keys %Results_by_File) if $opt_counted;
 # 1}}}
 # Step 7:  Assemble results.                   {{{1
 #
-my $end_time = time();
+my $end_time = get_time();
 printf "%8d file%s ignored.                           \n", 
     plural_form(scalar keys %Ignored) unless $opt_quiet;
 print_errors(\%Error_Codes, \@Errors) if @Errors;
@@ -1400,11 +1405,11 @@ if (!%Delta_by_Language) {
 }
 
 if ($opt_by_file) {
-    @Lines_Out = diff_report($VERSION, time() - $start_time,
+    @Lines_Out = diff_report($VERSION, get_time() - $start_time,
                             "by file",
                             \%Delta_by_File, \%Scale_Factor);
 } else {
-    @Lines_Out = diff_report($VERSION, time() - $start_time,
+    @Lines_Out = diff_report($VERSION, get_time() - $start_time,
                             "by language",
                             \%Delta_by_Language, \%Scale_Factor);
 }
@@ -1515,7 +1520,7 @@ write_file($opt_counted, sort keys %Results_by_File) if $opt_counted;
 # 1}}}
 # Step 7:  Assemble results.                   {{{1
 #
-my $end_time = time();
+my $end_time = get_time();
 printf "%8d file%s ignored.\n", plural_form(scalar keys %Ignored) 
     unless $opt_quiet;
 print_errors(\%Error_Codes, \@Errors) if @Errors;
@@ -1760,7 +1765,7 @@ sub diff_report     {                        # {{{1
     my $header_line  = sprintf "%s v %s", $URL, $version;
     my $sum_files    = 1;
     my $sum_lines    = 1;
-       $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
+       $header_line .= sprintf("  T=%.2f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
@@ -2319,7 +2324,7 @@ sub generate_report {                        # {{{1
     }
 
     my $header_line  = sprintf "%s v %s", $URL, $version;
-       $header_line .= sprintf("  T=%.1f s (%.1f files/s, %.1f lines/s)",
+       $header_line .= sprintf("  T=%.2f s (%.1f files/s, %.1f lines/s)",
                         $elapsed_sec           ,
                         $sum_files/$elapsed_sec,
                         $sum_lines/$elapsed_sec) unless $opt_sum_reports;
@@ -8681,6 +8686,13 @@ sub combine_diffs {                          # {{{1
     $res .= sprintf("%s\n", "-" x $width);
   
     return $res;
+} # 1}}}
+sub get_time {                               # {{{1
+    if ($HAVE_Time_HiRes) {
+        return Time::HiRes::time();
+    } else {
+        return time();
+    }
 } # 1}}}
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
