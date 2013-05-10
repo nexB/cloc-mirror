@@ -4219,6 +4219,7 @@ sub set_constants {                          # {{{1
             'ses'         => 'Patran Command Language'   ,
             'pcl'         => 'Patran Command Language'   ,
             'ps1'         => 'PowerShell'            ,
+            'scss'        => 'SASS'                  ,
             'sh'          => 'Bourne Shell'          ,
             'smarty'      => 'Smarty'                ,
             'sql'         => 'SQL'                   ,
@@ -4581,6 +4582,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],
+    'SASS'               => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Scala'              => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -5319,6 +5325,7 @@ sub set_constants {                          # {{{1
     'ksh'                          =>   3.81,
     'C Shell'                      =>   3.81,
     'siebel tools '                =>   6.15,
+    'SASS'                         =>   1.5 ,
     'simplan'                      =>   2.22,
     'simscript'                    =>   1.74,
     'simula'                       =>   1.74,
