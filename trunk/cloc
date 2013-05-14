@@ -4219,6 +4219,7 @@ sub set_constants {                          # {{{1
             'ses'         => 'Patran Command Language'   ,
             'pcl'         => 'Patran Command Language'   ,
             'ps1'         => 'PowerShell'            ,
+            'sass'        => 'SASS'                  ,
             'scss'        => 'SASS'                  ,
             'sh'          => 'Bourne Shell'          ,
             'smarty'      => 'Smarty'                ,
