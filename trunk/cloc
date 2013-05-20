@@ -4085,12 +4085,13 @@ sub set_constants {                          # {{{1
             'cl'          => 'Lisp/OpenCL'           ,
             'clj'         => 'Clojure'               ,
             'cljs'        => 'ClojureScript'         ,
-            'cls'         => 'Visual Basic'          ,
+            'cls'         => 'Visual Basic'          , # also Apex Class
             'CMakeLists.txt' => 'CMake'              ,
             'cmake'       => 'CMake'                 ,
             'cob'         => 'COBOL'                 ,
             'COB'         => 'COBOL'                 ,
             'coffee'      => 'CoffeeScript'          ,
+            'component'   => 'Visualforce Component' ,
             'config'      => 'ASP.Net'               ,
             'cpp'         => 'C++'                   ,
             'cs'          => 'C#'                    ,
@@ -4180,6 +4181,7 @@ sub set_constants {                          # {{{1
             'mth'         => 'Teamcenter mth'        ,
             'oscript'     => 'LiveLink OScript'      ,
             'pad'         => 'Ada'                   , # Oracle Ada preprocessor
+            'page'        => 'Visualforce Page'      ,
             'pas'         => 'Pascal'                ,
             'pcc'         => 'C++'                   , # Oracle C++ preprocessor
             'perl'        => 'Perl'                  ,
@@ -4234,6 +4236,7 @@ sub set_constants {                          # {{{1
             'tcsh'        => 'C Shell'               ,
             'tk'          => 'Tcl/Tk'                ,
             'tpl'         => 'Smarty'                ,
+            'trigger'     => 'Apex Trigger'          ,
             'vala'        => 'Vala'                  ,
             'vapi'        => 'Vala Header'           ,
             'vhd'         => 'VHDL'                  ,
@@ -4318,6 +4321,11 @@ sub set_constants {                          # {{{1
     'Ant'                => [
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
+    'Apex Trigger'       => [
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'call_regexp_common'  , 'C'      ], 
+                                [ 'remove_inline'       , '//.*$'  ],
                             ],
     'Arduino Sketch'     => [   # same as C
                                 [ 'remove_matches'      , '^\s*//' ],
@@ -4682,6 +4690,14 @@ sub set_constants {                          # {{{1
     'Visual Basic'       => [   [ 'remove_above'        , '^\s*Attribute\s+VB_Name\s+=' ],               
                                 [ 'remove_matches'      , '^\s*Attribute\s+'],
                                 [ 'remove_matches'      , '^\s*\47'], ],  # \47 = '
+    'Visualforce Component' => [
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
+    'Visualforce Page'   => [
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
     'yacc'               => [   
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -4922,6 +4938,7 @@ sub set_constants {                          # {{{1
 'webinfo'                     =>   1.29,
 'CCS'                         =>   5.33,
 
+    'Apex Trigger'                 =>   1.4 ,
 #   'assembler (basic)'            =>   0.25,
     'Arduino Sketch'               =>   1.00,
     'Assembly'                     =>   0.25,
@@ -5422,6 +5439,8 @@ sub set_constants {                          # {{{1
     'visual cobol'                 =>   4.00,
     'visual objects'               =>   5.00,
     'visualage'                    =>   3.81,
+    'Visualforce Component'        =>   1.9 ,
+    'Visualforce Page'             =>   1.9 ,
     'visualgen'                    =>   4.44,
     'vpf'                          =>   0.84,
     'vsrexx'                       =>   2.50,
@@ -7260,9 +7279,9 @@ printf ".m:  Kill   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points,
             ++$matlab_points;
 printf ".m:  funct  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         } elsif (m{^\s*%}) {              #   %
+            # matlab commented line
             --$objective_C_points;
             ++$matlab_points;
-            ++$mumps_points;
 printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
         }
     }
