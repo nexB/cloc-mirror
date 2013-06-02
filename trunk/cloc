@@ -3276,6 +3276,7 @@ sub different_files {                        # {{{1
             if ($HAVE_Digest_MD5) {
                 binmode $IN;
                 my $MD5 = Digest::MD5->new->addfile($IN)->hexdigest;
+#print "$F, $MD5\n";
                 push @{$file_hash{$MD5}}, $F;
             } else {
                 # all files treated unique
@@ -3299,7 +3300,16 @@ sub different_files {                        # {{{1
                                         \@nul_a, \%nul_h);
             $i_best = $i if $language ne "(unknown)";
         }
-        push @unique, $file_hash{$md5}[$i_best];
+        # keep the best one found and identify the rest as ignored
+        for (my $i = 0; $i < scalar(@{$file_hash{$md5}}); $i++) {
+            if ($i == $i_best) {
+                push @unique, $file_hash{$md5}[$i_best];
+            } else {
+                $rh_ignored->{$file_hash{$md5}[$i]} = "duplicate of " .
+                    $file_hash{$md5}[$i_best];
+            }
+        }
+
     }
     print "<- different_files(@unique)\n" if $opt_v > 2;
     return @unique;
