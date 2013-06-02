@@ -220,6 +220,14 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              are checked against known scripting languages
                              by examining the first line for #!).  See also
                              --force-lang, --script-lang.
+   --max-file-size=<MB>      Skip files larger than <MB> megabytes when
+                             traversing directories.  By default, <MB>=100.
+                             cloc's memory requirement is roughly twenty times 
+                             larger than the largest file so running with 
+                             files larger than 100 MB on a computer with less 
+                             than 2 GB of memory will cause problems.  
+                             Note:  this check does not apply to files 
+                             explicitly passed as command line arguments.
    --read-binary-files       Process binary files in addition to text files.
                              This is usually a bad idea and should only be
                              attempted with text files that have embedded
@@ -445,6 +453,7 @@ my (
     $opt_force_on_unix        ,   # actually forces !$ON_WINDOWS
     $opt_show_os              ,
     $opt_skip_archive         ,
+    $opt_max_file_size        ,   # in MB
    );
 my $getopt_success = GetOptions(
    "by_file|by-file"                         => \$opt_by_file             ,
@@ -512,6 +521,7 @@ my $getopt_success = GetOptions(
    "unix"                                    => \$opt_force_on_unix       ,
    "show_os|show-os"                         => \$opt_show_os             ,
    "skip_archive|skip-archive=s"             => \$opt_skip_archive        ,
+   "max_file_size|max-file-size=i"           => \$opt_max_file_size       ,
   );
 $opt_by_file  = 1 if defined  $opt_by_file_by_lang;
 my $CLOC_XSL = "cloc.xsl"; # created with --xsl
@@ -542,6 +552,7 @@ $opt_diff_timeout      =10  unless $opt_diff_timeout;
 $opt_csv               = 1  if $opt_csv_delimiter;
 $ON_WINDOWS            = 1  if $opt_force_on_windows;
 $ON_WINDOWS            = 0  if $opt_force_on_unix;
+$opt_max_file_size     = 100 unless $opt_max_file_size;
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -3018,6 +3029,14 @@ sub files {                                  # {{{1
         printf "files(%s)  zero size\n", $File::Find::name if $opt_v > 5;
     }
     return unless $nBytes  ; # attempting other tests w/pipe or socket will hang
+    if ($nBytes > $opt_max_file_size*1024**2) {
+        $Ignored{$File::Find::name} = "file size of " .
+            $nBytes/1024**2 . " MB exceeds max file size of " .
+            "$opt_max_file_size MB";
+        printf "file(%s)  exceeds $opt_max_file_size MB\n", 
+            $File::Find::name if $opt_v > 5;
+        return;
+    }
     my $is_dir = is_dir($_);
     my $is_bin = -B     $_ ;
     printf "files(%s)  size=%d is_dir=%d  -B=%d\n",

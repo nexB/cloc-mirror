@@ -177,6 +177,17 @@ overrides internal logic for files without extensions (where such files
 are checked against known scripting languages by examining the first 
 line for C<#!>).  See also B<--force-lang>, B<--script-lang>.
 
+=item B<--max-file-size=MB>
+
+Skip files larger than C<MB> megabytes when
+traversing directories.  By default, C<MB>=100.
+cloc's memory requirement is roughly twenty times 
+larger than the largest file so running with 
+files larger than 100 MB on a computer with less 
+than 2 GB of memory will cause problems.  
+Note:  this check does not apply to files 
+explicitly passed as command line arguments.
+
 =item B<--read-binary-files>
 
 Process binary files in addition to text files. This is usually a bad
@@ -195,7 +206,7 @@ B<--force-lang-def> to over-ride cloc's definitions.
 
 =item B<--script-lang=LANG,S>
 
-Process all files that invoke <s> as a C<#!> scripting language with the
+Process all files that invoke C<S> as a C<#!> scripting language with the
 counter for language LANG. For example, files that begin with
 C<#!/usr/local/bin/perl5.8.8> will be counted with the Perl counter by
 using
@@ -203,7 +214,7 @@ using
 	--script-lang=Perl,perl5.8.8
 
 The language name is case insensitive but the name of the script
-language executable, S, must have the right case. This option can be
+language executable, C<S>, must have the right case. This option can be
 specified multiple times. See also B<--force-lang>.
 
 =item B<--sdir=DIR>
