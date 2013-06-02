@@ -5524,6 +5524,7 @@ sub set_constants {                          # {{{1
             '.ZIP'     => 1 ,
             '.ear'     => 1 ,  # Java
             '.war'     => 1 ,  # contained within .ear
+            '.xz'      => 1 ,
             );
 # 1}}}
 } # end sub set_constants()
@@ -8151,6 +8152,16 @@ sub uncompress_archive_cmd {                 # {{{1
         if (external_utility_exists("bzip2 --help")) {
             if (external_utility_exists("tar --version")) {
                 $extract_cmd = "bzip2 -dc '$archive_file' | tar xf -";
+            } else {
+                $missing = "tar";
+            }
+        } else {
+            $missing = "bzip2";
+        }
+    } elsif ($archive_file =~ /\.tar\.xz$/ and !$ON_WINDOWS)    {
+        if (external_utility_exists("unxz --version")) {
+            if (external_utility_exists("tar --version")) {
+                $extract_cmd = "unxz -dc '$archive_file' | tar xf -";
             } else {
                 $missing = "tar";
             }
