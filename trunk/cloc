@@ -4220,6 +4220,7 @@ sub set_constants {                          # {{{1
             'php4'        => 'PHP'                   ,
             'php5'        => 'PHP'                   ,
             'php'         => 'PHP'                   ,
+            'pig'         => 'Pig Latin'             ,
             'plh'         => 'Perl'                  ,
             'pl'          => 'Perl'                  ,
             'PL'          => 'Perl'                  ,
@@ -4581,6 +4582,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_below_above'  , '^=head1', '^=cut'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                             ], 
+    'Pig Latin'          => [   
+                                [ 'remove_matches'      , '^\s*--' ],
+                                [ 'remove_inline'       , '--.*$'  ],
+                                [ 'call_regexp_common'  , 'C'       ],
+                            ],
     'PowerShell'         => [ 
                                 [ 'powershell_to_C'                ], 
                                 [ 'call_regexp_common'  , 'C'      ],
@@ -5301,6 +5307,7 @@ sub set_constants {                          # {{{1
     'peoplesoft'                   =>   2.50,
     'Perl'                         =>   4.00,
     'persistance object builder'   =>   3.81,
+    'Pig Latin'                    =>   1.00,
     'pilot'                        =>   1.51,
     'pl/1'                         =>   1.38,
     'pl/m'                         =>   1.13,
