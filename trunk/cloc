@@ -3568,6 +3568,9 @@ sub rm_comments {                            # {{{1
          $lines[0] ne $original_lines[0])) {
         unshift @lines, $original_lines[0];  # add the first line back
     }
+
+    foreach (@lines) { chomp }   # make sure no spurious newlines were added
+
     print "<- rm_comments\n" if $opt_v > 2;
     return @lines;
 } # 1}}}
