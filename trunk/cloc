@@ -30,7 +30,7 @@
 # <http://www.gnu.org/licenses/gpl.txt>.
 #
 # 1}}}
-my $VERSION = "1.60";  # odd number == beta; even number == stable
+my $VERSION = "1.61";  # odd number == beta; even number == stable
 my $URL     = "http://cloc.sourceforge.net";
 require 5.006;
 # use modules                                  {{{1
@@ -4130,6 +4130,7 @@ sub set_constants {                          # {{{1
             'csh'         => 'C Shell'               ,
             'css'         => "CSS"                   ,
             'ctl'         => 'Visual Basic'          ,
+            'cu'          => 'CUDA'                  ,
             'cxx'         => 'C++'                   ,
             'd'           => 'D'                     ,
             'da'          => 'DAL'                   ,
@@ -4407,6 +4408,11 @@ sub set_constants {                          # {{{1
     'CMake'              => [   
                                 [ 'remove_matches'      , '^\s*#'  ],
                                 [ 'remove_inline'       , '#.*$'   ], 
+                            ],
+    'CUDA'               => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
                             ],
     'Cython'             => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -5068,6 +5074,7 @@ sub set_constants {                          # {{{1
 'CSS' => 1.0,
     
     'culprit'                      =>   1.57,
+    'CUDA'                         =>   1.00,
     'cxpert'                       =>   1.63,
     'cygnet'                       =>   4.21,
     'D'                            =>   1.70,
