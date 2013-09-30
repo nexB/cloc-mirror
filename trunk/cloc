@@ -4457,6 +4457,8 @@ sub set_constants {                          # {{{1
     'ECPP'               => [   
                                 [ 'remove_between_general', 
                                   '<%doc>', '</%doc>',             ],
+                                [ 'remove_between_general', 
+                                  '<#'    , '#>'     ,             ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
 
