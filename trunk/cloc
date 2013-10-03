@@ -4187,6 +4187,8 @@ sub set_constants {                          # {{{1
             'jsf'         => 'JavaServer Faces'      ,
             'xhtml'       => 'JavaServer Faces'      ,
             'jsp'         => 'JSP'                   , # Java server pages
+            'jspf'        => 'JSP'                   , # Java server pages            
+            'vm'          => 'Velocity Template Language' ,
             'ksc'         => 'Kermit'                ,
             'ksh'         => 'Korn Shell'            ,
             'lhs'         => 'Haskell'               ,
@@ -4764,6 +4766,14 @@ sub set_constants {                          # {{{1
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
+    'Velocity Template Language' => [
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ],
+                                [ 'remove_jsp_comments' ,          ], 
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'add_newlines'        ,          ],
+                                [ 'call_regexp_common'  , 'C'      ],
+                            ],                            
     'yacc'               => [   
                                 [ 'call_regexp_common'  , 'C'      ], 
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -5226,6 +5236,7 @@ sub set_constants {                          # {{{1
     'Javascript'                   =>   1.48,
     'JavaServer Faces'             =>   1.5 ,
     'JSP'                          =>   1.48,
+    'Velocity Template Language'   =>   1.00,
     'JCL'                          =>   1.67,
     'joss'                         =>   0.75,
     'jovial'                       =>   0.75,
@@ -5514,6 +5525,7 @@ sub set_constants {                          # {{{1
     'Visualforce Component'        =>   1.9 ,
     'Visualforce Page'             =>   1.9 ,
     'visualgen'                    =>   4.44,
+    'VM'                           =>   2.00,
     'vpf'                          =>   0.84,
     'vsrexx'                       =>   2.50,
     'vulcan'                       =>   1.25,
