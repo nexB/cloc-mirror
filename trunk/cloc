@@ -3124,14 +3124,14 @@ sub classify_file {                          # {{{1
         }
     }
 
-    if ($file =~ /\.(\w+)$/) { # has an extension
+    if ($file =~ /\.(\S+)$/) { # has an extension
       print "$full_file extension=[$1]\n" if $opt_v > 2;
       my $extension = $1;
          # Windows file names are case insensitive so map 
          # all extensions to lowercase there.
          $extension = lc $extension if $ON_WINDOWS;  
       my @extension_list = ( $extension );
-      if ($file =~ /\.(\w+\.\w+)$/) { # has a double extension
+      if ($file =~ /\.(\S+\.\S+)$/) { # has a double extension
           my $extension = $1;
           $extension = lc $extension if $ON_WINDOWS;  
           unshift @extension_list, $extension;  # examine double ext first
