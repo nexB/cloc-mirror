@@ -4156,8 +4156,8 @@ sub set_constants {                          # {{{1
             'fmt'         => 'Oracle Forms'          ,
             'focexec'     => 'Focus'                 ,
             'frm'         => 'Visual Basic'          ,
-            'fs'          => 'FSharp'                ,
-            'fsi'         => 'FSharp'                ,
+            'fs'          => 'F#'                    ,
+            'fsi'         => 'F#'                    ,
             'gnumakefile' => 'make'                  ,
             'Gnumakefile' => 'make'                  ,
             'go'          => 'Go'                    ,
@@ -4497,7 +4497,7 @@ sub set_constants {                          # {{{1
                                 [ 'remove_f90_comments' ,          ], 
                                 [ 'remove_inline'       , '\!.*$'  ],
                             ],
-    'FSharp'             => [   
+    'F#'                 => [   
                                 [ 'call_regexp_common'  , 'Pascal' ], 
                                 [ 'remove_matches'      , '^\s*//' ],
                             ],
@@ -5182,7 +5182,7 @@ sub set_constants {                          # {{{1
     'foxpro 1'                     =>   2.00,
     'foxpro 2.5'                   =>   2.35,
     'framework'                    =>  13.33,
-    'FSharp'                       =>   2.50,
+    'F#'                           =>   2.50,
     'g2'                           =>   1.63,
     'gamma'                        =>   5.00,
     'genascript'                   =>   2.96,
