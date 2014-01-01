@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # cloc -- Count Lines of Code                  {{{1
-# Copyright (C) 2006-2013 Northrop Grumman Corporation
+# Copyright (C) 2006-2014 Northrop Grumman Corporation
 # Author:  Al Danial <al.danial@gmail.com>
 #          First release August 2006
 #
@@ -2329,7 +2329,6 @@ sub generate_report {                        # {{{1
         $BY_FILE      = 1;
     } elsif ($report_type eq "by report file")     {
         $first_column = "File";
-        $BY_FILE      = 1;
     } else {
         $first_column = "Report File";
     }
