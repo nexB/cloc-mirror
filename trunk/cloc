@@ -321,6 +321,11 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
  ${BB}Debug Options${NN}
    --categorized=<file>      Save names of categorized files to <file>.
    --counted=<file>          Save names of processed source files to <file>.
+   --explain=<lang>          Print the filters used to remove comments for
+                             language <lang> and exit.  In some cases the 
+                             filters refer to Perl subroutines rather than
+                             regular expressions.  An examination of the
+                             source code may be needed for further explanation.
    --diff-alignment=<file>   Write to <file> a list of files and file pairs
                              showing which files were added, removed, and/or
                              compared during a run with --diff.  This switch
@@ -329,8 +334,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --found=<file>            Save names of every file found to <file>.
    --ignored=<file>          Save names of ignored files and the reason they
                              were ignored to <file>.
-   --print-filter-stages     Print to STDOUT processed source code before and
-                             after each filter is applied.
+   --print-filter-stages     Print processed source code before and after 
+                             each filter is applied.
    --show-ext[=<ext>]        Print information about all known (or just the
                              given) file extensions and exit.
    --show-lang[=<lang>]      Print information about all known (or just the
@@ -409,6 +414,7 @@ my (
     $opt_exclude_lang         ,
     $opt_exclude_list_file    ,
     $opt_exclude_dir          ,
+    $opt_explain              ,
     $opt_force_lang_def       ,
     $opt_read_lang_def        ,
     $opt_write_lang_def       ,
@@ -463,6 +469,7 @@ my $getopt_success = GetOptions(
    "exclude_lang|exclude-lang=s"             => \$opt_exclude_lang        ,
    "exclude_dir|exclude-dir=s"               => \$opt_exclude_dir         ,
    "exclude_list_file|exclude-list-file=s"   => \$opt_exclude_list_file   ,
+   "explain=s"                               => \$opt_explain             ,
    "extract_with|extract-with=s"             => \$opt_extract_with        ,
    "found=s"                                 => \$opt_found               ,
    "diff"                                    => \$opt_diff                ,
@@ -586,6 +593,7 @@ die $usage unless defined $opt_version         or
                   defined $opt_write_lang_def  or
                   defined $opt_list_file       or
                   defined $opt_xsl             or
+                  defined $opt_explain         or
                   scalar @ARGV >= 1;
 die "--diff requires at least two arguments\n" 
     if $opt_diff and scalar @ARGV < 2;
@@ -723,9 +731,12 @@ my %Script_Language = map { $_ => 1 } values %Language_by_Script ;
 # 1}}}
 # Step 2:  Early exits for display, summation. {{{1
 #
-print_extension_info($opt_show_ext ) if defined $opt_show_ext ;
-print_language_info( $opt_show_lang) if defined $opt_show_lang;
-exit if (defined $opt_show_ext) or (defined $opt_show_lang);
+print_extension_info(   $opt_show_ext ) if defined $opt_show_ext ;
+print_language_info(    $opt_show_lang) if defined $opt_show_lang;
+print_language_filters( $opt_explain  ) if defined $opt_explain  ;
+exit if (defined $opt_show_ext)  or 
+        (defined $opt_show_lang) or
+        (defined $opt_explain);
 
 #print "Before glob have [", join(",", @ARGV), "]\n";
 @ARGV = windows_glob(@ARGV) if $ON_WINDOWS;
@@ -2829,6 +2840,20 @@ sub print_language_info {                    # {{{1
         foreach my $lang (sort {lc $a cmp lc $b } keys %extensions) {
             printf "%-26s (%s)\n", $lang, join(", ", @{$extensions{$lang}});
         }
+    }
+} # 1}}}
+sub print_language_filters {                 # {{{1
+    my ($language,) = @_;
+    if (!defined @{$Filters_by_Language{$language}}) {
+        warn "Unknown language: $language\n";
+        warn "Use --show-lang to list all defined languages.\n";
+        return;
+    }
+    printf "%s\n", $language;
+    foreach my $filter (@{$Filters_by_Language{$language}}) {
+        printf "    filter %s", $filter->[0];
+        printf " %s", $filter->[1] if defined $filter->[1];
+        print  "\n";
     }
 } # 1}}}
 sub make_file_list {                         # {{{1
