@@ -2623,7 +2623,8 @@ sub write_lang_def {                         # {{{1
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
             printf $OUT " %s", $filter->[1] if defined $filter->[1];
-            # $filter->[0] == 'remove_between_general' has two args
+            # $filter->[0] == 'remove_between_general'  and
+            #                 'remove_matches_2re' have two args
             printf $OUT " %s", $filter->[2] if defined $filter->[2];
             print  $OUT "\n";
         }
@@ -2681,7 +2682,7 @@ sub read_lang_def {                          # {{{1
         die "Missing computer language name, line $. of $file\n"
             unless $language;
 
-        if      (/^    filter\s+(remove_between_general)
+        if      (/^    filter\s+(remove_between_(general|2re))
                        \s+(.*?)\s+(.*?)s*$/x) {
             push @{$rhaa_Filters_by_Language->{$language}}, [ 
                   $1 , $2 , $3 ]
@@ -3664,6 +3665,7 @@ sub remove_matches_2re {                     # {{{1
 
     my @save_lines = ();
     for (my $i = 0; $i < scalar @{$ra_lines}; $i++) {
+        chomp($ra_lines->[$i]);
 #print "remove_matches_2re [$pattern1] [$pattern2] [$ra_lines->[$i]]\n";
         if ($i) {
 #print "remove_matches_2re prev=[$ra_lines->[$i-1]] this=[$ra_lines->[$i]]\n";
@@ -4235,6 +4237,7 @@ sub set_constants {                          # {{{1
             'm4'          => 'm4'                    ,
             'makefile'    => 'make'                  ,
             'Makefile'    => 'make'                  ,
+            'mc'          => 'Windows Message File'  ,
             'met'         => 'Teamcenter met'        ,
             'mg'          => 'Modula3'               , 
 #           'mli'         => 'ML'                    , # ML not implemented
@@ -4849,6 +4852,14 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'add_newlines'        ,          ], 
                                 [ 'call_regexp_common'  , 'C'      ], 
+                            ],
+    'Windows Message File'  => [
+                                [ 'remove_matches'      , '^\s*;\s*//' ], 
+                                [ 'call_regexp_common'  , 'C'          ], 
+                                [ 'remove_matches'      , '^\s*;\s*$'  ], 
+#                               next line only hypothetical
+#                               [ 'remove_matches_2re'  , '^\s*;\s*/\*',
+#                                                         '^\s*;\s*\*/', ],
                             ],
     'WiX source'         => [
                                 [ 'remove_html_comments',          ],
