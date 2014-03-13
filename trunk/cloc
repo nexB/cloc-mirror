@@ -4299,6 +4299,7 @@ sub set_constants {                          # {{{1
             'pcl'         => 'Patran Command Language'   ,
             'ps1'         => 'PowerShell'            ,
             'R'           => 'R'                     ,
+            'rc'          => 'Windows Resource File' ,
             'sass'        => 'SASS'                  ,
             'scss'        => 'SASS'                  ,
             'sh'          => 'Bourne Shell'          ,
@@ -4860,6 +4861,11 @@ sub set_constants {                          # {{{1
 #                               next line only hypothetical
 #                               [ 'remove_matches_2re'  , '^\s*;\s*/\*',
 #                                                         '^\s*;\s*\*/', ],
+                            ],
+    'Windows Resource File' => [
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
                             ],
     'WiX source'         => [
                                 [ 'remove_html_comments',          ],
@@ -5626,6 +5632,8 @@ sub set_constants {                          # {{{1
     'watfor'                       =>   0.88,
     'web scripts'                  =>   5.33,
     'whip'                         =>   0.88,
+    'Windows Message File'         =>   1.00,
+    'Windows Resource File'        =>   1.00,
     'WiX source'                   =>   1.90,
     'WiX include'                  =>   1.90,
     'WiX string localization'      =>   1.90,
