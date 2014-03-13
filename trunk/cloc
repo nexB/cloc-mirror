@@ -4299,6 +4299,7 @@ sub set_constants {                          # {{{1
             'ses'         => 'Patran Command Language'   ,
             'pcl'         => 'Patran Command Language'   ,
             'prefab'      => 'Unity-Prefab'          ,
+            'mat'         => 'Unity-Prefab'          ,
             'ps1'         => 'PowerShell'            ,
             'R'           => 'R'                     ,
             'rc'          => 'Windows Resource File' ,
