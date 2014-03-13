@@ -4219,6 +4219,7 @@ sub set_constants {                          # {{{1
             'js'          => 'Javascript'            ,
             'jsf'         => 'JavaServer Faces'      ,
             'xhtml'       => 'JavaServer Faces'      ,
+            'json'        => 'JSON'                  ,
             'jsp'         => 'JSP'                   , # Java server pages
             'jspf'        => 'JSP'                   , # Java server pages            
             'vm'          => 'Velocity Template Language' ,
@@ -4579,6 +4580,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'JCL'                => [   [ 'remove_jcl_comments' ,          ], ],
+    'JSON'               => [   # ECMA-404, the JSON standard definition
+                                # makes no provision for JSON comments
+                                # so just use a placeholder filter
+                                [ 'remove_matches'      , '^\s*$'  ], 
+                            ],
     'LESS'               => [
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'call_regexp_common'  , 'C'      ],
@@ -5303,6 +5309,7 @@ sub set_constants {                          # {{{1
     'Java'                         =>   1.36,
     'Javascript'                   =>   1.48,
     'JavaServer Faces'             =>   1.5 ,
+    'JSON'                         =>   2.50,
     'JSP'                          =>   1.48,
     'Velocity Template Language'   =>   1.00,
     'JCL'                          =>   1.67,
