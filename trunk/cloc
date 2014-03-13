@@ -4282,6 +4282,7 @@ sub set_constants {                          # {{{1
             'pyx'         => 'Cython'                ,
             'qml'         => 'QML'                   ,
             'rb'          => 'Ruby'                  ,
+            'rake'        => 'Ruby'                  ,
          #  'resx'        => 'ASP.Net'               ,
             'rex'         => 'Oracle Reports'        ,
             'rexx'        => 'Rexx'                  ,
@@ -4388,6 +4389,8 @@ sub set_constants {                          # {{{1
             'CMakeLists.txt' => 'CMake'              ,
             'build.xml'      => 'Ant/XML'            ,
             'pom.xml'        => 'Maven/XML'          ,
+            'Rakefile'       => 'Ruby'               ,
+            'rakefile'       => 'Ruby'               ,
             );
 # 1}}}
 %{$rhaa_Filters_by_Language} = (             # {{{1
