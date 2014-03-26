@@ -2802,13 +2802,13 @@ sub print_extension_info {                   # {{{1
     if ($extension) {  # show information on this extension
         foreach my $ext (sort {lc $a cmp lc $b } keys %Language_by_Extension) {
             # Language_by_Extension{f}    = 'Fortran 77' 
-            printf "%-12s -> %s\n", $ext, $Language_by_Extension{$ext}
+            printf "%-15s -> %s\n", $ext, $Language_by_Extension{$ext}
                 if $ext =~ m{$extension}i;
         }
     } else {           # show information on all  extensions
         foreach my $ext (sort {lc $a cmp lc $b } keys %Language_by_Extension) {
             # Language_by_Extension{f}    = 'Fortran 77' 
-            printf "%-12s -> %s\n", $ext, $Language_by_Extension{$ext};
+            printf "%-15s -> %s\n", $ext, $Language_by_Extension{$ext};
         }
     }
 } # 1}}}
@@ -4138,6 +4138,10 @@ sub set_constants {                          # {{{1
             'bas'         => 'Visual Basic'          ,
             'bat'         => 'DOS Batch'             ,
             'BAT'         => 'DOS Batch'             ,
+            'cmd'         => 'DOS Batch'             ,
+            'CMD'         => 'DOS Batch'             ,
+            'btm'         => 'DOS Batch'             ,
+            'BTM'         => 'DOS Batch'             ,
             'build.xml'   => 'Ant'                   ,
             'cbl'         => 'COBOL'                 ,
             'CBL'         => 'COBOL'                 ,
