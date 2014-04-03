@@ -2000,7 +2000,8 @@ sub diff_xml_yaml_report {                   # {{{1
             if ($opt_xml) {
                 if ($BY_FILE) {
                     $L .= sprintf "    <file name=\"%s\" files_count=\"1\" ", 
-                            rm_leading_tempdir($lang_or_file, \%TEMP_DIR);
+                        xml_metachars(
+                            rm_leading_tempdir($lang_or_file, \%TEMP_DIR));
                 } else {
                     $L .= sprintf "    <language name=\"%s\" files_count=\"%d\" ",
                             $lang_or_file ,
@@ -2451,6 +2452,7 @@ sub generate_report {                        # {{{1
 
         if ($BY_FILE) {
             my $clean_filename = rm_leading_tempdir($lang_or_file, \%TEMP_DIR);
+               $clean_filename = xml_metachars($clean_filename) if $opt_xml;
             $data_line  = sprintf $Format{'1'}{$Style}, $clean_filename;
         } else {
             $data_line  = sprintf $Format{'2'}{$Style}, $lang_or_file;
@@ -7636,6 +7638,24 @@ sub html_colored_text {                      # {{{1
     }
 #   return "" unless $text;
     return '<font color="' . $color . '">' . html_metachars($text) . "</font>";
+} # 1}}}
+sub xml_metachars {                          # {{{1
+    # http://en.wikipedia.org/wiki/Character_encodings_in_HTML#XML_character_references
+    my ($string, ) = shift @_;
+
+    my  @in_chars    = split(//, $string);
+    my  @out_chars   = ();
+    foreach my $c (@in_chars) {
+        if      ($c eq '&') { push @out_chars, '&amp;'
+        } elsif ($c eq '<') { push @out_chars, '&lt;'
+        } elsif ($c eq '>') { push @out_chars, '&gt;'
+        } elsif ($c eq '"') { push @out_chars, '&quot;'
+        } elsif ($c eq "'") { push @out_chars, '&apos;'
+        } else {
+            push @out_chars, $c;
+        }
+    }
+    return join "", @out_chars; 
 } # 1}}}
 sub html_metachars {                         # {{{1
     # Replace HTML metacharacters with their printable forms.
