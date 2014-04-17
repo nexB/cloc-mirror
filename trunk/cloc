@@ -3667,7 +3667,7 @@ sub remove_matches_2re {                     # {{{1
 
     my @save_lines = ();
     for (my $i = 0; $i < scalar @{$ra_lines}; $i++) {
-        chomp($ra_lines->[$i]);
+#       chomp($ra_lines->[$i]);
 #print "remove_matches_2re [$pattern1] [$pattern2] [$ra_lines->[$i]]\n";
         if ($i) {
 #print "remove_matches_2re prev=[$ra_lines->[$i-1]] this=[$ra_lines->[$i]]\n";
