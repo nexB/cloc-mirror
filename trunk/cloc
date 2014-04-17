@@ -4238,6 +4238,7 @@ sub set_constants {                          # {{{1
             'vm'          => 'Velocity Template Language' ,
             'ksc'         => 'Kermit'                ,
             'ksh'         => 'Korn Shell'            ,
+            'kt'          => 'Kotlin'                ,
             'lhs'         => 'Haskell'               ,
             'l'           => 'lex'                   ,
             'less'        => 'LESS'                  ,
@@ -4625,6 +4626,11 @@ sub set_constants {                          # {{{1
                                 # makes no provision for JSON comments
                                 # so just use a placeholder filter
                                 [ 'remove_matches'      , '^\s*$'  ], 
+                            ],
+    'Kotlin'             => [
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'remove_between_general', '/*', '*/' ],
                             ],
     'LESS'               => [
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -5398,6 +5404,7 @@ sub set_constants {                          # {{{1
     'krl'                          =>   1.38,
     'Kermit'                       =>   2.00,
     'Korn Shell'                   =>   3.81,
+    'Kotlin'                       =>   2.00,
     'ladder logic'                 =>   2.22,
     'lambit/l'                     =>   1.25,
     'lattice c'                    =>   0.63,
