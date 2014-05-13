@@ -563,6 +563,7 @@ $opt_max_file_size     = 100 unless $opt_max_file_size;
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
+$opt_progress_rate =   0 if     defined $opt_quiet;
 if (!defined $opt_v) {
     $opt_v  = 0;
 } elsif (!$opt_v) {
