@@ -4518,7 +4518,9 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
-    'DAL'                => [   [ 'remove_between'      , '[]',    ], ],
+    'DAL'                => [
+                                [ 'remove_between_general', '[', ']', ],
+                            ],
     'Dart'               => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
