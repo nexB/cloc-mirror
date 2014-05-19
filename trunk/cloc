@@ -3514,6 +3514,23 @@ sub write_file {                             # {{{1
 } # 1}}}
 sub read_file  {                             # {{{1
     my ($file, ) = @_;
+    my %BoM = (
+        "fe ff"           => 2 ,
+        "ff fe"           => 2 ,
+        "ef bb bf"        => 3 ,
+        "f7 64 4c"        => 3 ,
+        "0e fe ff"        => 3 ,
+        "fb ee 28"        => 3 ,
+        "00 00 fe ff"     => 4 ,
+        "ff fe 00 00"     => 4 ,
+        "2b 2f 76 38"     => 4 ,
+        "2b 2f 76 39"     => 4 ,
+        "2b 2f 76 2b"     => 4 ,
+        "2b 2f 76 2f"     => 4 ,
+        "dd 73 66 73"     => 4 ,
+        "84 31 95 33"     => 4 ,
+        "2b 2f 76 38 2d"  => 5 ,
+        );
 
     print "-> read_file($file)\n" if $opt_v > 2;
     my @lines = ();
@@ -3529,6 +3546,25 @@ sub read_file  {                             # {{{1
     } else {
         warn "Unable to read $file\n";
     }
+
+    # Are first few characters of the file Unicode Byte Order
+    # Marks (http://en.wikipedia.org/wiki/Byte_Order_Mark)? 
+    # If yes, remove them.
+    if (@lines) {
+        my @chrs   = split('', $lines[0]);
+        my $n_chrs = scalar @chrs;
+        my ($n2, $n3, $n4, $n5) = ('', '', '', '');
+        $n2 = sprintf("%x %x", map  ord, @chrs[0,1]) if $n_chrs >= 2;
+        $n3 = sprintf("%s %x", $n2, ord  $chrs[2])   if $n_chrs >= 3;
+        $n4 = sprintf("%s %x", $n3, ord  $chrs[3])   if $n_chrs >= 4;
+        $n5 = sprintf("%s %x", $n4, ord  $chrs[4])   if $n_chrs >= 5;
+        if      (defined $BoM{$n2}) { $lines[0] = substr $lines[0], 2;
+        } elsif (defined $BoM{$n3}) { $lines[0] = substr $lines[0], 3;
+        } elsif (defined $BoM{$n4}) { $lines[0] = substr $lines[0], 4;
+        } elsif (defined $BoM{$n5}) { $lines[0] = substr $lines[0], 5;
+        }
+    }
+
     print "<- read_file\n" if $opt_v > 2;
     return @lines;
 } # 1}}}
