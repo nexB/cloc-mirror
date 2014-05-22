@@ -4002,6 +4002,49 @@ sub remove_html_comments {                   # {{{1
     print "<- remove_html_comments\n" if $opt_v > 2;
     return @save_lines;
 } # 1}}}
+sub remove_haml_block {                      # {{{1
+    # Haml block comments are defined by a silent comment marker like
+    #    /
+    # or
+    #    -#
+    # followed by indented text on subsequent lines.
+    # http://haml.info/docs/yardoc/file.REFERENCE.html#comments
+    my ($ra_lines, ) = @_;
+
+    print "-> remove_haml_block\n" if $opt_v > 2;
+
+    my @save_lines = ();
+    my $in_comment = 0;
+    foreach (@{$ra_lines}) {
+
+        next if /^\s*$/;
+        my $line = expand($_);  # convert tabs to equivalent spaces
+        if ($in_comment) {
+            $line =~ /^(\s*)/;
+            # print "indent=", length $1, "\n";
+            if (length $1 < $in_comment) {
+                # indent level is less than comment level
+                # are back in code
+                $in_comment = 0;
+            } else {
+                # still in comments, don't use this line
+                next;
+            }
+        } elsif ($line =~ m{^(\s*)(/|-#)\s*$}) {
+            if ($1) {
+                $in_comment = 1;
+            } else {
+                $in_comment = length $1 + 1; # number of leading spaces + 1
+            }
+            # print "in_comment=$in_comment\n";
+            next;
+        }
+        push @save_lines, $line;
+    }
+
+    print "<- remove_haml_block\n" if $opt_v > 2;
+    return @save_lines;
+} # 1}}}
 sub add_newlines {                           # {{{1
     my ($ra_lines, ) = @_;
     print "-> add_newlines \n" if $opt_v > 2;
@@ -4250,6 +4293,7 @@ sub set_constants {                          # {{{1
             'shader'      => 'HLSL'                  ,
             'cg'          => 'HLSL'                  ,
             'cginc'       => 'HLSL'                  ,
+            'haml'        => 'Haml'                  ,
             'htm'         => 'HTML'                  ,
             'html'        => 'HTML'                  ,
             'i3'          => 'Modula3'               ,
@@ -4629,6 +4673,12 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],
+    'Haml'               => [   
+                                [ 'remove_haml_block'   ,          ], 
+                                [ 'remove_html_comments',          ],
+                                [ 'remove_matches'      , '^\s*/\s*\S+' ], 
+                                [ 'remove_matches'      , '^\s*-#\s*\S+' ], 
                             ],
     'HTML'               => [   
                                 [ 'remove_html_comments',          ],
@@ -5380,6 +5430,7 @@ sub set_constants {                          # {{{1
     'high c'                       =>   0.63,
     'hlevel'                       =>   1.38,
     'hp basic'                     =>   0.63,
+    'Haml'                         =>   2.50,
     'HTML'                         =>   1.90,
     'XML'                          =>   1.90,
     'MXML'                         =>   1.90,
