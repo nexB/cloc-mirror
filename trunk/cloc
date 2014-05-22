@@ -4294,6 +4294,8 @@ sub set_constants {                          # {{{1
             'cg'          => 'HLSL'                  ,
             'cginc'       => 'HLSL'                  ,
             'haml'        => 'Haml'                  ,
+            'handlebars'  => 'Handlebars'            ,
+            'hbs'         => 'Handlebars'            ,
             'htm'         => 'HTML'                  ,
             'html'        => 'HTML'                  ,
             'i3'          => 'Modula3'               ,
@@ -4657,6 +4659,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],
+    'Handlebars'         => [
+                                [ 'remove_between_general', '{{!--', '--}}' ],
+                                [ 'remove_between_general', '{{!', '}}' ],
+                                [ 'remove_html_comments',          ],
                             ],
     'Harbour'            => [
                                 [ 'remove_matches'      , '^\s*//' ], 
@@ -5431,6 +5438,7 @@ sub set_constants {                          # {{{1
     'hlevel'                       =>   1.38,
     'hp basic'                     =>   0.63,
     'Haml'                         =>   2.50,
+    'Handlebars'                   =>   2.50,
     'HTML'                         =>   1.90,
     'XML'                          =>   1.90,
     'MXML'                         =>   1.90,
