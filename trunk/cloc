@@ -2621,6 +2621,7 @@ sub write_lang_def {                         # {{{1
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
         next if $language eq "MATLAB/Objective C/MUMPS" or
                 $language eq "PHP/Pascal"               or
+                $language eq "Pascal/Puppet"            or
                 $language eq "Lisp/OpenCL";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
@@ -3212,6 +3213,19 @@ sub classify_file {                          # {{{1
                 } elsif (really_is_incpascal($full_file)) {
                     return 'Pascal';
                 } else {
+                    return $language; # (unknown)
+                }
+            } elsif ($Language_by_Extension{$extension} eq 'Pascal/Puppet') {
+                my $lang_Pasc_or_Pup = "";
+                pascal_or_puppet(     $full_file , 
+                                      $rh_Err    ,
+                                      $raa_errors,
+                                     \$lang_Pasc_or_Pup);
+                if ($lang_Pasc_or_Pup) {
+                    return $lang_Pasc_or_Pup;
+                } else { # an error happened in pascal_or_puppet()
+                    $rh_ignored->{$full_file} = 
+                        'failure in pascal_or_puppet()';
                     return $language; # (unknown)
                 }
             } elsif ($Language_by_Extension{$extension} eq 'Lisp/OpenCL') {
@@ -4381,7 +4395,7 @@ sub set_constants {                          # {{{1
             'pom.xml'     => 'Maven'                 ,
             'pom'         => 'Maven'                 ,
             'p'           => 'Pascal'                ,
-            'pp'          => 'Pascal'                ,
+            'pp'          => 'Pascal/Puppet'         ,
             'psql'        => 'SQL'                   ,
             'py'          => 'Python'                ,
             'pyx'         => 'Cython'                ,
@@ -4797,6 +4811,12 @@ sub set_constants {                          # {{{1
     'Pascal'             => [   
                                 [ 'call_regexp_common'  , 'Pascal' ], 
                                 [ 'remove_matches'      , '^\s*//' ],
+                            ],
+    'Pascal/Puppet'            => [ [ 'die' ,          ], ], # never called
+    'Puppet'             => [   
+                                [ 'remove_matches'      , '^\s*#'   ], 
+                                [ 'call_regexp_common'  , 'C'       ],
+                                [ 'remove_inline'       , '#.*$'   ],
                             ],
     'Patran Command Language'=> [   
                                 [ 'remove_matches'      , '^\s*#'   ], 
@@ -5634,6 +5654,7 @@ sub set_constants {                          # {{{1
     'prolog'                       =>   1.25,
     'prose'                        =>   0.75,
     'proteus'                      =>   0.75,
+    'Puppet'                       =>   2.00,
     'qbasic'                       =>   1.38,
     'qbe'                          =>   6.15,
     'qmf'                          =>   5.33,
@@ -7762,6 +7783,56 @@ sub Maven_or_XML {                           # {{{1
 
     print "<- Maven_or_XML($lang)\n" if $opt_v > 2;
     return $lang;
+} # 1}}}
+sub pascal_or_puppet {                       # {{{1
+    # Decide if code is Pascal or Puppet manifest
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+        $rs_language , # out
+       ) = @_;
+
+    print "-> pascal_or_puppet\n" if $opt_v > 2;
+
+    ${$rs_language} = "";
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
+        return;
+    }
+
+    my $DEBUG              = 0;
+    my $pascal_points      = 0;
+    my $puppet_points      = 0;
+
+    while (<$IN>) {
+        ++$pascal_points if /\bprogram\s+[A-Za-z]/i;
+        ++$pascal_points if /\bunit\s+[A-Za-z]/i;
+        ++$pascal_points if /\bmodule\s+[A-Za-z]/i;
+        ++$pascal_points if /\bprocedure\b/i;
+        ++$pascal_points if /\bfunction\b/i;
+        ++$pascal_points if /^\s*interface\s+/i;
+        ++$pascal_points if /^\s*implementation\s+/i;
+        ++$pascal_points if /\bbegin\b/i;
+        ++$pascal_points if /\bend\b/i;
+
+        ++$puppet_points if /^\s*class\s+/;
+        ++$puppet_points if /^\s*case\s+/;
+        ++$puppet_points if /^\s*package\s+/;
+        ++$puppet_points if /^\s*file\s+/;
+        ++$puppet_points if /^\s*service\s+/;
+    }
+    $IN->close;
+
+    print "<- pascal_or_puppet(pascal=$pascal_points, puppet=$puppet_points)\n"
+        if $opt_v > 2;
+
+    if ($pascal_points > $puppet_points) {
+        ${$rs_language} = "Pascal";
+    } else {
+        ${$rs_language} = "Puppet";
+    }
+
 } # 1}}}
 sub html_colored_text {                      # {{{1
     # http://www.pagetutor.com/pagetutor/makapage/pics/net216-2.gif
