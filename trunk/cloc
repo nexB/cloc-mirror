@@ -2928,7 +2928,9 @@ sub make_file_list {                         # {{{1
     foreach my $dir (@dir_list) {
 #print "make_file_list dir=$dir\n";
         # populates global variable @file_list
-        find({wanted => \&files, follow => $opt_follow_links }, $dir);  
+        find({wanted     => \&files            ,
+              preprocess => \&find_preprocessor,
+              follow     =>  $opt_follow_links }, $dir);  
     }
     $nFiles_Found = scalar @file_list;
     printf "%8d text file%s.\n", plural_form($nFiles_Found) unless $opt_quiet;
@@ -3034,31 +3036,39 @@ sub remove_duplicate_files {                 # {{{1
     }
     print "<- remove_duplicate_files\n" if $opt_v > 2;
 } # 1}}}
-sub files {                                  # {{{1
-    # invoked by File::Find's find()   Populates global variables,
-    # @file_list, %Ignored
-    if ($opt_exclude_dir or $opt_exclude_list_file) {
-        my $return = 0;
-        foreach my $skip_dir (keys %Exclude_Dir) {
-            # File::Find::dir used to always start with / but
-            # newer versions (1.13) no longer do; have to correct for this
-            my $dir = $File::Find::dir;
-               $dir = "./$dir" unless $dir =~ m{^/};
-            if ($dir =~ m{/\Q$skip_dir\E(/|$)} ) {
-                $Ignored{$File::Find::name} = "--exclude-dir=$skip_dir";
-                $return = 1;
-                last;
+sub find_preprocessor {                      # {{{1
+    # invoked by File::Find's find()   Populates global variable %Ignored
+    # Reject directories in cwd which are in the exclude list.
+
+    my @ok = ();
+    foreach my $F_or_D (@_) {  # pure file or directory name, no separators
+        if ($opt_exclude_dir or $opt_exclude_list_file) {
+            my $keep_it = 1;
+            foreach my $skip_dir (keys %Exclude_Dir) {
+                if ($F_or_D eq $skip_dir) {
+                    $Ignored{$File::Find::name} = "--exclude-dir=$skip_dir";
+                    $keep_it = 0;
+                }
             }
+            push @ok, $F_or_D if $keep_it;
+        } else {
+            push @ok, $F_or_D;
         }
-        return if $return;
-    }
+
+    }   
+    return @ok;
+} # 1}}}
+sub files {                                  # {{{1
+    # invoked by File::Find's find()   Populates global variable @file_list.
+    # See also find_preprocessor() which prunes undesired directories.
+
     my $Dir = cwd(); # not $File::Find::dir which just gives relative path
 	if ($opt_match_f    ) {	return unless /$opt_match_f/;     }
     if ($opt_not_match_f) {	return if     /$opt_not_match_f/; }
 	if ($opt_match_d    ) {	return unless $Dir =~ m{$opt_match_d}     }
     if ($opt_not_match_d) {	return if     $Dir =~ m{$opt_not_match_d} }
 
-    my $nBytes = -s     $_ ;
+    my $nBytes = -s $_ ;
     if (!$nBytes) {
         $Ignored{$File::Find::name} = 'zero sized file';
         printf "files(%s)  zero size\n", $File::Find::name if $opt_v > 5;
