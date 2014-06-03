@@ -3038,24 +3038,25 @@ sub remove_duplicate_files {                 # {{{1
     print "<- remove_duplicate_files\n" if $opt_v > 2;
 } # 1}}}
 sub find_preprocessor {                      # {{{1
-    # invoked by File::Find's find()   Populates global variable %Ignored
-    # Reject directories in cwd which are in the exclude list.
+    # invoked by File::Find's find()   
+    # Reads global variable %Exclude_Dir.
+    # Populates global variable %Ignored.
+    # Reject files/directories in cwd which are in the exclude list.
 
     my @ok = ();
     foreach my $F_or_D (@_) {  # pure file or directory name, no separators
-        if ($opt_exclude_dir or $opt_exclude_list_file) {
-            my $keep_it = 1;
-            foreach my $skip_dir (keys %Exclude_Dir) {
-                if ($F_or_D eq $skip_dir) {
-                    $Ignored{$File::Find::name} = "--exclude-dir=$skip_dir";
-                    $keep_it = 0;
-                }
+        if ($Exclude_Dir{$F_or_D}) {
+            $Ignored{$File::Find::name} = "--exclude-dir=$Exclude_Dir{$F_or_D}";
+        } elsif (-d $F_or_D) {
+            if ($opt_not_match_d and $F_or_D =~ m{$opt_not_match_d}) {
+                $Ignored{$File::Find::name} = "--not-match-d=$opt_not_match_d";
+            } else {
+                push @ok, $F_or_D;
             }
-            push @ok, $F_or_D if $keep_it;
+
         } else {
             push @ok, $F_or_D;
         }
-
     }   
     return @ok;
 } # 1}}}
@@ -3067,7 +3068,6 @@ sub files {                                  # {{{1
 	if ($opt_match_f    ) {	return unless /$opt_match_f/;     }
     if ($opt_not_match_f) {	return if     /$opt_not_match_f/; }
 	if ($opt_match_d    ) {	return unless $Dir =~ m{$opt_match_d}     }
-    if ($opt_not_match_d) {	return if     $Dir =~ m{$opt_not_match_d} }
 
     my $nBytes = -s $_ ;
     if (!$nBytes) {
