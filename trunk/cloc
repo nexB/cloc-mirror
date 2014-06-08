@@ -3894,11 +3894,15 @@ sub remove_between_general {                 # {{{1
                 s/^.*?\Q$end_marker\E//;
                 $in_comment = 0;
             }
+            next if $in_comment;
         }
         next if /^\s*$/;
-        $in_comment = 1 if /^(.*?)\Q$start_marker\E/;
-        next if defined $1 and $1 =~ /^\s*$/;
-        next if ($in_comment);
+        $in_comment = 1 if /^(.*?)\Q$start_marker\E/; # $1 may be blank or code
+        next if defined $1 and $1 =~ /^\s+$/; # leading blank; all comment
+        if ($in_comment) {
+            # part code, part comment; strip the comment and keep the code
+            s/^(.*?)\Q$start_marker\E/$1/;
+        }
         push @save_lines, $_;
     }
 
@@ -4367,6 +4371,7 @@ sub set_constants {                          # {{{1
             'mll'         => 'OCaml'                 , 
             'm'           => 'MATLAB/Objective C/MUMPS' ,
             'mm'          => 'Objective C++'         ,
+            'mustache'    => 'Mustache'              ,
             'wdproj'      => 'MSBuild script'        ,
             'csproj'      => 'MSBuild script'        ,
             'vcproj'      => 'MSBuild script'        ,
@@ -4804,6 +4809,9 @@ sub set_constants {                          # {{{1
     'PHP/Pascal'               => [ [ 'die' ,          ], ], # never called
     'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
+    'Mustache'           => [
+                                [ 'remove_between_general', '{{!', '}}' ],
+                            ],
     'Octave'             => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
@@ -5596,6 +5604,7 @@ sub set_constants {                          # {{{1
     'msl'                          =>   1.25,
     'mulisp'                       =>   1.25,
     'MUMPS'                        =>   4.21,
+    'Mustache'                     =>   1.75,
     'Nastran'                      =>   1.13,
     'natural'                      =>   1.54,
     'natural 1'                    =>   1.51,
