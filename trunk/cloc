@@ -2627,7 +2627,8 @@ sub write_lang_def {                         # {{{1
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
             printf $OUT " %s", $filter->[1] if defined $filter->[1];
-            # $filter->[0] == 'remove_between_general'  and
+            # $filter->[0] == 'remove_between_general',
+            #                 'remove_between_regex', and
             #                 'remove_matches_2re' have two args
             printf $OUT " %s", $filter->[2] if defined $filter->[2];
             print  $OUT "\n";
@@ -3898,7 +3899,7 @@ sub remove_between_general {                 # {{{1
         }
         next if /^\s*$/;
         $in_comment = 1 if /^(.*?)\Q$start_marker\E/; # $1 may be blank or code
-        next if defined $1 and $1 =~ /^\s+$/; # leading blank; all comment
+        next if defined $1 and $1 =~ /^\s*$/; # leading blank; all comment
         if ($in_comment) {
             # part code, part comment; strip the comment and keep the code
             s/^(.*?)\Q$start_marker\E/$1/;
@@ -3907,6 +3908,42 @@ sub remove_between_general {                 # {{{1
     }
 
     print "<- remove_between_general\n" if $opt_v > 2;
+    return @save_lines;
+} # 1}}}
+sub remove_between_regex   {                 # {{{1
+    my ($ra_lines, $start_RE, $end_RE, ) = @_;
+    # Start and end regex's may be any length strings.
+        
+    print "-> remove_between_regex(start=$start_RE, end=$end_RE)\n"
+        if $opt_v > 2;
+    
+    my $all_lines = join("", @{$ra_lines});
+        
+    my @save_lines = ();
+    my $in_comment = 0;
+    foreach (@{$ra_lines}) {
+            
+        next if /^\s*$/;
+        s/${start_RE}.*?${end_RE}//g;  # strip one-line comments
+        next if /^\s*$/;
+        if ($in_comment) {
+            if (/$end_RE/) {
+                s/^.*?${end_RE}//;
+                $in_comment = 0;
+            }
+            next if $in_comment;
+        }   
+        next if /^\s*$/;
+        $in_comment = 1 if /^(.*?)${start_RE}/; # $1 may be blank or code
+        next if defined $1 and $1 =~ /^\s*$/; # leading blank; all comment
+        if ($in_comment) {
+            # part code, part comment; strip the comment and keep the code
+            s/^(.*?)${start_RE}/$1/;
+        }
+        push @save_lines, $_;
+    }
+
+    print "<- remove_between_regex\n" if $opt_v > 2;
     return @save_lines;
 } # 1}}}
 sub remove_cobol_blanks {                    # {{{1
@@ -4819,10 +4856,15 @@ sub set_constants {                          # {{{1
                             ], 
     'Oracle Forms'       => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Oracle Reports'     => [   [ 'call_regexp_common'  , 'C'      ], ],
-    'Pascal'             => [   
-                                [ 'call_regexp_common'  , 'Pascal' ], 
+    'Pascal'             => [
+                                [ 'remove_between_regex', '{[^!]', '}' ],
+                                [ 'remove_between_general', '(*', '*)' ],
                                 [ 'remove_matches'      , '^\s*//' ],
                             ],
+####'Pascal'             => [   
+####                            [ 'call_regexp_common'  , 'Pascal' ], 
+####                            [ 'remove_matches'      , '^\s*//' ],
+####                        ],
     'Pascal/Puppet'            => [ [ 'die' ,          ], ], # never called
     'Puppet'             => [   
                                 [ 'remove_matches'      , '^\s*#'   ], 
