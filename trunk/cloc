@@ -4347,6 +4347,7 @@ sub set_constants {                          # {{{1
             'gnumakefile' => 'make'                  ,
             'Gnumakefile' => 'make'                  ,
             'go'          => 'Go'                    ,
+            'gsp'         => 'Grails'                ,
             'groovy'      => 'Groovy'                ,
             'gant'        => 'Groovy'                ,
             'h'           => 'C/C++ Header'          ,
@@ -4725,9 +4726,12 @@ sub set_constants {                          # {{{1
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
-    'Groovy'             => [   
-                                [ 'remove_matches'      , '^\s*//' ], 
-                                [ 'remove_inline'       , '//.*$'  ], 
+    'Grails'             => [   
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ],
+                                [ 'remove_jsp_comments' ,          ], 
+                                [ 'remove_matches'      , '^\s*//' ],
+                                [ 'add_newlines'        ,          ],
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
     'Handlebars'         => [
@@ -5527,6 +5531,7 @@ sub set_constants {                          # {{{1
     'guest'                        =>   2.86,
     'guru'                         =>   1.63,
     'Go'                           =>   2.50,
+    'Grails'                       =>   1.48,
     'Groovy'                       =>   4.10,
     'gw basic'                     =>   0.82,
     'Harbour'                      =>   2.00,
