@@ -2687,18 +2687,18 @@ sub read_lang_def {                          # {{{1
         die "Missing computer language name, line $. of $file\n"
             unless $language;
 
-        if      (/^    filter\s+(remove_between_(general|2re))
-                       \s+(.*?)\s+(.*?)s*$/x) {
+        if      (/^\s{4}filter\s+(remove_between_(general|2re|regex))
+                       \s+(\S+)\s+(\S+)s*$/x) {
             push @{$rhaa_Filters_by_Language->{$language}}, [ 
-                  $1 , $2 , $3 ]
+                  $1 , $3 , $4 ]
 
-        } elsif (/^    filter\s+(\w+)\s*$/) {
+        } elsif (/^\s{4}filter\s+(\w+)\s*$/) {
             push @{$rhaa_Filters_by_Language->{$language}}, [ $1 ]
 
-        } elsif (/^    filter\s+(\w+)\s+(.*?)\s*$/) {
+        } elsif (/^\s{4}filter\s+(\w+)\s+(.*?)\s*$/) {
             push @{$rhaa_Filters_by_Language->{$language}}, [ $1 , $2 ]
 
-        } elsif (/^    extension\s+(\S+)\s*$/) {
+        } elsif (/^\s{4}extension\s+(\S+)\s*$/) {
             if (defined $rh_Language_by_Extension->{$1}) {
                 die "File extension collision:  $1 ",
                     "maps to languages '$rh_Language_by_Extension->{$1}' ",
@@ -2708,16 +2708,16 @@ sub read_lang_def {                          # {{{1
             }
             $rh_Language_by_Extension->{$1} = $language;
 
-        } elsif (/^    filename\s+(\S+)\s*$/) {
+        } elsif (/^\s{4}filename\s+(\S+)\s*$/) {
             $rh_Language_by_File->{$1} = $language;
 
-        } elsif (/^    script_exe\s+(\S+)\s*$/) {
+        } elsif (/^\s{4}script_exe\s+(\S+)\s*$/) {
             $rh_Language_by_Script->{$1} = $language;
 
-        } elsif (/^    3rd_gen_scale\s+(\S+)\s*$/) {
+        } elsif (/^\s{4}3rd_gen_scale\s+(\S+)\s*$/) {
             $rh_Scale_Factor->{$language} = $1;
 
-        } elsif (/^    end_of_line_continuation\s+(\S+)\s*$/) {
+        } elsif (/^\s{4}end_of_line_continuation\s+(\S+)\s*$/) {
             $rh_EOL_Continuation_re->{$language} = $1;
 
         } else {
@@ -2865,7 +2865,8 @@ sub print_language_filters {                 # {{{1
     printf "%s\n", $language;
     foreach my $filter (@{$Filters_by_Language{$language}}) {
         printf "    filter %s", $filter->[0];
-        printf " %s", $filter->[1] if defined $filter->[1];
+        printf "  %s", $filter->[1] if defined $filter->[1];
+        printf "  %s", $filter->[2] if defined $filter->[2];
         print  "\n";
     }
 } # 1}}}
@@ -3902,7 +3903,7 @@ sub remove_between_general {                 # {{{1
         next if defined $1 and $1 =~ /^\s*$/; # leading blank; all comment
         if ($in_comment) {
             # part code, part comment; strip the comment and keep the code
-            s/^(.*?)\Q$start_marker\E/$1/;
+            s/^(.*?)\Q$start_marker\E.*$/$1/;
         }
         push @save_lines, $_;
     }
@@ -3938,7 +3939,7 @@ sub remove_between_regex   {                 # {{{1
         next if defined $1 and $1 =~ /^\s*$/; # leading blank; all comment
         if ($in_comment) {
             # part code, part comment; strip the comment and keep the code
-            s/^(.*?)${start_RE}/$1/;
+            s/^(.*?)${start_RE}.*$/$1/;
         }
         push @save_lines, $_;
     }
@@ -4857,7 +4858,7 @@ sub set_constants {                          # {{{1
     'Oracle Forms'       => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Oracle Reports'     => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Pascal'             => [
-                                [ 'remove_between_regex', '{[^!]', '}' ],
+                                [ 'remove_between_regex', '{[^$]', '}' ],
                                 [ 'remove_between_general', '(*', '*)' ],
                                 [ 'remove_matches'      , '^\s*//' ],
                             ],
