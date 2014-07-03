@@ -8386,6 +8386,91 @@ sub remove_leading_dir {                     # {{{1
     return @filenames;
 
 } # 1}}}
+sub strip_leading_dir {                      # {{{1 
+    my ($leading, @filenames) = @_;
+    #  removes the string $leading from each entry in @filenames
+    print "-> strip_leading_dir()\n" if $opt_v > 2;
+
+#print "remove_leading_dir leading=[$leading]\n"; die;
+    if ($ON_WINDOWS) {
+       $leading =~ s{\\}{/}g;
+    }
+    foreach my $F (@filenames) {
+        $F =~ s{^$leading}{};
+    }
+
+    print "<- strip_leading_dir()\n" if $opt_v > 2;
+    return @filenames;
+
+} # 1}}}
+sub find_deepest_file {                      # {{{1 
+    my @filenames = @_;
+    #
+    #  Input should be a list of file names
+    #  with the same leading directory such as
+    # 
+    #      dir1/dir2/a.txt
+    #      dir1/dir2/b.txt
+    #      dir1/dir2/dir3/c.txt
+    #
+    #  Output is the file with the most parent directories:
+    # 
+    #      dir1/dir2/dir3/c.txt
+
+    print "-> find_deepest_file()\n" if $opt_v > 2;
+
+    my $deepest    = undef;
+    my $max_subdir = -1;
+    foreach my $F (sort @filenames) {
+        my ($Vol, $Dir, $File) = File::Spec->splitpath($F);
+        my @x = File::Spec->splitdir( $Dir );
+        pop @x unless $x[$#x]; # last entry usually null, remove it
+        if (scalar @x > $max_subdir) {
+            $deepest    = $F;
+            $max_subdir = scalar @x;
+        }
+    }
+
+    print "<- find_deepest_file()\n" if $opt_v > 2;
+    return $deepest;
+
+} # 1}}}
+sub find_uncommon_parent_dir {               # {{{1
+    my ($file_L, $file_R) = @_;
+    #
+    # example:
+    #
+    #   file_L = "perl-5.16.1/cpan/CPANPLUS/lib/CPANPLUS/Internals/Source/SQLite/Tie.pm"
+    #   file_R = "/tmp/8VxQG0OLbp/perl-5.16.3/cpan/CPANPLUS/lib/CPANPLUS/Internals/Source/SQLite/Tie.pm"
+    #
+    # then return
+    #
+    #   "perl-5.16.1",
+    #   "/tmp/8VxQG0OLbp/perl-5.16.3",
+
+    my ($Vol_L, $Dir_L, $File_L) = File::Spec->splitpath($file_L);
+    my @x_L = File::Spec->splitdir( $Dir_L );
+    my ($Vol_R, $Dir_R, $File_R) = File::Spec->splitpath($file_R);
+    my @x_R = File::Spec->splitdir( $Dir_R );
+
+    my @common  = ();
+
+    # work backwards
+    while ($x_L[$#x_L] eq $x_R[$#x_R]) {
+        push @common, $x_L[$#x_L];
+        pop  @x_L;
+        pop  @x_R;
+    }
+    my $success = scalar @common;
+
+    my $dirs_L = File::Spec->catdir( @x_L );
+    my $dirs_R = File::Spec->catdir( @x_R );
+    my $lead_L = File::Spec->catpath( $Vol_L, $dirs_L, "" );
+    my $lead_R = File::Spec->catpath( $Vol_R, $dirs_R, "" );
+
+    return $lead_L, $lead_R, $success;
+
+} # 1}}}
 sub align_by_pairs {                         # {{{1 
     my ($rh_file_list_L        , # in
         $rh_file_list_R        , # in
@@ -8426,8 +8511,25 @@ sub align_by_pairs {                         # {{{1
     # if the groups are in different directories so the first step
     # is to strip the leading directory names from file lists to
     # make it possible to align by file names.
-    my @files_L_minus_dir = remove_leading_dir(@files_L);
-    my @files_R_minus_dir = remove_leading_dir(@files_R);
+    my @files_L_minus_dir = undef;
+    my @files_R_minus_dir = undef;
+    my $deepest_file_L    = find_deepest_file(@files_L);
+    my $deepest_file_R    = find_deepest_file(@files_R);
+#print "deepest L = [$deepest_file_L]\n";
+#print "deepest R = [$deepest_file_R]\n";
+    my ($leading_dir_L, $leading_dir_R, $success) = 
+        find_uncommon_parent_dir($deepest_file_L, $deepest_file_R);
+#print "leading_dir_L=[$leading_dir_L]\n";
+#print "leading_dir_R=[$leading_dir_R]\n";
+#print "success      =[$success]\n";
+    if ($success) {
+        @files_L_minus_dir = strip_leading_dir($leading_dir_L, @files_L);
+        @files_R_minus_dir = strip_leading_dir($leading_dir_R, @files_R);
+    } else {
+        # otherwise fall back to old strategy
+        @files_L_minus_dir = remove_leading_dir(@files_L);
+        @files_R_minus_dir = remove_leading_dir(@files_R);
+    }
 
     # Keys of the stripped_X arrays are canonical file names;
     # should overlap mostly.  Keys in stripped_L but not in
