@@ -596,8 +596,8 @@ die $usage unless defined $opt_version         or
                   defined $opt_xsl             or
                   defined $opt_explain         or
                   scalar @ARGV >= 1;
-die "--diff requires at least two arguments\n" 
-    if $opt_diff and scalar @ARGV < 2;
+die "--diff requires two arguments; got ", scalar @ARGV, "\n" 
+    if $opt_diff and scalar @ARGV != 2;
 if ($opt_version) {
     printf "$VERSION\n";
     exit;
@@ -8471,6 +8471,67 @@ sub find_uncommon_parent_dir {               # {{{1
     return $lead_L, $lead_R, $success;
 
 } # 1}}}
+sub get_leading_dirs {                       # {{{1
+    my ($rh_file_list_L, $rh_file_list_R) = @_;
+    # find uniquely named files in both sets to help determine the 
+    # leading directory positions
+    my %unique_filename = ();
+    my %basename_L = ();
+    my %basename_R = ();
+    foreach my $f (keys %{$rh_file_list_L}) {
+        my $bn = basename($f);
+        $basename_L{ $bn }{'count'}   += 1; 
+        $basename_L{ $bn }{'fullpath'} = $f; 
+    }
+    foreach my $f (keys %{$rh_file_list_R}) {
+        my $bn = basename($f);
+        $basename_R{ $bn }{'count'}   += 1;
+        $basename_R{ $bn }{'fullpath'} = $f; 
+    }
+    foreach my $f (keys %basename_L) {
+        next unless $basename_L{$f}{'count'} == 1;
+        next unless defined $basename_R{$f} and $basename_R{$f}{'count'} == 1;
+        $unique_filename{$f}{'L'} = $basename_L{ $f }{'fullpath'};
+        $unique_filename{$f}{'R'} = $basename_R{ $f }{'fullpath'};
+    }
+    return undef, undef, 0 unless %unique_filename;
+
+    my %candidate_leading_dir_L = ();
+    my %candidate_leading_dir_R = ();
+    foreach my $f (keys %unique_filename) {
+        my $fL = $unique_filename{ $f }{'L'};
+        my $fR = $unique_filename{ $f }{'R'};
+#printf "%-36s -> %-36s\n", $fL, $fR;
+        my $ptr_L = length($fL) - 1;
+        my $ptr_R = length($fR) - 1;
+        my @aL    = split '', $fL;
+        my @aR    = split '', $fR;
+        while ($ptr_L >= 0 and $ptr_R >= 0) {
+            last if $aL[$ptr_L] ne $aR[$ptr_R];
+            --$ptr_L;
+            --$ptr_R;
+        }
+#print "ptr_L=$ptr_L   ptr_R=$ptr_R\n";
+        my $leading_dir_L = "";
+           $leading_dir_L = substr($fL, 0, $ptr_L+1) if $ptr_L >= 0;
+        my $leading_dir_R = "";
+           $leading_dir_R = substr($fR, 0, $ptr_R+1) if $ptr_R >= 0;
+#print "leading_dir_L=$leading_dir_L   leading_dir_R=$leading_dir_R\n";
+        ++$candidate_leading_dir_L{$leading_dir_L};
+        ++$candidate_leading_dir_R{$leading_dir_R};
+    }
+#use Data::Dumper::Simple;
+#print Dumper(%candidate_leading_dir_L);
+#print Dumper(%candidate_leading_dir_R);
+#die;
+    my $best_L = (sort {
+               $candidate_leading_dir_L{$b} <=> 
+               $candidate_leading_dir_L{$a}} keys %candidate_leading_dir_L)[0];
+    my $best_R = (sort {
+               $candidate_leading_dir_R{$b} <=> 
+               $candidate_leading_dir_R{$a}} keys %candidate_leading_dir_R)[0];
+    return $best_L, $best_R, 1;
+} # 1}}}
 sub align_by_pairs {                         # {{{1 
     my ($rh_file_list_L        , # in
         $rh_file_list_R        , # in
@@ -8498,7 +8559,7 @@ sub align_by_pairs {                         # {{{1
         return;
     }
 #use Data::Dumper::Simple;
-#print Dumper("align_by_pairs", @files_L, @files_R);
+#print Dumper("align_by_pairs", %{$rh_file_list_L}, %{$rh_file_list_R},);
 #die;
     if (scalar @files_L == 1 and scalar @files_R == 1) {
         # The easy case:  compare two files.
@@ -8513,12 +8574,15 @@ sub align_by_pairs {                         # {{{1
     # make it possible to align by file names.
     my @files_L_minus_dir = undef;
     my @files_R_minus_dir = undef;
+
     my $deepest_file_L    = find_deepest_file(@files_L);
     my $deepest_file_R    = find_deepest_file(@files_R);
 #print "deepest L = [$deepest_file_L]\n";
 #print "deepest R = [$deepest_file_R]\n";
+####my ($leading_dir_L, $leading_dir_R, $success) = 
+####    find_uncommon_parent_dir($deepest_file_L, $deepest_file_R);
     my ($leading_dir_L, $leading_dir_R, $success) = 
-        find_uncommon_parent_dir($deepest_file_L, $deepest_file_R);
+                get_leading_dirs($rh_file_list_L, $rh_file_list_R);
 #print "leading_dir_L=[$leading_dir_L]\n";
 #print "leading_dir_R=[$leading_dir_R]\n";
 #print "success      =[$success]\n";
