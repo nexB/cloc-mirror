@@ -2360,7 +2360,7 @@ sub generate_report {                        # {{{1
             # language and one by report file, each of which needs a header
         }
         if ($opt_xml) {
-            if ($BY_FILE) {
+            if ($BY_FILE or ($report_type eq "by report file")) {
                 push @results, "<files>";
             } else {
                 push @results, "<languages>";
@@ -2477,7 +2477,7 @@ sub generate_report {                        # {{{1
                 }
                 $data_line.=' language="' . $lang . '" ';
             }
-            if ($BY_FILE) {
+            if ($BY_FILE or ($report_type eq "by report file")) {
                 push @results, "  <file " . $data_line . "/>";
             } else {
                 push @results, "  <language " . $data_line . "/>";
@@ -2536,7 +2536,7 @@ sub generate_report {                        # {{{1
             $sum_scaled  if $opt_3;
         push @results, "  <total " . $data_line . "/>";
 
-        if ($BY_FILE) {
+        if ($BY_FILE or ($report_type eq "by report file")) {
             push @results, "</files>";
         } else {
             foreach my $language (keys %{$languages}) {
