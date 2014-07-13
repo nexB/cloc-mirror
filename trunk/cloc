@@ -4466,6 +4466,12 @@ sub set_constants {                          # {{{1
             'mat'         => 'Unity-Prefab'          ,
             'ps1'         => 'PowerShell'            ,
             'R'           => 'R'                     ,
+            'rkt'         => 'Racket'                ,
+            'rktl'        => 'Racket'                ,
+            'ss'          => 'Racket'                ,
+            'scm'         => 'Racket'                ,
+            'sch'         => 'Racket'                ,
+            'scrbl'       => 'Racket'                ,
             'tsv'         => 'RobotFramework'        ,
             'rc'          => 'Windows Resource File' ,
             'rc2'         => 'Windows Resource File' ,
@@ -4921,6 +4927,10 @@ sub set_constants {                          # {{{1
     'R'                  => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Racket'             => [   
+                                [ 'remove_matches'      , '^\s*;'  ], 
+                                [ 'remove_inline'       , ';.*$'   ],
                             ], 
     'Razor'              => [
                                 [ 'remove_matches'      , '^\s*//' ],
@@ -5743,6 +5753,7 @@ sub set_constants {                          # {{{1
     'quickbuild'                   =>   2.86,
     'quiz'                         =>   5.33,
     'R'                            =>   3.00,
+    'Racket'                       =>   1.50,
     'rally'                        =>   2.00,
     'ramis ii'                     =>   2.00,
     'rapidgen'                     =>   2.86,
