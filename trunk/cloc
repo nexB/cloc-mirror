@@ -4321,7 +4321,7 @@ sub set_constants {                          # {{{1
             'd'           => 'D'                     ,
             'da'          => 'DAL'                   ,
             'dart'        => 'Dart'                  ,
-            'def'         => 'Teamcenter def'        ,
+            'def'         => 'Windows Module Definition',
             'dmap'        => 'NASTRAN DMAP'          ,
             'dpr'         => 'Pascal'                ,
             'dsr'         => 'Visual Basic'          ,
@@ -5030,7 +5030,6 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                             ], 
-    'Teamcenter def'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'Teamcenter met'     => [   [ 'call_regexp_common'  , 'C'      ], ],
     'Teamcenter mth'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
     'TypeScript'         => [   
@@ -5090,6 +5089,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ],
                                 [ 'add_newlines'        ,          ],
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],                            
+    'Teamcenter def'     => [   [ 'remove_matches'      , '^\s*#'  ], ], 
+    'Windows Module Definition' => [
+                                [ 'remove_matches'      , '^\s*;' ],
+                                [ 'remove_inline'       , ';.*$'  ], 
                             ],                            
     'yacc'               => [   
                                 [ 'call_regexp_common'  , 'C'      ], 
