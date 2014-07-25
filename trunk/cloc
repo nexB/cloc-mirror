@@ -664,6 +664,7 @@ if ($opt_read_lang_def) {
 if ($opt_lang_no_ext and !defined $Filters_by_Language{$opt_lang_no_ext}) {
     die_unknown_lang($opt_lang_no_ext, "--lang-no-ext")
 }
+check_scale_existence(\%Filters_by_Language, \%Scale_Factor);
 
 # Process command line provided extention-to-language mapping overrides.
 # Make a hash of known languages in lower case for easier matching.
@@ -4098,9 +4099,9 @@ sub remove_haml_block {                      # {{{1
             }
         } elsif ($line =~ m{^(\s*)(/|-#)\s*$}) {
             if ($1) {
-                $in_comment = 1;
-            } else {
                 $in_comment = length $1 + 1; # number of leading spaces + 1
+            } else {
+                $in_comment = 1;
             }
             # print "in_comment=$in_comment\n";
             next;
@@ -5964,6 +5965,27 @@ sub set_constants {                          # {{{1
             );
 # 1}}}
 } # end sub set_constants()
+sub check_scale_existence {                  # {{{1
+    my ($rhaa_Filters_by_Language, 
+        $rh_Scale_Factor) = @_;
+
+    my %extension_collisions = (
+        # TODO:  find a better way of dealing with these
+        "PHP/Pascal"                => 1,
+        "Lisp/OpenCL"               => 1,
+        "MATLAB/Objective C/MUMPS"  => 1,
+        "Pascal/Puppet"             => 1,
+    );
+    my $OK = 1;
+    foreach my $language (keys %{$rhaa_Filters_by_Language}) {
+        next if defined $extension_collisions{$language};
+        if (!defined $rh_Scale_Factor->{$language}) {
+            $OK = 0;
+            warn "Missing scale factor for $language\n";
+        }
+    }
+    die unless $OK;
+} # 1}}}
 sub Install_Regexp_Common {                  # {{{1
     # Installs portions of Damian Conway's & Abigail's Regexp::Common
     # module, v2.120, into a temporary directory for the duration of
