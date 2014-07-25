@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
 # cloc -- Count Lines of Code                  {{{1
-# Copyright (C) 2006-2014 Northrop Grumman Corporation
-# Author:  Al Danial <al.danial@gmail.com>
-#          First release August 2006
+# Copyright (C) 2006-2014 Al Danial <al.danial@gmail.com>
+# First release August 2006
 #
 # Includes code from:
 #   - SLOCCount v2.26 
