@@ -5914,6 +5914,7 @@ sub set_constants {                          # {{{1
     'whip'                         =>   0.88,
     'Windows Message File'         =>   1.00,
     'Windows Resource File'        =>   1.00,
+    'Windows Module Definition'    =>   1.00,
     'WiX source'                   =>   1.90,
     'WiX include'                  =>   1.90,
     'WiX string localization'      =>   1.90,
