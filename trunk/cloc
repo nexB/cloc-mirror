@@ -4813,7 +4813,10 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
-    'Lisp'               => [   [ 'remove_matches'      , '^\s*;'  ], ],
+    'Lisp'               => [   
+                                [ 'remove_matches'      , '^\s*;'  ], 
+                                [ 'remove_between_general', '#|', '|#' ],
+                            ],
     'Lisp/OpenCL'        => [ [ 'die' ,          ], ], # never called
     'LiveLink OScript'   => [   [ 'remove_matches'      , '^\s*//' ], ],
 #   'Lua'                => [   [ 'call_regexp_common'  , 'lua'    ], ],
