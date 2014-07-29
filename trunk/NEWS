@@ -1,3 +1,127 @@
+                Release Notes for cloc version 1.62
+                   http://cloc.sourceforge.net
+                           July 29 2014
+
+New Languages:
+    o CUDA
+    o ECPP
+    o F#
+    o Grails
+    o Haml
+    o Handlebars
+    o Harbour
+    o HLSL
+    o JSON
+    o Kotlin
+    o Mustache
+    o PL/I
+    o Puppet manifest
+    o R
+    o Racket
+    o Rake
+    o RobotFramework
+    o Swift
+    o TypeScript
+    o Unity-Prefab
+    o Velocity Template Language
+    o Windows Message
+    o Windows Module Definition
+    o Windows Resource
+    o WiX include
+    o WiX source
+    o WiX string localization
+    o xBase
+    o xBase Header
+    o XQuery
+
+Updates:
+    o JSP             Added extension  .jspf
+    o MSBuild script  Added extensions .vcproj, .wixproj, .vbproj
+    o DOS Batch       Added extensions .cmd, .btm
+    o C++             Added extension  .c++
+    o Pascal          Lines that begin with {! are counted as code as
+                      some compilers treat these as a compiler directives.
+    o Lisp            Treat text between #| and |# as a block comment.
+    o Suppress progress rate display if --quiet is set.
+    o --exclude-dir directories are pruned before the file search 
+      descends into those directories instead of just ignoring
+      files there
+    o The logic that aligns file pairs between --diff sets was 
+      rewritten.  Corner cases such as diff between one file and
+      a set of files are handled much more precisely.
+
+New options and features:
+
+   --explain=LANG            Print the filters used to remove comments for
+                             language LANG and exit.  In some cases the 
+                             filters refer to Perl subroutines rather than
+                             regular expressions.  An examination of the
+                             source code may be needed for further explanation.
+
+   Added new filter macros:
+      o remove_between_general, which accepts start and end comment marker.
+      o remove_between_regex, which accepts start and end comment regexes.
+
+   Properly handle text files that begin with Unicode Byte Order Marks.
+
+Bug Fixes:
+
+    Remove spurious newlines produced by bad comment removal regexes
+    which could cause incorrect diff's.
+    Correctly handle file extensions with non-alphanumeric characters.
+    Show file count with --sum-reports.
+    Properly encode characters &,<,>,",' in XML output.
+    Properly read and write entries for the 'remove_between_general'
+    macro in language definition text files.
+
+============================================================================
+                Release Notes for cloc version 1.60
+                   http://cloc.sourceforge.net
+                           August 16, 2013
+
+New Languages:
+    o LESS
+    o Razor
+    o JavaServer Faces
+    o SASS
+    o Apex Trigger
+    o Visualforce Component
+    o Visualforce Page
+    o Verilog-SystemVerilog
+    o Pig Latin
+
+Updates:
+    o Improved handling of UTF-16 (both little and big endian).
+    o use Time::HiRes if available.
+    o Improved logic that distinguishes between Objective C,
+      MUMPS and MATLAB files.
+    o Added information about duplicate files to output created
+      by --ignored.
+    o Added support for .tar.xz compressed archives.
+    o CMake                Added .cmake file extension.
+    o MXML                 Added support for Actionscript
+    o Groovy               Added .gant file extension.
+    o Vala                 Recognize Vala header files.
+
+New options and features:
+
+   --max-file-size=<MB>      Skip files larger than <MB> megabytes when
+                             traversing directories.  By default, <MB>=100.
+                             cloc's memory requirement is roughly twenty times 
+                             larger than the largest file so running with 
+                             files larger than 100 MB on a computer with less 
+                             than 2 GB of memory will cause problems.  
+                             Note:  this check does not apply to files 
+                             explicitly passed as command line arguments.
+
+Bug Fixes:
+
+    Suppress "Wrote <file>" messages when running with --quiet.
+    Fixed an error that caused cloc to fail with "Can't use an 
+    undefined value as an ARRAY reference" when running with 
+    Perl 5.16 or newer when it encounters certain file types.
+
+============================================================================
                 Release Notes for cloc version 1.58
                    http://cloc.sourceforge.net
                            March 3, 2013
