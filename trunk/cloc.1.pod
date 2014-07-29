@@ -1,7 +1,7 @@
 #   Copyright
 #
-#      Copyright (C) 2013 Al Danial <al.danial@gmail.com>.
-#      Copyright (C) 2010-2013 Jari Aalto <jari.aalto@cante.net>
+#      Copyright (C) 2014 Al Danial <al.danial@gmail.com>.
+#      Copyright (C) 2010-2014 Jari Aalto <jari.aalto@cante.net>
 #
 #   License
 #
@@ -350,6 +350,14 @@ showing which files were added, removed, and/or
 compared during a run with B<--diff>.  This switch
 forces the B<--diff> mode on.
 
+=item B<--explain=LANG>
+
+Print the filters used to remove comments for
+language LANG and exit.  In some cases the 
+filters refer to Perl subroutines rather than
+regular expressions.  An examination of the
+source code may be needed for further explanation.
+
 =item B<--help>
 
 Print this usage information and exit.
@@ -515,7 +523,7 @@ sloccount(1)
 =head1 AUTHORS
 
 The cloc program was written by Al Danial <al.danial@gmail.com> and
-is Copyright (C) 2006-2013 Northrop Grumman Corporation.
+is Copyright (C) 2006-2014 <al.danial@gmail.com>.
 
 The manual page was originally written by Jari Aalto <jari.aalto@cante.net>.
 
