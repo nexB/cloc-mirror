@@ -4463,6 +4463,7 @@ sub set_constants {                          # {{{1
             'ses'         => 'Patran Command Language'   ,
             'pcl'         => 'Patran Command Language'   ,
             'pl1'         => 'PL/I'                  ,
+            'purs'        => 'PureScript'            ,
             'prefab'      => 'Unity-Prefab'          ,
             'mat'         => 'Unity-Prefab'          ,
             'ps1'         => 'PowerShell'            ,
@@ -4902,6 +4903,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*#'   ], 
                                 [ 'call_regexp_common'  , 'C'       ],
                                 [ 'remove_inline'       , '#.*$'   ],
+                            ],
+    'PureScript'         => [   
+                                [ 'remove_matches'      , '^\s*--' ],
+                                [ 'remove_between_general', '{-', '-}' ],
+                                [ 'remove_inline'       , '--.*$'  ],
                             ],
     'Patran Command Language'=> [   
                                 [ 'remove_matches'      , '^\s*#'   ], 
@@ -5768,6 +5774,7 @@ sub set_constants {                          # {{{1
     'prose'                        =>   0.75,
     'proteus'                      =>   0.75,
     'Puppet'                       =>   2.00,
+    'PureScript'                   =>   2.00,
     'qbasic'                       =>   1.38,
     'qbe'                          =>   6.15,
     'qmf'                          =>   5.33,
