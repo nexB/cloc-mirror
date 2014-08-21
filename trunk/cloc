@@ -4481,6 +4481,9 @@ sub set_constants {                          # {{{1
             'scss'        => 'SASS'                  ,
             'sh'          => 'Bourne Shell'          ,
             'smarty'      => 'Smarty'                ,
+            'sml'         => 'Standard ML'           ,
+            'sig'         => 'Standard ML'           ,
+            'fun'         => 'Standard ML'           ,
             'sql'         => 'SQL'                   ,
             'SQL'         => 'SQL'                   ,
             'sproc.sql'   => 'SQL Stored Procedure'  ,
@@ -5030,6 +5033,9 @@ sub set_constants {                          # {{{1
     'Smarty'             => [   
                                 [ 'smarty_to_C'                    ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ], 
+    'Standard ML'        => [   
+                                [ 'remove_between_general', '(*', '*)' ],
                             ], 
     'Swift'              => [   
                                 [ 'remove_matches'      , '^\s*//' ],
@@ -5858,6 +5864,7 @@ sub set_constants {                          # {{{1
     'SQL'                          =>   2.29,
     'sqlwindows'                   =>   6.67,
     'statistical default'          =>   2.50,
+    'Standard ML'                  =>   3.00,
     'strategem'                    =>   2.22,
     'stress'                       =>   1.13,
     'strongly typed default'       =>   0.88,
