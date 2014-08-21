@@ -4322,6 +4322,7 @@ sub set_constants {                          # {{{1
             'da'          => 'DAL'                   ,
             'dart'        => 'Dart'                  ,
             'def'         => 'Windows Module Definition',
+            'diff'        => 'diff'                  ,
             'dmap'        => 'NASTRAN DMAP'          ,
             'dpr'         => 'Pascal'                ,
             'dsr'         => 'Visual Basic'          ,
@@ -4691,6 +4692,16 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
+                            ],
+    # diff is kind of weird: anything but a space in the first column
+    # will count as code, with the exception of #, ---, +++.  Spaces
+    # in the first column denote context lines which aren't part of the
+    # difference.
+    'diff'               => [   
+                                [ 'remove_matches'      , '^#' ], 
+                                [ 'remove_matches'      , '^\-\-\-' ], 
+                                [ 'remove_matches'      , '^\+\+\+' ], 
+                                [ 'remove_matches'      , '^\s' ], 
                             ],
     'ECPP'               => [   
                                 [ 'remove_between_general', 
@@ -5486,6 +5497,7 @@ sub set_constants {                          # {{{1
     'dbase iii'                    =>   2.00,
     'dbase iv'                     =>   1.54,
     'dcl'                          =>   0.38,
+    'diff'                         =>   1.00,
     'decision support default'     =>   2.22,
     'decrally'                     =>   2.00,
     'delphi'                       =>   2.76,
