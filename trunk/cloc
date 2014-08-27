@@ -663,7 +663,8 @@ if ($opt_read_lang_def) {
 if ($opt_lang_no_ext and !defined $Filters_by_Language{$opt_lang_no_ext}) {
     die_unknown_lang($opt_lang_no_ext, "--lang-no-ext")
 }
-check_scale_existence(\%Filters_by_Language, \%Scale_Factor);
+check_scale_existence(\%Filters_by_Language, \%Language_by_Extension,
+                      \%Scale_Factor);
 
 # Process command line provided extention-to-language mapping overrides.
 # Make a hash of known languages in lower case for easier matching.
@@ -4764,6 +4765,11 @@ sub set_constants {                          # {{{1
                                 [ 'add_newlines'        ,          ],
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
+    'Groovy'             => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
+                            ],
     'Handlebars'         => [
                                 [ 'remove_between_general', '{{!--', '--}}' ],
                                 [ 'remove_between_general', '{{!', '}}' ],
@@ -6003,7 +6009,9 @@ sub set_constants {                          # {{{1
 # 1}}}
 } # end sub set_constants()
 sub check_scale_existence {                  # {{{1
+    # do a few sanity checks
     my ($rhaa_Filters_by_Language, 
+        $rh_Language_by_Extension,
         $rh_Scale_Factor) = @_;
 
     my %extension_collisions = (
@@ -6014,12 +6022,24 @@ sub check_scale_existence {                  # {{{1
         "Pascal/Puppet"             => 1,
     );
     my $OK = 1;
-    foreach my $language (keys %{$rhaa_Filters_by_Language}) {
+    foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
         next if defined $extension_collisions{$language};
         if (!defined $rh_Scale_Factor->{$language}) {
             $OK = 0;
             warn "Missing scale factor for $language\n";
         }
+    }
+
+    my %seen_it = ();
+    foreach my $ext (sort keys %{$rh_Language_by_Extension}) {
+        my $language = $rh_Language_by_Extension->{$ext};
+        next if defined $extension_collisions{$language};
+        next if $seen_it{$language};
+        if (!defined @{$rhaa_Filters_by_Language->{$language}}) {
+            $OK = 0;
+            warn "Missing language filter for $language\n";
+        }
+        $seen_it{$language} = 1;
     }
     die unless $OK;
 } # 1}}}
