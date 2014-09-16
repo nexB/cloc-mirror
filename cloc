@@ -733,9 +733,9 @@ my %Script_Language = map { $_ => 1 } values %Language_by_Script ;
 # 1}}}
 # Step 2:  Early exits for display, summation. {{{1
 #
-print_extension_info(   $opt_show_ext ) if defined $opt_show_ext ;
-print_language_info(    $opt_show_lang) if defined $opt_show_lang;
-print_language_filters( $opt_explain  ) if defined $opt_explain  ;
+print_extension_info(   $opt_show_ext     ) if defined $opt_show_ext ;
+print_language_info(    $opt_show_lang, '') if defined $opt_show_lang;
+print_language_filters( $opt_explain      ) if defined $opt_explain  ;
 exit if (defined $opt_show_ext)  or 
         (defined $opt_show_lang) or
         (defined $opt_explain);
@@ -2819,13 +2819,15 @@ sub print_extension_info {                   # {{{1
     }
 } # 1}}}
 sub print_language_info {                    # {{{1
-    my ($language,) = @_;
+    my ($language,         
+        $prefix ,) = @_;
     my %extensions = (); # the subset matched by the given $language value
     if ($language) {  # show information on this language
         foreach my $ext (sort {lc $a cmp lc $b } keys %Language_by_Extension) {
             # Language_by_Extension{f}    = 'Fortran 77' 
             push @{$extensions{$Language_by_Extension{$ext}} }, $ext
-                if $Language_by_Extension{$ext} =~ m{$language}i;
+                if lc $Language_by_Extension{$ext} eq lc $language;
+#               if $Language_by_Extension{$ext} =~ m{$language}i;
         }
     } else {          # show information on all  languages
         foreach my $ext (sort {lc $a cmp lc $b } keys %Language_by_Extension) {
@@ -2852,7 +2854,11 @@ sub print_language_info {                    # {{{1
 
     if (%extensions) {
         foreach my $lang (sort {lc $a cmp lc $b } keys %extensions) {
-            printf "%-26s (%s)\n", $lang, join(", ", @{$extensions{$lang}});
+            if ($prefix) {
+                printf "%s %s\n", $prefix, join(", ", @{$extensions{$lang}});
+            } else {
+                printf "%-26s (%s)\n", $lang, join(", ", @{$extensions{$lang}});
+            }
         }
     }
 } # 1}}}
@@ -2870,6 +2876,7 @@ sub print_language_filters {                 # {{{1
         printf "  %s", $filter->[2] if defined $filter->[2];
         print  "\n";
     }
+    print_language_info($language, "    extensions:");
 } # 1}}}
 sub make_file_list {                         # {{{1
     my ($ra_arg_list,  # in   file and/or directory names to examine
@@ -4341,6 +4348,10 @@ sub set_constants {                          # {{{1
             'F95'         => 'Fortran 95'            ,
             'f'           => 'Fortran 77'            ,
             'F'           => 'Fortran 77'            ,
+            'for'         => 'Fortran 77'            ,
+            'FOR'         => 'Fortran 77'            ,
+            'ftn'         => 'Fortran 77'            ,
+            'FTN'         => 'Fortran 77'            ,
             'fmt'         => 'Oracle Forms'          ,
             'focexec'     => 'Focus'                 ,
             'frm'         => 'Visual Basic'          ,
