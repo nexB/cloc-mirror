@@ -983,15 +983,16 @@ if ($opt_diff) {
 my @fh            = ();
 my @files_for_set = ();
 # make file lists for each separate argument
-if ($opt_exclude_list_file) {
-    process_exclude_list_file($opt_exclude_list_file, 
-                             \%Exclude_Dir,
-                             \%Ignored);
-}
 for (my $i = 0; $i < scalar @ARGV; $i++) {
     push @fh, 
          make_file_list([ $ARGV[$i] ], \%Error_Codes, \@Errors, \%Ignored);
     @{$files_for_set[$i]} = @file_list;
+    if ($opt_exclude_list_file) {
+        # note: process_exclude_list_file() references global @file_list
+        process_exclude_list_file($opt_exclude_list_file, 
+                                 \%Exclude_Dir,
+                                 \%Ignored);
+    }
     @file_list = ();
 }
 # 1}}}
@@ -1451,6 +1452,7 @@ if ($opt_list_file) {
     #     File::Find's find() which in turn calls files()
 }
 if ($opt_exclude_list_file) {
+    # note: process_exclude_list_file() references global @file_list
     process_exclude_list_file($opt_exclude_list_file, 
                              \%Exclude_Dir,
                              \%Ignored);
@@ -1580,6 +1582,7 @@ sub process_exclude_list_file {              # {{{1
         $rh_exclude_dir , # out
         $rh_ignored     , # out
        ) = @_;
+    # note: references global @file_list
     print "-> process_exclude_list_file($list_file)\n" if $opt_v > 2;
     # reject a specific set of files and/or directories
     my @reject_list   = read_list_file($list_file);
