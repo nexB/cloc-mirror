@@ -8510,6 +8510,9 @@ sub strip_leading_dir {                      # {{{1
 #print "remove_leading_dir leading=[$leading]\n"; die;
     if ($ON_WINDOWS) {
        $leading =~ s{\\}{/}g;
+        foreach my $F (@filenames) {
+            $F =~ s{\\}{/}g;
+        }
     }
     foreach my $F (@filenames) {
         $F =~ s{^$leading}{};
