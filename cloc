@@ -3190,7 +3190,7 @@ sub classify_file {                          # {{{1
          # all extensions to lowercase there.
          $extension = lc $extension if $ON_WINDOWS;  
       my @extension_list = ( $extension );
-      if ($file =~ /\.(\[^\.]+\.\[^\.]+)$/) { # has a double extension
+      if ($file =~ /\.([^\.]+\.[^\.]+)$/) { # has a double extension
           my $extension = $1;
           $extension = lc $extension if $ON_WINDOWS;  
           unshift @extension_list, $extension;  # examine double ext first
