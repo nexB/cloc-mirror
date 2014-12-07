@@ -2161,13 +2161,15 @@ create table metadata (          -- $URL v $VERSION
                 Project   text,    
                 elapsed_s real);   
 create table t        (
-                Project   text   ,  
-                Language  text   ,  
-                File      text   ,  
-                nBlank    integer,  
-                nComment  integer,  
-                nCode     integer,  
-                nScaled   real   ); 
+                Project       text   ,  
+                Language      text   ,  
+                File          text   ,  
+                File_dirname  text   ,  
+                File_basename text   ,  
+                nBlank        integer,  
+                nComment      integer,  
+                nCode         integer,  
+                nScaled       real   ); 
 ";
     $opt_sql = "-" if $opt_sql eq "1";
 
@@ -2195,14 +2197,19 @@ create table t        (
         # from the file name.
 
         $clean_filename = rm_leading_tempdir($clean_filename, \%TEMP_DIR);
-        printf $fh "insert into t values('%s', '%s', '%s', %d, %d, %d, %f);\n",
+
+        printf $fh "insert into t values('%s', '%s', '%s', '%s', '%s', " .
+                   "%d, %d, %d, %f);\n",
                     $opt_sql_project           ,
                     $language                  ,
                     $clean_filename            ,
+                    dirname( $clean_filename)  ,
+                    basename($clean_filename)  ,
                     $rhh_count->{$file}{'blank'},
                     $rhh_count->{$file}{'comment'},
                     $rhh_count->{$file}{'code'}   ,
                     $rhh_count->{$file}{'code'}*$rh_scale->{$language};
+
         ++$nIns;
         if (!($nIns % 10_000)) {
             print $fh "commit;\n";
