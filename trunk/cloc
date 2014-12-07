@@ -4348,6 +4348,8 @@ sub set_constants {                          # {{{1
             'ec'          => 'C'                     ,
             'ecpp'        => 'ECPP'                  ,
             'el'          => 'Lisp'                  ,
+            'exs'         => 'Elixir'                ,
+            'ex'          => 'Elixir'                ,
             'erl'         => 'Erlang'                ,
             'exp'         => 'Expect'                ,
             'f77'         => 'Fortran 77'            ,
@@ -4756,6 +4758,10 @@ sub set_constants {                          # {{{1
     'DOS Batch'          => [   [ 'remove_matches'      , '^\s*rem', ], ],
     'DTD'                => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
+    'Elixir'             => [
+                                [ 'remove_matches'      , '^\s*#'  ],
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ],
     'Erlang'             => [   
                                 [ 'remove_matches'      , '^\s*%'  ], 
                                 [ 'remove_inline'       , '%.*$'   ],
@@ -5569,6 +5575,7 @@ sub set_constants {                          # {{{1
     'eda/sql'                      =>   6.67,
     'edscheme 3.4'                 =>   1.51,
     'eiffel'                       =>   3.81,
+    'Elixir'                       =>   2.11,
     'enform'                       =>   1.74,
     'englishbased default'         =>   1.51,
     'ensemble'                     =>   2.76,
