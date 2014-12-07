@@ -203,7 +203,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              filters.  Note:  languages which map to the same 
                              file extension (for example:
                              MATLAB/Objective C/MUMPS;  Pascal/PHP; 
-                             Lisp/OpenCL) will be ignored as these require 
+                             Lisp/OpenCL, Perl/Prolog) will be ignored as 
+                             these require 
                              additional processing that is not expressed in 
                              language definition files.  Use --read-lang-def 
                              to define new language filters without replacing 
@@ -2633,6 +2634,7 @@ sub write_lang_def {                         # {{{1
         next if $language eq "MATLAB/Objective C/MUMPS" or
                 $language eq "PHP/Pascal"               or
                 $language eq "Pascal/Puppet"            or
+                $language eq "Perl/Prolog"              or
                 $language eq "Lisp/OpenCL";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
@@ -2857,6 +2859,10 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'Lisp'}}  , "cl";
         push @{$extensions{'OpenCL'}}, "cl";
         delete $extensions{'Lisp/OpenCL'};
+    } elsif ($language =~ /^(Perl|Prolog)$/i) {
+        push @{$extensions{'Perl'}}  , "pl";
+        push @{$extensions{'Prolog'}}, "pl";
+        delete $extensions{'Perl/Prolog'};
     } elsif ($language =~ /^(Ant)$/i) {
         push @{$extensions{'Ant'}}  , "build.xml";
         delete $extensions{'Ant/XML'};
@@ -3250,6 +3256,8 @@ sub classify_file {                          # {{{1
                 }
             } elsif ($Language_by_Extension{$extension} eq 'Lisp/OpenCL') {
                 return Lisp_or_OpenCL($full_file, $rh_Err, $raa_errors);
+            } elsif ($Language_by_Extension{$extension} eq 'Perl/Prolog') {
+                return Perl_or_Prolog($full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
                 # file at least roughly resembles PHP.  Alternatively,
@@ -4457,12 +4465,13 @@ sub set_constants {                          # {{{1
             'php'         => 'PHP'                   ,
             'pig'         => 'Pig Latin'             ,
             'plh'         => 'Perl'                  ,
-            'pl'          => 'Perl'                  ,
-            'PL'          => 'Perl'                  ,
+            'pl'          => 'Perl/Prolog'           ,
+            'PL'          => 'Perl/Prolog'           ,
             'plx'         => 'Perl'                  ,
             'pm'          => 'Perl'                  ,
             'pom.xml'     => 'Maven'                 ,
             'pom'         => 'Maven'                 ,
+            'P'           => 'Prolog'                ,
             'p'           => 'Pascal'                ,
             'pp'          => 'Pascal/Puppet'         ,
             'psql'        => 'SQL'                   ,
@@ -4970,6 +4979,7 @@ sub set_constants {                          # {{{1
                                 [ 'remove_below_above'  , '^=head1', '^=cut'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                             ], 
+    'Perl/Prolog'        => [ [ 'die' ,          ], ], # never called
     'Pig Latin'          => [   
                                 [ 'remove_matches'      , '^\s*--' ],
                                 [ 'remove_inline'       , '--.*$'  ],
@@ -4984,7 +4994,7 @@ sub set_constants {                          # {{{1
     'Prolog'             => [   
                                 [ 'remove_matches'      , '^\s*\%' ],
                                 [ 'call_regexp_common'  , 'C'      ],
-                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'remove_inline'       , '(//|\%).*$' ], 
                             ],
     'Python'             => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -6058,6 +6068,7 @@ sub check_scale_existence {                  # {{{1
         "Lisp/OpenCL"               => 1,
         "MATLAB/Objective C/MUMPS"  => 1,
         "Pascal/Puppet"             => 1,
+        "Perl/Prolog"               => 1,
     );
     my $OK = 1;
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
@@ -7914,6 +7925,40 @@ sub Lisp_or_OpenCL {                         # {{{1
     }
 
     print "<- Lisp_or_OpenCL\n" if $opt_v > 2;
+    return $lang;
+} # 1}}}
+sub Perl_or_Prolog {                         # {{{1
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+       ) = @_;
+
+    print "-> Perl_or_Prolog\n" if $opt_v > 2;
+
+    my $lang = undef;
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
+        return $lang;
+    }
+    my $perl_points = 0;
+    my $prolog_points = 0;
+    while (<$IN>) {
+        ++$perl_points if  /;\s*$/;
+        ++$perl_points if  /({|})/;
+        ++$perl_points if  /^\s*sub\s+/;
+        ++$prolog_points if /\.\s*$/;
+        ++$prolog_points if /:-/;
+    }
+    $IN->close;
+    # print "perl_points=$perl_points   prolog_points=$prolog_points\n";
+    if ($perl_points > $prolog_points) {
+        $lang = "Perl";
+    } else {
+        $lang = "Prolog";
+    }
+
+    print "<- Perl_or_Prolog\n" if $opt_v > 2;
     return $lang;
 } # 1}}}
 sub Ant_or_XML {                             # {{{1
