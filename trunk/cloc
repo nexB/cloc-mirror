@@ -2198,6 +2198,8 @@ create table t        (
         # from the file name.
 
         $clean_filename = rm_leading_tempdir($clean_filename, \%TEMP_DIR);
+        $clean_filename =~ s/\'/''/g;  # double embedded single quotes
+                                       # to escape them 
 
         printf $fh "insert into t values('%s', '%s', '%s', '%s', '%s', " .
                    "%d, %d, %d, %f);\n",
