@@ -4502,6 +4502,7 @@ sub set_constants {                          # {{{1
             'pl1'         => 'PL/I'                  ,
             'purs'        => 'PureScript'            ,
             'prefab'      => 'Unity-Prefab'          ,
+            'proto'       => 'Protocol Buffers'      ,
             'mat'         => 'Unity-Prefab'          ,
             'ps1'         => 'PowerShell'            ,
             'R'           => 'R'                     ,
@@ -5000,6 +5001,11 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*\%' ],
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '(//|\%).*$' ], 
+                            ],
+    'Protocol Buffers'   => [   
+                                [ 'remove_matches'      , '^\s*//' ], 
+                                [ 'remove_inline'       , '//.*$'  ], 
+                                [ 'call_regexp_common'  , 'C'      ],
                             ],
     'Python'             => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -5841,6 +5847,7 @@ sub set_constants {                          # {{{1
     'Prolog'                       =>   1.25,
     'prose'                        =>   0.75,
     'proteus'                      =>   0.75,
+    'Protocol Buffers'             =>   2.00,
     'Puppet'                       =>   2.00,
     'PureScript'                   =>   2.00,
     'qbasic'                       =>   1.38,
