@@ -203,12 +203,12 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              filters.  Note:  languages which map to the same 
                              file extension (for example:
                              MATLAB/Objective C/MUMPS/Mercury;  Pascal/PHP; 
-                             Lisp/OpenCL, Perl/Prolog) will be ignored as 
-                             these require 
-                             additional processing that is not expressed in 
-                             language definition files.  Use --read-lang-def 
-                             to define new language filters without replacing 
-                             built-in filters (see also --write-lang-def).
+                             Lisp/OpenCL; Lisp/Julia; Perl/Prolog) will be 
+                             ignored as these require additional processing 
+                             that is not expressed in language definition 
+                             files.  Use --read-lang-def to define new 
+                             language filters without replacing built-in 
+                             filters (see also --write-lang-def).
    --ignore-whitespace       Ignore horizontal white space when comparing files
                              with --diff.  See also --ignore-case.
    --ignore-case             Ignore changes in case; consider upper- and lower-
@@ -2639,7 +2639,8 @@ sub write_lang_def {                         # {{{1
                 $language eq "PHP/Pascal"               or
                 $language eq "Pascal/Puppet"            or
                 $language eq "Perl/Prolog"              or
-                $language eq "Lisp/OpenCL";
+                $language eq "Lisp/OpenCL"              or
+                $language eq "Lisp/Julia" ;
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
@@ -2863,6 +2864,10 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'Lisp'}}  , "cl";
         push @{$extensions{'OpenCL'}}, "cl";
         delete $extensions{'Lisp/OpenCL'};
+    } elsif ($language =~ /^(Lisp|Julia)$/i) {
+        push @{$extensions{'Lisp'}}  , "jl";
+        push @{$extensions{'Julia'}} , "jl";
+        delete $extensions{'Lisp/Julia'};
     } elsif ($language =~ /^(Perl|Prolog)$/i) {
         push @{$extensions{'Perl'}}  , "pl";
         push @{$extensions{'Prolog'}}, "pl";
@@ -3260,6 +3265,8 @@ sub classify_file {                          # {{{1
                 }
             } elsif ($Language_by_Extension{$extension} eq 'Lisp/OpenCL') {
                 return Lisp_or_OpenCL($full_file, $rh_Err, $raa_errors);
+            } elsif ($Language_by_Extension{$extension} eq 'Lisp/Julia') {
+                return Lisp_or_Julia( $full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Perl/Prolog') {
                 return Perl_or_Prolog($full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
@@ -4415,7 +4422,7 @@ sub set_constants {                          # {{{1
             'itk'         => 'Tcl/Tk'                ,
             'java'        => 'Java'                  ,
             'jcl'         => 'JCL'                   , # IBM Job Control Lang.
-            'jl'          => 'Lisp'                  ,
+            'jl'          => 'Lisp/Julia'            ,
             'js'          => 'Javascript'            ,
             'jsf'         => 'JavaServer Faces'      ,
             'xhtml'       => 'JavaServer Faces'      ,
@@ -4885,6 +4892,11 @@ sub set_constants {                          # {{{1
                                 # so just use a placeholder filter
                                 [ 'remove_matches'      , '^\s*$'  ], 
                             ],
+    'Julia'              => [
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                                [ 'remove_between_general', '#=', '=#' ],
+                            ],
     'Kotlin'             => [
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_inline'       , '//.*$'  ], 
@@ -4900,6 +4912,7 @@ sub set_constants {                          # {{{1
                                 [ 'remove_between_general', '#|', '|#' ],
                             ],
     'Lisp/OpenCL'        => [ [ 'die' ,          ], ], # never called
+    'Lisp/Julia'         => [ [ 'die' ,          ], ], # never called
     'LiveLink OScript'   => [   [ 'remove_matches'      , '^\s*//' ], ],
 #   'Lua'                => [   [ 'call_regexp_common'  , 'lua'    ], ],
     'Lua'                => [   [ 'remove_matches'      , '^\s*\-\-' ], ],
@@ -6043,8 +6056,8 @@ sub set_constants {                          # {{{1
     'C/C++ Header'                 => 1.00, 
     'inc'                          => 1.00,
     'lex'                          => 1.00,
+    'Julia'                        => 4.00,
     'MATLAB'                       => 4.00,
-    'MATLAB/Objective C/MUMPS/Mercury' => 3.00,
     'Mercury'                      => 3.00,
     'Maven/XML'                    => 2.5,
     'IDL'                          => 3.80,
@@ -6059,6 +6072,9 @@ sub set_constants {                          # {{{1
     'sed'                          => 4.00,
     'Lua'                          => 4.00,
     'OpenCL'                       => 1.50,
+#   'Lisp/Julia'                   => 4.00,
+#   'Lisp/OpenCL'                  => 1.50,
+#   'MATLAB/Objective C/MUMPS/Mercury' => 3.00,
 );
 # 1}}}
 %{$rh_Known_Binary_Archives} = (             # {{{1
@@ -6083,11 +6099,12 @@ sub check_scale_existence {                  # {{{1
 
     my %extension_collisions = (
         # TODO:  find a better way of dealing with these
-        "PHP/Pascal"                => 1,
-        "Lisp/OpenCL"               => 1,
-        "MATLAB/Objective C/MUMPS"  => 1,
-        "Pascal/Puppet"             => 1,
-        "Perl/Prolog"               => 1,
+        "PHP/Pascal"                        => 1,
+        "Lisp/OpenCL"                       => 1,
+        "Lisp/Julia"                        => 1,
+        "MATLAB/Objective C/MUMPS/Mercury"  => 1,
+        "Pascal/Puppet"                     => 1,
+        "Perl/Prolog"                       => 1,
     );
     my $OK = 1;
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
@@ -7950,6 +7967,38 @@ sub Lisp_or_OpenCL {                         # {{{1
     }
 
     print "<- Lisp_or_OpenCL\n" if $opt_v > 2;
+    return $lang;
+} # 1}}}
+sub Lisp_or_Julia {                          # {{{1
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+       ) = @_;
+
+    print "-> Lisp_or_Julia\n" if $opt_v > 2;
+
+    my $lang = undef;
+    my $IN = new IO::File $file, "r";
+    if (!defined $IN) {
+        push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
+        return $lang;
+    }
+    my $lisp_points   = 0;
+    my $julia_points = 0;
+    while (<$IN>) {
+        ++$lisp_points if  /^\s*;/;
+        ++$lisp_points if  /\((def|eval|require|export|let|loop|dec|format)/;
+        ++$julia_points if  /^\s*(function|end|println|for|while)/;
+    }
+    $IN->close;
+    # print "lisp_points=$lisp_points   julia_points=$julia_points\n";
+    if ($lisp_points > $julia_points) {
+        $lang = "Lisp";
+    } else {
+        $lang = "Julia";
+    }
+
+    print "<- Lisp_or_Julia\n" if $opt_v > 2;
     return $lang;
 } # 1}}}
 sub Perl_or_Prolog {                         # {{{1
