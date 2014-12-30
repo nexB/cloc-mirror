@@ -4362,6 +4362,7 @@ sub set_constants {                          # {{{1
             'diff'        => 'diff'                  ,
             'dmap'        => 'NASTRAN DMAP'          ,
             'dpr'         => 'Pascal'                ,
+            'dita'        => 'DITA'                  ,
             'dsr'         => 'Visual Basic'          ,
             'dtd'         => 'DTD'                   ,
             'ec'          => 'C'                     ,
@@ -4764,6 +4765,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\-\-\-' ], 
                                 [ 'remove_matches'      , '^\+\+\+' ], 
                                 [ 'remove_matches'      , '^\s' ], 
+                            ],
+    'DITA'               => [   
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ],
                             ],
     'ECPP'               => [   
                                 [ 'remove_between_general', 
@@ -5282,8 +5287,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ],
                             ],
-    'XML'                => [   [ 'remove_html_comments',          ],
-                                [ 'call_regexp_common'  , 'HTML'   ], ],
+    'XML'                => [   
+                                [ 'remove_html_comments',          ],
+                                [ 'call_regexp_common'  , 'HTML'   ], 
+                            ],
     'XQuery'             => [
                                 [ 'remove_between_general', '(:', ':)' ],
                             ],
@@ -5597,6 +5604,7 @@ sub set_constants {                          # {{{1
     'decision support default'     =>   2.22,
     'decrally'                     =>   2.00,
     'delphi'                       =>   2.76,
+    'DITA'                         =>   1.90,
     'dl/1'                         =>   2.00,
     'NASTRAN DMAP'                 =>   2.35,
     'dna4'                         =>   4.21,
