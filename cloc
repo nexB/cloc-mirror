@@ -202,7 +202,7 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              then use these filters instead of the built-in
                              filters.  Note:  languages which map to the same 
                              file extension (for example:
-                             MATLAB/Objective C/MUMPS;  Pascal/PHP; 
+                             MATLAB/Objective C/MUMPS/Mercury;  Pascal/PHP; 
                              Lisp/OpenCL, Perl/Prolog) will be ignored as 
                              these require 
                              additional processing that is not expressed in 
@@ -2635,7 +2635,7 @@ sub write_lang_def {                         # {{{1
     die "Unable to write to $file\n" unless defined $OUT;
 
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
-        next if $language eq "MATLAB/Objective C/MUMPS" or
+        next if $language eq "MATLAB/Objective C/MUMPS/Mercury" or
                 $language eq "PHP/Pascal"               or
                 $language eq "Pascal/Puppet"            or
                 $language eq "Perl/Prolog"              or
@@ -2854,11 +2854,11 @@ sub print_language_info {                    # {{{1
 
     # add exceptions (one file extension mapping to multiple languages)
     if (!$language or 
-        $language =~ /^(Objective C|MATLAB|MUMPS)$/i) {
+        $language =~ /^(Objective C|MATLAB|MUMPS|Mercury)$/i) {
         push @{$extensions{'Objective C'}}, "m";
         push @{$extensions{'MATLAB'}}     , "m";
         push @{$extensions{'MUMPS'}}      , "m";
-        delete $extensions{'MATLAB/Objective C/MUMPS'};
+        delete $extensions{'MATLAB/Objective C/MUMPS/Mercury'};
     } elsif ($language =~ /^(Lisp|OpenCL)$/i) {
         push @{$extensions{'Lisp'}}  , "cl";
         push @{$extensions{'OpenCL'}}, "cl";
@@ -3224,7 +3224,7 @@ sub classify_file {                          # {{{1
         }
         if (defined $Language_by_Extension{$extension}) {
             if ($Language_by_Extension{$extension} eq
-                'MATLAB/Objective C/MUMPS') {
+                'MATLAB/Objective C/MUMPS/Mercury') {
                 my $lang_M_or_O = "";
                 matlab_or_objective_C($full_file , 
                                       $rh_Err    ,
@@ -4445,7 +4445,7 @@ sub set_constants {                          # {{{1
             'mli'         => 'OCaml'                 , 
             'mly'         => 'OCaml'                 , 
             'mll'         => 'OCaml'                 , 
-            'm'           => 'MATLAB/Objective C/MUMPS' ,
+            'm'           => 'MATLAB/Objective C/MUMPS/Mercury' ,
             'mm'          => 'Objective C++'         ,
             'mustache'    => 'Mustache'              ,
             'wdproj'      => 'MSBuild script'        ,
@@ -4919,6 +4919,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
+    'Mercury'            => [   
+                                [ 'remove_inline'       , '%.*$'   ],
+                                [ 'remove_matches'      , '^\s*%'  ], 
+                            ], 
     'Modula3'            => [   [ 'call_regexp_common'  , 'Pascal' ], ],
         # Modula 3 comments are (* ... *) so applying the Pascal filter
         # which also treats { ... } as a comment is not really correct.
@@ -4941,7 +4945,7 @@ sub set_constants {                          # {{{1
                                 [ 'remove_inline'       , '//.*$'  ], # C99
                             ],
     'PHP/Pascal'               => [ [ 'die' ,          ], ], # never called
-    'MATLAB/Objective C/MUMPS' => [ [ 'die' ,          ], ], # never called
+    'MATLAB/Objective C/MUMPS/Mercury' => [ [ 'die' ,          ], ], # never called
     'MUMPS'              => [   [ 'remove_matches'      , '^\s*;'  ], ], 
     'Mustache'           => [
                                 [ 'remove_between_general', '{{!', '}}' ],
@@ -6040,6 +6044,8 @@ sub set_constants {                          # {{{1
     'inc'                          => 1.00,
     'lex'                          => 1.00,
     'MATLAB'                       => 4.00,
+    'MATLAB/Objective C/MUMPS/Mercury' => 3.00,
+    'Mercury'                      => 3.00,
     'Maven/XML'                    => 2.5,
     'IDL'                          => 3.80,
     'Octave'                       => 4.00,
@@ -7806,13 +7812,12 @@ sub plural_form {                            # {{{1
     else         { return ($n, "s"); }
 } # 1}}}
 sub matlab_or_objective_C {                  # {{{1
-    # Decide if code is MATLAB, Objective C, or MUMPS
+    # Decide if code is MATLAB, Objective C, MUMPS, or Mercury
     my ($file        , # in
         $rh_Err      , # in   hash of error codes
         $raa_errors  , # out
         $rs_language , # out
        ) = @_;
-
     print "-> matlab_or_objective_C\n" if $opt_v > 2;
     # matlab markers:
     #   first line starts with "function"
@@ -7830,6 +7835,9 @@ sub matlab_or_objective_C {                  # {{{1
     #   do not match:  \w+\s*=\s*\w
     #   lines begin with   \s*\.?\w+\s+\w
     #   high marks for lines that start with \s*K\s+ or \s*Kill\s+
+    #
+    # Mercury:
+    #   any line that begins with :- immediately triggers this 
 
     ${$rs_language} = "";
     my $IN = new IO::File $file, "r";
@@ -7843,14 +7851,18 @@ sub matlab_or_objective_C {                  # {{{1
     my $matlab_points      = 0;
     my $objective_C_points = 0;
     my $mumps_points       = 0;
+    my $mercury_points     = 0;
     my $has_braces         = 0;
     while (<$IN>) {
-        ++$has_braces if m/[{}]/;
+        ++$has_braces if $_ =~ m/[{}]/;
         ++$mumps_points if $. == 1 and m{^[A-Z]};
         if      (m{^\s*/\*}) {           #   /*
             ++$objective_C_points;
             --$matlab_points;
 printf ".m:  /*     obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+        } elsif (m{^:-\s+}) {      # gotta be mercury
+            $mercury_points = 1000;
+            last;
         } elsif (m{\w+\s*=\s*\[}) {      # matrix assignment, very matlab
             $matlab_points += 5;
 printf ".m:  \\w=[   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
@@ -7868,6 +7880,7 @@ printf ".m:  ;      obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points,
             $objective_C_points = 1;
             $matlab_points      = 0;
 printf ".m: #includ obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+            $has_braces         = 2;
             last;
         } elsif (m{^\s*@(interface|implementation|protocol|public|protected|private|end)\s}o) {
             # Objective C without a doubt
@@ -7894,18 +7907,17 @@ printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points,
     }
     $IN->close;
 
-    print "<- matlab_or_objective_C(matlab=$matlab_points, C=$objective_C_points, mumps=$mumps_points)\n"
-        if $opt_v > 2;
     $objective_C_points = -9.9e20 unless $has_braces >= 2;
-    if      (($matlab_points > $objective_C_points) and
-             ($matlab_points > $mumps_points)      ) {
-        ${$rs_language} = "MATLAB";
-    } elsif (($mumps_points > $objective_C_points) and
-             ($mumps_points > $matlab_points)      ) {
-        ${$rs_language} = "MUMPS";
-    } else {
-        ${$rs_language} = "Objective C";
-    }
+
+    my %points = ( 'MATLAB'      => $matlab_points     ,
+                   'MUMPS'       => $mumps_points      ,
+                   'Objective C' => $objective_C_points,
+                   'Mercury'     => $mercury_points    , );
+
+    ${$rs_language} = (sort { $points{$b} <=> $points{$a}} keys %points)[0];
+
+    print "<- matlab_or_objective_C($file: matlab=$matlab_points, C=$objective_C_points, mumps=$mumps_points, mercury=$mercury_points) => ${$rs_language}\n"
+        if $opt_v > 2;
 
 } # 1}}}
 sub Lisp_or_OpenCL {                         # {{{1
