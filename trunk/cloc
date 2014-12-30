@@ -4370,6 +4370,8 @@ sub set_constants {                          # {{{1
             'el'          => 'Lisp'                  ,
             'exs'         => 'Elixir'                ,
             'ex'          => 'Elixir'                ,
+            'erb'         => 'ERB'                   ,
+            'ERB'         => 'ERB'                   ,
             'erl'         => 'Erlang'                ,
             'exp'         => 'Expect'                ,
             'f77'         => 'Fortran 77'            ,
@@ -4777,7 +4779,9 @@ sub set_constants {                          # {{{1
                                   '<#'    , '#>'     ,             ],
                                 [ 'call_regexp_common'  , 'HTML'   ], 
                             ],
-
+    'ERB'                => [   
+                                [ 'remove_between_general', '<%#', '%>' ],
+                            ],
     'NASTRAN DMAP'       => [   
                                 [ 'remove_matches'      , '^\s*\$' ], 
                                 [ 'remove_inline'       , '\$.*$'  ], 
@@ -5627,6 +5631,7 @@ sub set_constants {                          # {{{1
     'englishbased default'         =>   1.51,
     'ensemble'                     =>   2.76,
     'epos'                         =>   4.00,
+    'ERB'                          =>   2.00,
     'Erlang'                       =>   2.11,
     'esf'                          =>   2.00,
     'espadvisor'                   =>   1.63,
