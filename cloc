@@ -9190,6 +9190,7 @@ sub read_list_file {                         # {{{1
     my @entry = ();
     while (<$IN>) {
         next if /^\s*$/ or /^\s*#/; # skip empty or commented lines
+        s/\cM$//;  # DOS to Unix
         chomp;
         push @entry, $_;
     }
