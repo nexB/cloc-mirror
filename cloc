@@ -2638,10 +2638,10 @@ sub write_lang_def {                         # {{{1
         next if $language eq "MATLAB/Objective C/MUMPS/Mercury" or
                 $language eq "PHP/Pascal"               or
                 $language eq "Pascal/Puppet"            or
-                $language eq "Perl/Prolog"              or
                 $language eq "Lisp/OpenCL"              or
                 $language eq "Lisp/Julia"               or
-                $language eq "IDL/Qt Project";
+                $language eq "Perl/Prolog"              or
+                $language eq "IDL/Qt Project/Prolog";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
             printf $OUT "    filter %s", $filter->[0];
@@ -2873,10 +2873,11 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'Perl'}}  , "pl";
         push @{$extensions{'Prolog'}}, "pl";
         delete $extensions{'Perl/Prolog'};
-    } elsif ($language =~ /^(IDL|Qt Project)$/i) {
+    } elsif ($language =~ /^(IDL|Qt Project|Prolog)$/i) {
         push @{$extensions{'IDL'}}       , "pro";
         push @{$extensions{'Qt Project'}}, "pro";
-        delete $extensions{'IDL/Qt Project'};
+        push @{$extensions{'Prolog'}}    , "pro";
+        delete $extensions{'IDL/Qt Project/Prolog'};
     } elsif ($language =~ /^(Ant)$/i) {
         push @{$extensions{'Ant'}}  , "build.xml";
         delete $extensions{'Ant/XML'};
@@ -3274,7 +3275,8 @@ sub classify_file {                          # {{{1
                 return Lisp_or_Julia( $full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Perl/Prolog') {
                 return Perl_or_Prolog($full_file, $rh_Err, $raa_errors);
-            } elsif ($Language_by_Extension{$extension} eq 'IDL/Qt Project') {
+            } elsif ($Language_by_Extension{$extension} eq 
+                     'IDL/Qt Project/Prolog') {
                 return IDL_or_QtProject($full_file, $rh_Err, $raa_errors);
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
@@ -4422,7 +4424,7 @@ sub set_constants {                          # {{{1
             'i3'          => 'Modula3'               ,
             'idl'         => 'IDL'                   ,
             'ism'         => 'InstallShield'         ,
-            'pro'         => 'IDL/Qt Project'        ,
+            'pro'         => 'IDL/Qt Project/Prolog' ,
             'ig'          => 'Modula3'               ,
             'il'          => 'SKILL'                 ,
             'ils'         => 'SKILL++'               ,
@@ -4878,7 +4880,7 @@ sub set_constants {                          # {{{1
                             ],
     'Haskell'            => [   [ 'remove_haskell_comments', '>filename<' ], ],
     'IDL'                => [   [ 'remove_matches'      , '^\s*;'  ], ],
-    'IDL/Qt Project'     => [ [ 'die' ,          ], ], # never called
+    'IDL/Qt Project/Prolog' => [ [ 'die' ,          ], ], # never called
     'InstallShield'      => [   [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ], ],
     'JSP'                => [   [ 'remove_html_comments',          ],
@@ -6133,7 +6135,7 @@ sub check_scale_existence {                  # {{{1
         "MATLAB/Objective C/MUMPS/Mercury"  => 1,
         "Pascal/Puppet"                     => 1,
         "Perl/Prolog"                       => 1,
-        "IDL/Qt Project"                    => 1,
+        "IDL/Qt Project/Prolog"             => 1,
     );
     my $OK = 1;
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
@@ -8065,12 +8067,13 @@ sub Perl_or_Prolog {                         # {{{1
     return $lang;
 } # 1}}}
 sub IDL_or_QtProject {                         # {{{1
+    # also Prolog
     my ($file        , # in
         $rh_Err      , # in   hash of error codes
         $raa_errors  , # out
        ) = @_;
 
-    print "-> IDL_or_QtProject\n" if $opt_v > 2;
+    print "-> IDL_or_QtProject($file)\n" if $opt_v > 2;
 
     my $lang = undef;
     my $IN = new IO::File $file, "r";
@@ -8078,22 +8081,34 @@ sub IDL_or_QtProject {                         # {{{1
         push @{$raa_errors}, [$rh_Err->{'Unable to read'} , $file];
         return $lang;
     }
-    my $idl_points = 0;
+    my $idl_points    = 0;
     my $qtproj_points = 0;
+    my $prolog_points = 0;
     while (<$IN>) {
-        ++$idl_points if  /^\s*;/;
-        ++$idl_points if  /plot\(/i;
+        ++$idl_points    if /^\s*;/;
+        ++$idl_points    if /plot\(/i;
         ++$qtproj_points if /^\s*(qt|configs|sources)\s*\+?=/i;
+        ++$prolog_points if /\.\s*$/;
+        ++$prolog_points if /:-/;
     }
     $IN->close;
     # print "idl_points=$idl_points   qtproj_points=$qtproj_points\n";
+
     if ($idl_points > $qtproj_points) {
         $lang = "IDL";
     } else {
         $lang = "Qt Project";
     }
 
-    print "<- IDL_or_QtProject\n" if $opt_v > 2;
+    my %points = ( 'IDL'        => $idl_points     ,
+                   'Qt Project' => $qtproj_points  ,
+                   'Prolog'     => $prolog_points  , );
+
+    $lang = (sort { $points{$b} <=> $points{$a}} keys %points)[0];
+
+    print "<- IDL_or_QtProject(idl_points=$idl_points, ",
+          "qtproj_points=$qtproj_points, prolog_points=$prolog_points)\n" 
+           if $opt_v > 2;
     return $lang;
 } # 1}}}
 sub Ant_or_XML {                             # {{{1
