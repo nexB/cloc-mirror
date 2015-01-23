@@ -4534,6 +4534,7 @@ sub set_constants {                          # {{{1
             'tsv'         => 'RobotFramework'        ,
             'rc'          => 'Windows Resource File' ,
             'rc2'         => 'Windows Resource File' ,
+            'sas'         => 'SAS'                   ,
             'sass'        => 'SASS'                  ,
             'scss'        => 'SASS'                  ,
             'sh'          => 'Bourne Shell'          ,
@@ -5099,9 +5100,12 @@ sub set_constants {                          # {{{1
                                 [ 'remove_inline'       , '//.*$'  ], 
                                 [ 'call_regexp_common'  , 'C'      ],
                             ],
+    'SAS'                => [   
+                                [ 'call_regexp_common'  , 'C'      ],
+                                [ 'remove_between_general', '*', ';' ],
+                            ],
     'SASS'               => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
-                                [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Scala'              => [   
@@ -5950,6 +5954,7 @@ sub set_constants {                          # {{{1
     'ksh'                          =>   3.81,
     'C Shell'                      =>   3.81,
     'siebel tools '                =>   6.15,
+    'SAS'                          =>   1.5 ,
     'SASS'                         =>   1.5 ,
     'simplan'                      =>   2.22,
     'simscript'                    =>   1.74,
