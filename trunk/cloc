@@ -3063,11 +3063,19 @@ sub remove_duplicate_files {                 # {{{1
 #print "equally sized files: ",join(", ", @{$files_by_size{$bytes}}), "\n";
             # Files in the list @{$files_by_size{$bytes} all are
             # $bytes long.  Sort the list by file basename.
-            my @sorted_bn = ();
-            my %BN = map { basename($_) => $_ } @{$files_by_size{$bytes}};
-            foreach my $F (sort keys %BN) {
-                push @sorted_bn, $BN{$F};
-            }
+
+          # # sorting on basename causes repeatability problems
+          # # if the basename is not unique (eg "includeA/x.h"
+          # # and "includeB/x.h".  Instead, sort on full path.
+          # # Ref bug #114.
+          # my @sorted_bn = ();
+          # my %BN = map { basename($_) => $_ } @{$files_by_size{$bytes}};
+          # foreach my $F (sort keys %BN) {
+          #     push @sorted_bn, $BN{$F};
+          # }
+
+            my @sorted_bn = sort @{$files_by_size{$bytes}};
+
             foreach my $F (different_files(\@sorted_bn  ,
                                             $rh_Err     ,
                                             $raa_errors ,
