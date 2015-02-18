@@ -2160,19 +2160,19 @@ sub generate_sql    {                        # {{{1
 
     my $schema = "
 create table metadata (          -- $URL v $VERSION
-                timestamp text,    
-                Project   text,    
+                timestamp varchar(500),    
+                Project   varchar(500),    
                 elapsed_s real);   
 create table t        (
-                Project       text   ,  
-                Language      text   ,  
-                File          text   ,  
-                File_dirname  text   ,  
-                File_basename text   ,  
-                nBlank        integer,  
-                nComment      integer,  
-                nCode         integer,  
-                nScaled       real   ); 
+                Project       varchar(500)   ,  
+                Language      varchar(500)   ,  
+                File          varchar(500)   ,  
+                File_dirname  varchar(500)   ,  
+                File_basename varchar(500)   ,  
+                nBlank        integer        ,  
+                nComment      integer        ,  
+                nCode         integer        ,  
+                nScaled       real           ); 
 ";
     $opt_sql = "-" if $opt_sql eq "1";
 
