@@ -297,6 +297,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              per line.  Relative path names will be resolved
                              starting from the directory where cloc is
                              invoked.  See also --list-file.
+   --include-lang=<L1>[,L2,] Include only the given comma separated languages
+                             L1, L2, L3, et cetera, in the count.
    --match-d=<regex>         Only count files in directories matching the Perl
                              regex.  For example
                                --match-d='/(src|include)/'
@@ -415,6 +417,7 @@ my (
     $opt_exclude_list_file    ,
     $opt_exclude_dir          ,
     $opt_explain              ,
+    $opt_include_lang         ,
     $opt_force_lang_def       ,
     $opt_read_lang_def        ,
     $opt_write_lang_def       ,
@@ -466,6 +469,7 @@ my $getopt_success = GetOptions(
    "by_file_by_lang|by-file-by-lang"         => \$opt_by_file_by_lang     ,
    "categorized=s"                           => \$opt_categorized         ,
    "counted=s"                               => \$opt_counted             ,
+   "include_lang|include-lang=s"             => \$opt_include_lang        ,
    "exclude_lang|exclude-lang=s"             => \$opt_exclude_lang        ,
    "exclude_dir|exclude-dir=s"               => \$opt_exclude_dir         ,
    "exclude_list_file|exclude-list-file=s"   => \$opt_exclude_list_file   ,
@@ -541,6 +545,9 @@ my %Exclude_Language = ();
 my %Exclude_Dir      = ();
    %Exclude_Dir      = map { $_ => 1 } split(/,/, $opt_exclude_dir ) 
         if $opt_exclude_dir ;
+my %Include_Language = ();
+   %Include_Language = map { $_ => 1 } split(/,/, $opt_include_lang) 
+        if $opt_include_lang;
 # Forcibly exclude .svn, .cvs, .hg, .git, .bzr directories.  The contents of these
 # directories often conflict with files of interest.
 $opt_exclude_dir       = 1;
@@ -1088,6 +1095,8 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
 #printf "%10s -> %s\n", $f, $Language{$fh[$F+1]}{$f};
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
+        next if $opt_include_lang 
+                and not $Include_Language{$Language{$fh[$F+1]}{$f}};
         next if $Language{$fh[$F+1]}{$f} eq "(unknown)";
         next if $Exclude_Language{$Language{$fh[$F+1]}{$f}};
         push @alignment, sprintf "  + %s ; %s\n", $f, $Language{$fh[$F+1]}{$f}
@@ -1120,9 +1129,11 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         next if $already_counted{$f};
         # Don't proceed unless the file (both L and R versions)
         # is in a known language.
-        next if $Language{$fh[$F  ]}{$f} eq "(unknown)";
-        next if $Exclude_Language{$Language{$fh[$F  ]}{$f}};
-        ++$Delta_by_Language{ $Language{$fh[$F  ]}{$f} }{'nFiles'}{'removed'};
+        next if $opt_include_lang 
+                and not $Include_Language{$Language{$fh[$F]}{$f}};
+        next if $Language{$fh[$F]}{$f} eq "(unknown)";
+        next if $Exclude_Language{$Language{$fh[$F]}{$f}};
+        ++$Delta_by_Language{ $Language{$fh[$F]}{$f} }{'nFiles'}{'removed'};
         push @alignment, sprintf "  - %s ; %s\n", $f, $Language{$fh[$F]}{$f}
             if $opt_diff_alignment;
 #printf "%10s -> %s\n", $f, $Language{$fh[$F  ]}{$f};
@@ -1164,11 +1175,17 @@ foreach (my $F = 0; $F < scalar @fh - 1; $F++) {
         printf "Counting:  %d\r", $nCounted 
             unless (!$opt_progress_rate or ($nCounted % $opt_progress_rate));
         next if $Ignored{$file_L};
-
+        # filter out non-included languages
+        if ($opt_include_lang and not $Include_Language{$Lang_L} 
+                              and not $Include_Language{$Lang_R}) {
+            $Ignored{$file_L} = "--include-lang=$Lang_L";
+            $Ignored{$file_R} = "--include-lang=$Lang_R";
+            next;
+        }
         # filter out excluded or unrecognized languages
         if ($Exclude_Language{$Lang_L} or $Exclude_Language{$Lang_R}) {
-            $Ignored{$file_L} = "--exclude-lang=$Lang_L}";
-            $Ignored{$file_R} = "--exclude-lang=$Lang_R}";
+            $Ignored{$file_L} = "--exclude-lang=$Lang_L";
+            $Ignored{$file_R} = "--exclude-lang=$Lang_R";
             next;
         }
         my $not_Filters_by_Language_Lang_LR = 0;
@@ -1509,6 +1526,10 @@ foreach my $file (sort keys %unique_source_file) {
     printf "Counting:  %d\r", $nCounted 
         unless (!$opt_progress_rate or ($nCounted % $opt_progress_rate));
     next if $Ignored{$file};
+    if ($opt_include_lang and not $Include_Language{$Language{$file}}) {
+        $Ignored{$file} = "--include-lang=$Language{$file}";
+        next;
+    }
     if ($Exclude_Language{$Language{$file}}) {
         $Ignored{$file} = "--exclude-lang=$Language{$file}";
         next;
