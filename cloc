@@ -1739,6 +1739,17 @@ sub combine_results {                        # {{{1
     print "<- combine_results\n" if $opt_v > 2;
     return $found_language;
 } # 1}}}
+sub compute_denominator {                    # {{{1
+    my ($method, $nCode, $nComment, $nBlank, ) = @_;
+    print "-> compute_denominator\n" if $opt_v > 2;
+    my %den        = ( "c" => $nCode );
+       $den{"cm"}  = $den{"c"}  + $nComment;
+       $den{"cmb"} = $den{"cm"} + $nBlank;
+       $den{"cb"}  = $den{"c"}  + $nBlank;
+
+    print "<- compute_denominator\n" if $opt_v > 2;
+    return $den{ $method };
+} # 1}}}
 sub diff_report     {                        # {{{1
     # returns an array of lines containing the results
     print "-> diff_report\n" if $opt_v > 2;
@@ -1858,17 +1869,12 @@ sub diff_report     {                        # {{{1
     } else {
         $data_line .= sprintf "%${spacing_2}s "  , "files";
     }
-    if ($opt_by_percent) {
-        $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
-            "blank \%"      ,
-            "comment \%"    ,
-            "code";
-    } else {
-        $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
-            "blank"         ,
-            "comment"       ,
-            "code";
-    }
+    my $PCT_symbol = "";
+       $PCT_symbol = " \%" if $opt_by_percent;
+    $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
+        "blank${PCT_symbol}"         ,
+        "comment${PCT_symbol}"       ,
+        "code";
 
     if ($Style eq "txt") {
         push @results, $data_line;
@@ -1899,11 +1905,10 @@ sub diff_report     {                        # {{{1
                 $line .= sprintf "  %${spacing_2}s", $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
             }
             if ($opt_by_percent) {
-                my %den        = ( "c" => $rhhh_count->{$lang_or_file}{'code'}{$S} );
-                   $den{"cm"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'comment'}{$S};
-                   $den{"cmb"} = $den{"cm"} + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                   $den{"cb"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                my $DEN = $den{ $opt_by_percent };
+                my $DEN = compute_denominator($opt_by_percent  ,
+                    $rhhh_count->{$lang_or_file}{'code'}{$S}   ,
+                    $rhhh_count->{$lang_or_file}{'comment'}{$S},
+                    $rhhh_count->{$lang_or_file}{'blank'}{$S}  );
                 if ($rhhh_count->{$lang_or_file}{'code'}{$S} > 0) {
                     $line .= sprintf " %14.2f %14.2f %${spacing_2}s",
                         $rhhh_count->{$lang_or_file}{'blank'}{$S}   / $DEN * 100,
@@ -1933,11 +1938,8 @@ sub diff_report     {                        # {{{1
                 $line .= sprintf "  %${spacing_2}s", $sum{'nFiles'}{$S};
             }
         if ($opt_by_percent) {
-            my %den        = ( "c" => $sum{'code'}{$S} );
-               $den{"cm"}  = $den{"c"}  + $sum{'comment'}{$S};
-               $den{"cmb"} = $den{"cm"} + $sum{'blank'}{$S};
-               $den{"cb"}  = $den{"c"}  + $sum{'blank'}{$S};
-            my $DEN = $den{ $opt_by_percent };
+            my $DEN = compute_denominator($opt_by_percent,
+                $sum{'code'}{$S}, $sum{'comment'}{$S}, $sum{'blank'}{$S});
             if ($sum{'code'}{$S} > 0) {
                 $line .= sprintf " %14.2f %14.2f %${spacing_2}s",
                     $sum{'blank'}{$S}   / $DEN * 100,
@@ -2098,11 +2100,10 @@ sub diff_xml_yaml_report {                   # {{{1
                             $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
                 }
                 if ($opt_by_percent) {
-                  my %den        = ( "c" => $$rhhh_count->{$lang_or_file}{'code'}{$S} );
-                     $den{"cm"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'comment'}{$S};
-                     $den{"cmb"} = $den{"cm"} + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                     $den{"cb"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                  my $DEN = $den{ $opt_by_percent };
+                  my $DEN = compute_denominator($opt_by_percent            ,
+                                $rhhh_count->{$lang_or_file}{'code'}{$S}   ,
+                                $rhhh_count->{$lang_or_file}{'comment'}{$S},
+                                $rhhh_count->{$lang_or_file}{'blank'}{$S}  );
                   foreach my $T (qw(blank comment)) {
                       if ($rhhh_count->{$lang_or_file}{'code'}{$S} > 0) {
                         $L .= sprintf "%s=\"%.2f\" ", 
@@ -2133,11 +2134,10 @@ sub diff_xml_yaml_report {                   # {{{1
                             $rhhh_count->{$lang_or_file}{'nFiles'}{$S};
                 }
                 if ($opt_by_percent) {
-                    my %den        = ( "c" =>     $rhhh_count->{$lang_or_file}{'code'}{$S} );
-                       $den{"cm"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'comment'}{$S};
-                       $den{"cmb"} = $den{"cm"} + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                       $den{"cb"}  = $den{"c"}  + $rhhh_count->{$lang_or_file}{'blank'}{$S};
-                    my $DEN = $den{ $opt_by_percent };
+                    my $DEN = compute_denominator($opt_by_percent  ,
+                        $rhhh_count->{$lang_or_file}{'code'}{$S}   ,
+                        $rhhh_count->{$lang_or_file}{'comment'}{$S},
+                        $rhhh_count->{$lang_or_file}{'blank'}{$S}  );
                     foreach my $T (qw(blank comment)) {
                         if ($rhhh_count->{$lang_or_file}{'code'}{$S} > 0) {
                             push @results, sprintf "    %s : %.2f", 
@@ -2162,11 +2162,10 @@ sub diff_xml_yaml_report {                   # {{{1
         if ($opt_xml) {
             my $L = sprintf "    <total sum_files=\"%d\" ", $sum{'nFiles'}{$S};
             if ($opt_by_percent) {
-              my %den        = ( "c" =>     $sum{'code'}{$S} );
-                 $den{"cm"}  = $den{"c"}  + $sum{'comment'}{$S};
-                 $den{"cmb"} = $den{"cm"} + $sum{'blank'}{$S};
-                 $den{"cb"}  = $den{"c"}  + $sum{'blank'}{$S};
-              my $DEN = $den{ $opt_by_percent };
+              my $DEN = compute_denominator($opt_by_percent,
+                            $sum{'code'}{$S}   , 
+                            $sum{'comment'}{$S}, 
+                            $sum{'blank'}{$S}  );
               foreach my $V (qw(blank comment)) {
                   if ($sum{'code'}{$S} > 0) {
                       $L .= sprintf "%s=\"%.2f\" ", $V, $sum{$V}{$S} / $DEN * 100;
@@ -2188,11 +2187,10 @@ sub diff_xml_yaml_report {                   # {{{1
             push @results, sprintf "%s_total :\n    sum_files : %d", 
                                 $S, $sum{'nFiles'}{$S};
             if ($opt_by_percent) {
-                my %den        = ( "c" =>     $sum{'code'}{$S} );
-                   $den{"cm"}  = $den{"c"}  + $sum{'comment'}{$S};
-                   $den{"cmb"} = $den{"cm"} + $sum{'blank'}{$S};
-                   $den{"cb"}  = $den{"c"}  + $sum{'blank'}{$S};
-                my $DEN = $den{ $opt_by_percent };
+                my $DEN = compute_denominator($opt_by_percent    ,
+                                              $sum{'code'}{$S}   ,
+                                              $sum{'comment'}{$S},
+                                              $sum{'blank'}{$S}  );
                 foreach my $V (qw(blank comment)) {
                     if ($sum{'code'}{$S} > 0) {
                         push @results, sprintf "    %s : %.2f", $V, $sum{$V}{$S} / $DEN * 100;
@@ -2597,17 +2595,12 @@ sub generate_report {                        # {{{1
         } else {
             $data_line .= sprintf "%${spacing_2}s "  , "files";
         }
-        if ($opt_by_percent) {
-            $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
-                "blank \%"      ,
-                "comment \%"    ,
-                "code";
-        } else {
-            $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
-                "blank"         ,
-                "comment"       ,
-                "code";
-        }
+        my $PCT_symbol = "";
+           $PCT_symbol = " \%" if $opt_by_percent;
+        $data_line .= sprintf "%${spacing_2}s %${spacing_2}s %${spacing_2}s",
+            "blank${PCT_symbol}"   ,
+            "comment${PCT_symbol}" ,
+            "code";
         $data_line .= sprintf " %8s   %14s",
             "scale"         ,
             "3rd gen. equiv"
@@ -2682,11 +2675,10 @@ sub generate_report {                        # {{{1
         $data_line .= sprintf $Format{3}{$Style}  , 
                         $rhh_count->{$lang_or_file}{'nFiles'} unless $BY_FILE;
         if ($opt_by_percent) {
-          my %den        = ( "c" =>     $rhh_count->{$lang_or_file}{'code'} );
-             $den{"cm"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'comment'};
-             $den{"cmb"} = $den{"cm"} + $rhh_count->{$lang_or_file}{'blank'};
-             $den{"cb"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'blank'};
-          my $DEN = $den{ $opt_by_percent };
+          my $DEN = compute_denominator($opt_by_percent       ,
+                        $rhh_count->{$lang_or_file}{'code'}   ,
+                        $rhh_count->{$lang_or_file}{'comment'},
+                        $rhh_count->{$lang_or_file}{'blank'}  );
           $data_line .= sprintf $Format{5}{$Style}  , 
               $rhh_count->{$lang_or_file}{'blank'}   / $DEN * 100,
               $rhh_count->{$lang_or_file}{'comment'} / $DEN * 100,
@@ -2720,11 +2712,10 @@ sub generate_report {                        # {{{1
             push @results,"  nFiles: "  .$rhh_count->{$lang_or_file}{'nFiles'} 
                 unless $BY_FILE;
             if ($opt_by_percent) {
-              my %den        = ( "c" =>     $rhh_count->{$lang_or_file}{'code'} );
-                 $den{"cm"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'comment'};
-                 $den{"cmb"} = $den{"cm"} + $rhh_count->{$lang_or_file}{'blank'};
-                 $den{"cb"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'blank'};
-              my $DEN = $den{ $opt_by_percent };
+              my $DEN = compute_denominator($opt_by_percent       ,
+                            $rhh_count->{$lang_or_file}{'code'}   ,
+                            $rhh_count->{$lang_or_file}{'comment'},
+                            $rhh_count->{$lang_or_file}{'blank'}  );
               push @results,"  blank: "   . sprintf("%3.2f", $rhh_count->{$lang_or_file}{'blank'} / $DEN * 100);
               push @results,"  comment: " . sprintf("%3.2f", $rhh_count->{$lang_or_file}{'comment'} / $DEN * 100);
               push @results,"  code: "    . $rhh_count->{$lang_or_file}{'code'}   ;
@@ -2753,11 +2744,10 @@ sub generate_report {                        # {{{1
             my $str = $first_column                         . ${DELIM} .
                       $clean_name                           . ${DELIM};
             if ($opt_by_percent) { 
-              my %den        = ( "c" =>     $rhh_count->{$lang_or_file}{'code'}{'code'} );
-                 $den{"cm"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'code'}{'comment'};
-                 $den{"cmb"} = $den{"cm"} + $rhh_count->{$lang_or_file}{'code'}{'blank'};
-                 $den{"cb"}  = $den{"c"}  + $rhh_count->{$lang_or_file}{'code'}{'blank'};
-              my $DEN = $den{ $opt_by_percent };
+              my $DEN = compute_denominator($opt_by_percent               ,
+                            $rhh_count->{$lang_or_file}{'code'}{'code'}   ,
+                            $rhh_count->{$lang_or_file}{'code'}{'comment'},
+                            $rhh_count->{$lang_or_file}{'code'}{'blank'}  );
               $str .= sprintf("%3.2f", $rhh_count->{$lang_or_file}{'blank'}   / $DEN * 100) . ${DELIM} .
                       sprintf("%3.2f", $rhh_count->{$lang_or_file}{'comment'} / $DEN * 100) . ${DELIM} .
                       $rhh_count->{$lang_or_file}{'code'};
@@ -2783,11 +2773,8 @@ sub generate_report {                        # {{{1
             $data_line .= sprintf "sum_files=\"%d\" ", $sum_files;
         }
         if ($opt_by_percent) {
-          my %den        = ( "c" =>     $sum_code );
-             $den{"cm"}  = $den{"c"}  + $sum_comment;
-             $den{"cmb"} = $den{"cm"} + $sum_blank;
-             $den{"cb"}  = $den{"c"}  + $sum_blank;
-          my $DEN = $den{ $opt_by_percent };
+          my $DEN = compute_denominator($opt_by_percent    ,
+                        $sum_code, $sum_comment, $sum_blank);
           $data_line .= sprintf $Format{'5'}{$Style},
               $sum_blank   / $DEN * 100,
               $sum_comment / $DEN * 100,
@@ -2820,11 +2807,8 @@ sub generate_report {                        # {{{1
     } elsif ($opt_yaml) {
         push @results, "SUM:";
         if ($opt_by_percent) {
-          my %den        = ( "c" =>     $sum_code );
-             $den{"cm"}  = $den{"c"}  + $sum_comment;
-             $den{"cmb"} = $den{"cm"} + $sum_blank;
-             $den{"cb"}  = $den{"c"}  + $sum_blank;
-          my $DEN = $den{ $opt_by_percent };
+          my $DEN = compute_denominator($opt_by_percent    ,
+                        $sum_code, $sum_comment, $sum_blank);
           push @results, "  blank: "  . sprintf("%.2f", $sum_blank   / $DEN * 100);
           push @results, "  comment: ". sprintf("%.2f", $sum_comment / $DEN * 100);
           push @results, "  code: "   . $sum_code   ;
@@ -2849,11 +2833,8 @@ sub generate_report {                        # {{{1
             $data_line .= sprintf "%${spacing_2}d ", $sum_files;
         }
         if ($opt_by_percent) {
-          my %den        = ( "c" =>     $sum_code );
-             $den{"cm"}  = $den{"c"}  + $sum_comment;
-             $den{"cmb"} = $den{"cm"} + $sum_blank;
-             $den{"cb"}  = $den{"c"}  + $sum_blank;
-          my $DEN = $den{ $opt_by_percent };
+          my $DEN = compute_denominator($opt_by_percent    ,
+                        $sum_code, $sum_comment, $sum_blank);
           $data_line .= sprintf $Format{'5'}{$Style},
               $sum_blank   / $DEN * 100,
               $sum_comment / $DEN * 100,
