@@ -606,7 +606,8 @@ if ($opt_sql eq "-" || $opt_sql eq "1") { # stream SQL output to STDOUT
     $skip_generate_report = 1;
     $opt_sum_reports      = 0;
 }
-if (defined $opt_by_percent and $opt_by_percent !~ m/^(c|cm|cb|cmb)$/i) {
+$opt_by_percent = '' unless defined $opt_by_percent;
+if ($opt_by_percent and $opt_by_percent !~ m/^(c|cm|cb|cmb)$/i) {
     die "--by-percent must be either 'c', 'cm', 'cb', or 'cmb'\n";
 }
 $opt_by_percent = lc $opt_by_percent;
@@ -3968,7 +3969,7 @@ sub rm_comments {                            # {{{1
     }
     # Exception for scripting languages:  treat the first #! line as code.
     # Will need to add it back in if it was removed earlier.
-    if ($Script_Language{$language} and 
+    if (defined $Script_Language{$language} and 
         $original_lines[0] =~ /^#!/ and
         (scalar(@lines) == 0 or 
          $lines[0] ne $original_lines[0])) {
