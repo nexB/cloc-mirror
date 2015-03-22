@@ -2362,8 +2362,6 @@ create table t        (
                 nBlank        integer        ,  
                 nComment      integer        ,  
                 nCode         integer        ,  
-                pctComment    real           ,  
-                pctCode       real           ,  
                 nScaled       real           ); 
 ";
     $opt_sql = "-" if $opt_sql eq "1";
@@ -2405,8 +2403,6 @@ create table t        (
                     $rhh_count->{$file}{'blank'},
                     $rhh_count->{$file}{'comment'},
                     $rhh_count->{$file}{'code'}   ,
-                    $rhh_count->{$file}{'blank'} / $rhh_count->{$file}{'code'} * 100,
-                    $rhh_count->{$file}{'comment'} / $rhh_count->{$file}{'code'} * 100,
                     $rhh_count->{$file}{'code'}*$rh_scale->{$language};
 
         ++$nIns;
