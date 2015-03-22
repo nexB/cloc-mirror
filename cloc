@@ -8213,59 +8213,62 @@ sub matlab_or_objective_C {                  # {{{1
     my $has_braces         = 0;
     while (<$IN>) {
         ++$has_braces if $_ =~ m/[{}]/;
+#print "LINE $. has_braces=$has_braces\n";
         ++$mumps_points if $. == 1 and m{^[A-Z]};
-        if      (m{^\s*/\*}) {           #   /*
-            ++$objective_C_points;
-            --$matlab_points;
-printf ".m:  /*     obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+        if      (m{^\s*/\*} or m {^\s*//}) {   #   /* or //
+            $objective_C_points += 5;
+            $matlab_points      -= 5;
+printf ".m:  /*|//  obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^:-\s+}) {      # gotta be mercury
             $mercury_points = 1000;
             last;
         } elsif (m{\w+\s*=\s*\[}) {      # matrix assignment, very matlab
             $matlab_points += 5;
-printf ".m:  \\w=[   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  \\w=[   obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*\w+\s*=\s*}) {    # definitely not MUMPS
             --$mumps_points;
-printf ".m:  \\w=    obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  \\w=    obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*\.?(\w)\s+(\w)} and $1 !~ /\d/ and $2 !~ /\d/) {
             ++$mumps_points;
-printf ".m:  \\w \\w  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  \\w \\w  obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*;}) {
             ++$mumps_points;
-printf ".m:  ;      obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  ;      obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*#(include|import)}) {
             # Objective C without a doubt
-            $objective_C_points = 1;
+            $objective_C_points = 1000;
             $matlab_points      = 0;
-printf ".m: #includ obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m: #includ obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
             $has_braces         = 2;
             last;
         } elsif (m{^\s*@(interface|implementation|protocol|public|protected|private|end)\s}o) {
             # Objective C without a doubt
-            $objective_C_points = 1;
+            $objective_C_points = 1000;
             $matlab_points      = 0;
-printf ".m: keyword obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m: keyword obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
             last;
         } elsif (m{^\s*\[}) {             #   line starts with [  -- very matlab
             $matlab_points += 5;
-printf ".m:  [      obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  [      obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\sK(ill)?\s+}) {
             $mumps_points  += 5;
-printf ".m:  Kill   obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  Kill   obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*function}) {
             --$objective_C_points;
             ++$matlab_points;
-printf ".m:  funct  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  funct  obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         } elsif (m{^\s*%}) {              #   %
             # matlab commented line
             --$objective_C_points;
             ++$matlab_points;
-printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d\n", $objective_C_points, $matlab_points, $mumps_points if $DEBUG;
+printf ".m:  pcent  obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
         }
     }
     $IN->close;
+printf "END LOOP    obj C=% 2d  matlab=% 2d  mumps=% 2d  mercury= % 2d\n", $objective_C_points, $matlab_points, $mumps_points, $mercury_points if $DEBUG;
 
-    $objective_C_points = -9.9e20 unless $has_braces >= 2;
+    # next heuristic is unreliable for small files
+#   $objective_C_points = -9.9e20 unless $has_braces >= 2;
 
     my %points = ( 'MATLAB'      => $matlab_points     ,
                    'MUMPS'       => $mumps_points      ,
