@@ -3953,6 +3953,10 @@ sub rm_comments {                            # {{{1
     my @lines          = @{$ra_lines};
     my @original_lines = @{$ra_lines};
 
+    if (!scalar @original_lines) {
+        return @lines;
+    }
+
     foreach my $call_string (@routines) {
         my $subroutine = $call_string->[0];
         if (! defined &{$subroutine}) {
