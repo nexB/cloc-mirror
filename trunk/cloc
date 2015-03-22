@@ -2897,6 +2897,7 @@ sub write_lang_def {                         # {{{1
                 $language eq "Lisp/OpenCL"              or
                 $language eq "Lisp/Julia"               or
                 $language eq "Perl/Prolog"              or
+                $language eq "D/dtrace"                 or
                 $language eq "IDL/Qt Project/Prolog";
         printf $OUT "%s\n", $language;
         foreach my $filter (@{$rhaa_Filters_by_Language->{$language}}) {
@@ -3134,6 +3135,10 @@ sub print_language_info {                    # {{{1
         push @{$extensions{'Qt Project'}}, "pro";
         push @{$extensions{'Prolog'}}    , "pro";
         delete $extensions{'IDL/Qt Project/Prolog'};
+    } elsif ($language =~ /^(D|dtrace)$/i) {
+        push @{$extensions{'D'}}       , "d";
+        push @{$extensions{'dtrace'}}  , "d";
+        delete $extensions{'D/dtrace'};
     } elsif ($language =~ /^(Ant)$/i) {
         push @{$extensions{'Ant'}}  , "build.xml";
         delete $extensions{'Ant/XML'};
@@ -3542,6 +3547,21 @@ sub classify_file {                          # {{{1
             } elsif ($Language_by_Extension{$extension} eq 
                      'IDL/Qt Project/Prolog') {
                 return IDL_or_QtProject($full_file, $rh_Err, $raa_errors);
+            } elsif ($Language_by_Extension{$extension} eq 'D/dtrace') {
+                # is it D or an init.d shell script?
+                my $a_script = really_is_D($full_file, $rh_Err, $raa_errors);
+                if ($a_script) {
+                    # could be dtrace, sh, bash or anything one would
+                    # write an init.d script in
+                    if (defined $Language_by_Script{$a_script}) {
+                        return $Language_by_Script{$a_script};
+                    } else {
+                        $rh_ignored->{$full_file} = 
+                            "Unrecognized script language, '$a_script'";
+                    }
+                } else {
+                    return 'D';
+                }
             } elsif ($Language_by_Extension{$extension} eq 'Smarty') {
                 # Smarty extension .tpl is generic; make sure the
                 # file at least roughly resembles PHP.  Alternatively,
@@ -4628,7 +4648,9 @@ sub set_constants {                          # {{{1
             'ctl'         => 'Visual Basic'          ,
             'cu'          => 'CUDA'                  ,
             'cxx'         => 'C++'                   ,
-            'd'           => 'D'                     ,
+            'd'           => 'D/dtrace'              ,
+# in addition, .d can map to init.d files typically written as 
+# bash or sh scripts
             'da'          => 'DAL'                   ,
             'dart'        => 'Dart'                  ,
             'def'         => 'Windows Module Definition',
@@ -4871,6 +4893,7 @@ sub set_constants {                          # {{{1
             'bc'       => 'bc'                    ,# calculator
             'csh'      => 'C Shell'               ,
             'dmd'      => 'D'                     ,
+            'dtrace'   => 'dtrace'                ,
             'idl'      => 'IDL'                   ,
             'kermit'   => 'Kermit'                ,
             'ksh'      => 'Korn Shell'            ,
@@ -4969,6 +4992,14 @@ sub set_constants {                          # {{{1
                                 [ 'remove_matches'      , '^\s*#'  ], 
                                 [ 'remove_inline'       , '#.*$'   ],
                             ], 
+    'Bourne Again Shell' => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
+    'Bourne Shell'       => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'C'                  => [   
                                 [ 'remove_matches'      , '^\s*//' ], # C99
                                 [ 'call_regexp_common'  , 'C'      ], 
@@ -5021,6 +5052,7 @@ sub set_constants {                          # {{{1
                                 [ 'remove_inline'       , '//.*$'  ], 
                             ],
     'Crystal Reports'    => [   [ 'remove_matches'      , '^\s*//' ], ],
+    'D/dtrace'           => [ [ 'die' ,          ], ], # never called
     'D'                  => [   
                                 [ 'remove_matches'      , '^\s*//' ], 
                                 [ 'remove_between_general', '/+', '+/' ],
@@ -5049,6 +5081,10 @@ sub set_constants {                          # {{{1
                                 [ 'remove_html_comments',          ],
                                 [ 'call_regexp_common'  , 'HTML'   ],
                             ],
+    'dtrace'             => [   
+                                [ 'remove_matches'      , '^\s*#'  ], 
+                                [ 'remove_inline'       , '#.*$'   ],
+                            ], 
     'ECPP'               => [   
                                 [ 'remove_between_general', 
                                   '<%doc>', '</%doc>',             ],
@@ -5419,14 +5455,7 @@ sub set_constants {                          # {{{1
                                 [ 'call_regexp_common'  , 'C'      ],
                                 [ 'remove_inline'       , '//.*$'  ],
                             ],
-    'Bourne Again Shell' => [   
-                                [ 'remove_matches'      , '^\s*#'  ], 
-                                [ 'remove_inline'       , '#.*$'   ],
-                            ], 
-    'Bourne Shell'       => [   
-                                [ 'remove_matches'      , '^\s*#'  ], 
-                                [ 'remove_inline'       , '#.*$'   ],
-                            ], 
+
     'm4'                 => [   [ 'remove_matches'      , '^dnl '  ], ], 
     'C Shell'            => [   
                                 [ 'remove_matches'      , '^\s*#'  ], 
@@ -5903,6 +5932,7 @@ sub set_constants {                          # {{{1
     'delphi'                       =>   2.76,
     'DITA'                         =>   1.90,
     'dl/1'                         =>   2.00,
+    'dtrace'                       =>   2.00,
     'NASTRAN DMAP'                 =>   2.35,
     'dna4'                         =>   4.21,
     'DOS Batch'                    =>   0.63,
@@ -6415,6 +6445,7 @@ sub check_scale_existence {                  # {{{1
         "Pascal/Puppet"                     => 1,
         "Perl/Prolog"                       => 1,
         "IDL/Qt Project/Prolog"             => 1,
+        "D/dtrace"                          => 1,
     );
     my $OK = 1;
     foreach my $language (sort keys %{$rhaa_Filters_by_Language}) {
@@ -10033,6 +10064,19 @@ sub get_time {                               # {{{1
     } else {
         return time();
     }
+} # 1}}}
+sub really_is_D {                            # {{{1
+    # Ref bug 131, files ending with .d could be init.d scripts
+    # instead of D language source files.
+    my ($file        , # in
+        $rh_Err      , # in   hash of error codes
+        $raa_errors  , # out
+       ) = @_;
+    print "-> really_is_D($file)\n" if $opt_v > 2;
+    my $possible_script = peek_at_first_line($file, $rh_Err, $raa_errors);
+
+    print "<- really_is_D($file)\n" if $opt_v > 2;
+    return $possible_script;    # null string if D, otherwise a language
 } # 1}}}
 # subroutines copied from SLOCCount
 my %lex_files    = ();  # really_is_lex()
