@@ -4464,7 +4464,7 @@ sub docstring_to_C {                         # {{{1
     foreach (@{$ra_lines}) {
         while (/"""/) {
             if (!$in_docstring) {
-                s{"""}{/*};
+                s{[uU]?"""}{/*};
                 $in_docstring = 1;
             } else {
                 s{"""}{*/};
