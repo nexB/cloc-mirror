@@ -10005,6 +10005,8 @@ sub combine_diffs {                          # {{{1
 
         my $sec;
         while (<$IN>) {
+            chomp;
+            s/\cM$//;
             next if /^(http|Language|-----)/;
             if (/^[A-Za-z0-9]+/) {        # section title
                 $sec = $_;
@@ -10019,7 +10021,7 @@ sub combine_diffs {                          # {{{1
                 my $ttl = shift @ar;
                 my $i = 0;
                 foreach(@ar) {
-                    my $t = "$ttl$dl$cols[$i]";
+                    my $t = "${ttl}${dl}${cols[$i]}";
                     $HoH{$sec}{$t} = 0 if ! exists $HoH{$sec}{$t};
                     $HoH{$sec}{$t} += $_;
                     $i++;
@@ -10042,10 +10044,10 @@ sub combine_diffs {                          # {{{1
         $res .= "$sec\n";
         foreach (@rows) {
             $res .= sprintf(" %-18s %14s %14s %14s %14s\n", 
-                            $_, $HoH{$sec}{"$_$dl$cols[0]"},
-                                $HoH{$sec}{"$_$dl$cols[1]"},
-                                $HoH{$sec}{"$_$dl$cols[2]"},
-                                $HoH{$sec}{"$_$dl$cols[3]"});
+                            $_, $HoH{$sec}{"${_}${dl}${cols[0]}"},
+                                $HoH{$sec}{"${_}${dl}${cols[1]}"},
+                                $HoH{$sec}{"${_}${dl}${cols[2]}"},
+                                $HoH{$sec}{"${_}${dl}${cols[3]}"});
         }
     }
     $res .= sprintf("%s\n", "-" x $width);
@@ -10053,10 +10055,10 @@ sub combine_diffs {                          # {{{1
     $res .= "$sec\n";
     foreach (@rows) {
         $res .= sprintf(" %-18s %14s %14s %14s %14s\n", 
-                        $_, $HoH{$sec}{"$_$dl$cols[0]"},
-                            $HoH{$sec}{"$_$dl$cols[1]"},
-                            $HoH{$sec}{"$_$dl$cols[2]"},
-                            $HoH{$sec}{"$_$dl$cols[3]"});
+                        $_, $HoH{$sec}{"${_}${dl}${cols[0]}"},
+                            $HoH{$sec}{"${_}${dl}${cols[1]}"},
+                            $HoH{$sec}{"${_}${dl}${cols[2]}"},
+                            $HoH{$sec}{"${_}${dl}${cols[3]}"});
     }
     $res .= sprintf("%s\n", "-" x $width);
   
