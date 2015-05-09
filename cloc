@@ -384,6 +384,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              SQLite.  If <file> is -, output is sent to STDOUT.
    --sql-project=<name>      Use <name> as the project identifier for the
                              current run.  Only valid with the --sql option.
+   --sql-style=<style>       Write SQL statements in the given style.
+                             Currently, the only style option is Oracle.
    --sql-append              Append SQL insert statements to the file specified
                              by --sql and do not generate table creation
                              statements.  Only valid with the --sql option.
@@ -462,6 +464,7 @@ my (
     $opt_sql                  ,
     $opt_sql_append           ,
     $opt_sql_project          ,
+    $opt_sql_style            ,
     $opt_inline               ,
     $opt_exclude_ext          ,
     $opt_ignore_whitespace    ,
@@ -532,6 +535,7 @@ my $getopt_success = GetOptions(
    "sql=s"                                   => \$opt_sql                 ,
    "sql_project|sql-project=s"               => \$opt_sql_project         ,
    "sql_append|sql-append"                   => \$opt_sql_append          ,
+   "sql_style|sql-style=s"                   => \$opt_sql_style           ,
    "inline"                                  => \$opt_inline              ,
    "exclude_ext|exclude-ext=s"               => \$opt_exclude_ext         ,
    "ignore_whitespace|ignore-whitespace"     => \$opt_ignore_whitespace   ,
@@ -594,7 +598,8 @@ if (defined $opt_xsl) {
     $opt_xml = 1;
 }
 my $skip_generate_report = 0;
-$opt_sql = 0 unless defined $opt_sql;
+$opt_sql_style = 0 unless defined $opt_sql_style;
+$opt_sql = 0 unless $opt_sql_style or defined $opt_sql;
 if ($opt_sql eq "-" || $opt_sql eq "1") { # stream SQL output to STDOUT
     $opt_quiet            = 1;
     $skip_generate_report = 1;
@@ -605,6 +610,12 @@ if ($opt_sql eq "-" || $opt_sql eq "1") { # stream SQL output to STDOUT
     $opt_by_file          = 1;
     $skip_generate_report = 1;
     $opt_sum_reports      = 0;
+}
+if ($opt_sql_style) {
+    $opt_sql_style = lc $opt_sql_style;
+    if (!grep { lc $_ eq $opt_sql_style } qw ( Oracle )) {
+        die "'$opt_sql_style' is not a recognized SQL style.\n";
+    }
 }
 $opt_by_percent = '' unless defined $opt_by_percent;
 if ($opt_by_percent and $opt_by_percent !~ m/^(c|cm|cb|cmb)$/i) {
@@ -2348,7 +2359,34 @@ sub generate_sql    {                        # {{{1
     $opt_sql_project = cwd() unless defined $opt_sql_project;
     $opt_sql_project =~ s{/}{\\}g if $ON_WINDOWS;
 
-    my $schema = "
+    my $schema = undef;
+    if ($opt_sql_style eq "oracle") {
+        $schema = "
+CREATE TABLE metadata
+(
+  timestamp   TIMESTAMP,
+  project     VARCHAR2(500 CHAR),
+  elapsed_s   NUMBER(10, 6)
+) 
+/
+
+CREATE TABLE t
+( 
+  project        VARCHAR2(500 CHAR),
+  language       VARCHAR2(500 CHAR),
+  file_fullname  VARCHAR2(500 CHAR),
+  file_dirname   VARCHAR2(500 CHAR),
+  file_basename  VARCHAR2(500 CHAR),
+  nblank         INTEGER,
+  ncomment       INTEGER,
+  ncode          INTEGER,
+  nscaled        NUMBER(10, 6)
+)
+/
+
+";
+    } else {
+        $schema = "
 create table metadata (          -- $URL v $VERSION
                 timestamp varchar(500),    
                 Project   varchar(500),    
@@ -2364,6 +2402,7 @@ create table t        (
                 nCode         integer        ,  
                 nScaled       real           ); 
 ";
+    }
     $opt_sql = "-" if $opt_sql eq "1";
 
     my $open_mode = ">";
@@ -2375,10 +2414,16 @@ create table t        (
     }
     print $fh $schema unless defined $opt_sql_append;
 
-    print $fh "begin transaction;\n";
-    printf $fh "insert into metadata values('%s', '%s', %f);\n",
-                strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
-                $opt_sql_project, $elapsed_sec;
+    if ($opt_sql_style eq "oracle") {
+        printf $fh "insert into metadata values(TO_TIMESTAMP('%s','yyyy-mm-dd hh24:mi:ss'), '%s', %f);\n",
+                    strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
+                    $opt_sql_project, $elapsed_sec;
+    } else {
+        print $fh "begin transaction;\n";
+        printf $fh "insert into metadata values('%s', '%s', %f);\n",
+                    strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
+                    $opt_sql_project, $elapsed_sec;
+    }
 
     my $nIns = 0;
     foreach my $file (keys %{$rhh_count}) {
@@ -2406,12 +2451,14 @@ create table t        (
                     $rhh_count->{$file}{'code'}*$rh_scale->{$language};
 
         ++$nIns;
-        if (!($nIns % 10_000)) {
+        if (!($nIns % 10_000) and ($opt_sql_style ne "oracle")) {
             print $fh "commit;\n";
             print $fh "begin transaction;\n";
         }
     }
-    print $fh "commit;\n";
+    if ($opt_sql_style ne "oracle") {
+        print $fh "commit;\n";
+    }
 
     $fh->close unless $opt_sql eq "-"; # don't try to close STDOUT
     print "<- generate_sql\n" if $opt_v > 2;
