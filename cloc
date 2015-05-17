@@ -161,8 +161,11 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                                --extract-with=\"\\\"c:\\Program Files\\WinZip\\WinZip32.exe\\\" -e -o >FILE< .\"
                              (if WinZip is installed there).
    --list-file=<file>        Take the list of file and/or directory names to
-                             process from <file> which has one file/directory
-                             name per line.  See also --exclude-list-file.
+                             process from <file>, which has one file/directory
+                             name per line.  Only exact matches are counted;
+                             relative path names will be resolved starting from 
+                             the directory where cloc is invoked.  
+                             See also --exclude-list-file.
    --unicode                 Check binary files to see if they contain Unicode
                              expanded ASCII text.  This causes performance to
                              drop noticably.
@@ -173,12 +176,19 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --by-file                 Report results for every source file encountered.
    --by-file-by-lang         Report results for every source file encountered
                              in addition to reporting by language.
+   --count-and-diff <set1> <set2>    
+                             First perform direct code counts of source file(s)
+                             of <set1> and <set2> separately, then perform a diff 
+                             of these.  Inputs may be pairs of files, directories, 
+                             or archives.  See also --diff, --diff-alignment,
+                             --diff-timeout, --ignore-case, --ignore-whitespace.
    --diff <set1> <set2>      Compute differences in code and comments between
                              source file(s) of <set1> and <set2>.  The inputs
                              may be pairs of files, directories, or archives.
                              Use --diff-alignment to generate a list showing
                              which file pairs where compared.  See also
-                             --ignore-case, --ignore-whitespace.
+                             --count+diff, --diff-timeout, --ignore-case, 
+                             --ignore-whitespace.
    --diff-timeout <N>        Ignore files which take more than <N> seconds
                              to process.  Default is 10 seconds.
                              (Large files with many repeated lines can cause 
@@ -293,10 +303,11 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --exclude-lang=<L1>[,L2,] Exclude the given comma separated languages
                              L1, L2, L3, et cetera, from being counted.
    --exclude-list-file=<file>  Ignore files and/or directories whose names
-                             appear in <file>.  <file> should have one entry
-                             per line.  Relative path names will be resolved
-                             starting from the directory where cloc is
-                             invoked.  See also --list-file.
+                             appear in <file>.  <file> should have one file
+                             name per line.  Only exact matches are ignored;
+                             relative path names will be resolved starting from 
+                             the directory where cloc is invoked.  
+                             See also --list-file.
    --include-lang=<L1>[,L2,] Include only the given comma separated languages
                              L1, L2, L3, et cetera, in the count.
    --match-d=<regex>         Only count files in directories matching the Perl
@@ -414,6 +425,7 @@ my (
     @opt_force_lang           ,
     $opt_lang_no_ext          ,
     @opt_script_lang          ,
+    $opt_count_diff           ,
     $opt_diff                 ,
     $opt_diff_alignment       ,
     $opt_diff_timeout         ,
@@ -491,6 +503,7 @@ my $getopt_success = GetOptions(
    "explain=s"                               => \$opt_explain             ,
    "extract_with|extract-with=s"             => \$opt_extract_with        ,
    "found=s"                                 => \$opt_found               ,
+   "count_and_diff|count-and-diff"           => \$opt_count_diff          ,
    "diff"                                    => \$opt_diff                ,
    "diff-alignment|diff_alignment=s"         => \$opt_diff_alignment      ,
    "diff-timeout|diff_timeout=i"             => \$opt_diff_timeout        ,
@@ -573,6 +586,7 @@ $Exclude_Dir{".cvs"}   = 1;
 $Exclude_Dir{".hg"}    = 1;
 $Exclude_Dir{".git"}   = 1;
 $Exclude_Dir{".bzr"}   = 1;
+$opt_count_diff        = defined $opt_count_diff ? 1 : 0;
 $opt_diff              = 1  if $opt_diff_alignment;
 $opt_exclude_ext       = "" unless $opt_exclude_ext;
 $opt_ignore_whitespace = 0  unless $opt_ignore_whitespace;
@@ -584,6 +598,19 @@ $opt_csv               = 1  if $opt_csv_delimiter;
 $ON_WINDOWS            = 1  if $opt_force_on_windows;
 $ON_WINDOWS            = 0  if $opt_force_on_unix;
 $opt_max_file_size     = 100 unless $opt_max_file_size;
+
+my @COUNT_DIFF_ARGV        = undef;
+my $COUNT_DIFF_report_file = undef;
+if ($opt_count_diff) {
+    die "--count-and-diff requires two arguments; got ", scalar @ARGV, "\n" 
+        if scalar @ARGV != 2;
+    # prefix with a dummy term so that $opt_count_diff is the
+    # index into @COUNT_DIFF_ARGV to work on at each pass
+    @COUNT_DIFF_ARGV = (undef, $ARGV[0],
+                               $ARGV[1],
+                              [$ARGV[0], $ARGV[1]]);  # 3rd pass: diff them
+    $COUNT_DIFF_report_file = $opt_report_file if $opt_report_file;
+}
 
 # Options defaults:
 $opt_progress_rate = 100 unless defined $opt_progress_rate;
@@ -776,6 +803,37 @@ print_language_filters( $opt_explain      ) if defined $opt_explain  ;
 exit if (defined $opt_show_ext)  or 
         (defined $opt_show_lang) or
         (defined $opt_explain);
+
+Top_of_Processing_Loop:
+# Sorry, coding purists.  Using a goto to implement --count-and-diff
+# which has to do three passes over the main code, starting with
+# a clean slate each time.
+if ($opt_count_diff) {
+    @ARGV = ( $COUNT_DIFF_ARGV[ $opt_count_diff ] );
+    if ($opt_count_diff == 3) {
+        $opt_diff = 1;
+        @ARGV = @{$COUNT_DIFF_ARGV[ $opt_count_diff ]}; # last arg is list of list
+    }
+    if ($opt_report_file) { 
+        # Instead of just one output file, will have three.
+        # Keep their names unique otherwise results are clobbered.
+        if ($opt_count_diff == 3) {
+            $opt_report_file = $COUNT_DIFF_report_file . ".diff.$ARGV[0].$ARGV[1]";
+        } else {
+            $opt_report_file = $COUNT_DIFF_report_file . "." .  $ARGV[0];
+        }
+    } else {
+        # STDOUT; print a header showing what it's working on
+        if ($opt_count_diff == 3) {
+            print "\ndiff $ARGV[0] $ARGV[1]::\n";
+        } else {
+            print "\n" if $opt_count_diff > 1;
+            print "$ARGV[0]::\n";
+        }
+    }
+    $ALREADY_SHOWED_HEADER      = 0;
+    $ALREADY_SHOWED_XML_SECTION = 0;
+}
 
 #print "Before glob have [", join(",", @ARGV), "]\n";
 @ARGV = windows_glob(@ARGV) if $ON_WINDOWS;
@@ -1629,6 +1687,11 @@ if      ($opt_by_file_by_lang) {
 }
 if ($opt_report_file) { write_file($opt_report_file, @Lines_Out); } 
 else                  { print "\n", join("\n", @Lines_Out), "\n"; }
+if ($opt_count_diff) {
+    ++$opt_count_diff;
+    exit if $opt_count_diff > 3;
+    goto Top_of_Processing_Loop;
+}
 
 sub process_exclude_list_file {              # {{{1
     my ($list_file      , # in
