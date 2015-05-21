@@ -1116,10 +1116,6 @@ my %Results_by_Language = ();
 my %Results_by_File     = ();
 my %Delta_by_Language   = ();
 my %Delta_by_File       = ();
-my $nFiles_added        = 0;
-my $nFiles_removed      = 0;
-my $nFiles_modified     = 0;
-my $nFiles_same         = 0;
 
 foreach (my $F = 0; $F < scalar @fh - 1; $F++) { 
     # loop over file sets; do diff between set $F to $F+1
@@ -4027,6 +4023,11 @@ sub read_file  {                             # {{{1
         }
     }
 
+    # Trim DOS line endings.  This allows Windows files
+    # to be diff'ed with Unix files without line endings
+    # causing every line to differ.
+    foreach (@lines) { s/\cM$// }
+
     print "<- read_file\n" if $opt_v > 2;
     return @lines;
 } # 1}}}
@@ -4048,6 +4049,7 @@ sub rm_blanks {                              # {{{1
             @out = remove_matches($ra_in, '^\s*$');
         }
     }
+
     print "<- rm_blanks(language=$language)\n" if $opt_v > 2;
     return @out;
 } # 1}}}
