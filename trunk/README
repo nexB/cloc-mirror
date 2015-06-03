@@ -26,7 +26,7 @@ Project details
       See Devel site
 
     Depends
-      Perl (any version). Uses only standard Perl libraries.
+      Perl (version 5.006 or newer). Uses only standard Perl libraries.
       CPAN Algorithm::Diff
       CPAN Regexp::Common
 
