@@ -1,7 +1,7 @@
 #   Copyright
 #
-#      Copyright (C) 2014 Al Danial <al.danial@gmail.com>.
-#      Copyright (C) 2010-2014 Jari Aalto <jari.aalto@cante.net>
+#      Copyright (C) 2015 Al Danial <al.danial@gmail.com>.
+#      Copyright (C) 2010-2015 Jari Aalto <jari.aalto@cante.net>
 #
 #   License
 #
@@ -112,13 +112,22 @@ Report results for every source file encountered.
 Report results for every source file encountered in addition to
 reporting by language.
 
+=item B<--count-and-diff SET1 SET2>
+
+First perform direct code counts of source file(s)
+of SET1 and SET2 separately, then perform a diff 
+of these.  Inputs may be pairs of files, directories, 
+or archives.  See also B<--diff>, B<--diff-alignment>, 
+B<--diff-timeout>, B<--ignore-case>, B<--ignore-whitespace>.
+
 =item B<--diff SET1 SET2>
 
 Compute differences in code and comments between source file(s) of 
 SET1 and SET2.  The inputs may be pairs of files, directories, or 
 archives.  Use B<--diff-alignment> to generate a list showing
-which file pairs where compared.  See also B<--ignore-case>, 
-B<--ignore-whitespace>.
+which file pairs where compared.  See also 
+B<--count-and-diff>, B<--diff-alignment>, B<--diff-timeout>, 
+B<--ignore-case>, B<--ignore-whitespace>.
 
 =item B<--diff-timeout N>
 
@@ -282,15 +291,22 @@ C<.hg>, and C<.svn> are always excluded.
 
 Do not count files having the given file name extensions.
 
-=item B<--exclude-lang=<L1>[,<L2> ...]>
+=item B<--exclude-lang=L1[,L2 ...]>
 
 Exclude the given comma separated languages from being counted.
 
 =item B<--exclude-list-file=FILE>
 
 Ignore files whose names appear in FILE. FILE should have one entry
-per line. Relative path names will be resolved starting from the
-directory where cloc is invoked. See also B<--list-file>.
+per line.  Only exact matches are ignored;
+relative path names will be resolved starting from 
+the directory where cloc is invoked.  
+See also B<--list-file>.
+
+=item B<--include-lang=L1[,L2 ...]>
+
+Count only the given comma separated languages
+L1, L2, L3, et cetera.
 
 =item B<--match-d=REGEX>
 
@@ -416,6 +432,22 @@ Print third-generation language output.  (This option can cause report
 summation to fail if some reports were produced with this option while 
 others were produced without it.)
 
+=item B<--by-percent X>          
+
+Instead of comment and blank line counts, show 
+these values as percentages based on the
+value of X in the denominator:
+
+    X = 'c'   -> # lines of code
+    X = 'cm'  -> # lines of code + comments
+    X = 'cb'  -> # lines of code + blanks
+    X = 'cmb' -> # lines of code + comments + blanks
+
+For example, if using method 'c' and your code
+has twice as many lines of comments as lines 
+of code, the value in the comment column will 
+be 200%.  The code column remains a line count.
+
 =item B<--progress-rate=N>
 
 Show progress update after every N files are processed (default
@@ -449,15 +481,20 @@ Write results as SQL CREATE and INSERT statements which can be read by
 a database program such as SQLite. If FILE is B<->, output is sent to
 I<STDOUT>.
 
+=item B<--sql-append>
+
+Append SQL insert statements to the file specified by B<--sql> and 
+do not generate table creation option.
+
 =item B<--sql-project=NAME>
 
 Use <name> as the project identifier for the current run. Only valid
 with the B<--sql> option.
 
-=item B<--sql-append>
+=item B<--sql-style=STYLE>       
 
-Append SQL insert statements to the file specified by B<--sql> and 
-do not generate table creation option.
+Write SQL statements in the given style instead of the default
+SQLite format.  Currently, the only style option is Oracle.
 
 =item B<--sum-one>
 
@@ -523,7 +560,7 @@ sloccount(1)
 =head1 AUTHORS
 
 The cloc program was written by Al Danial <al.danial@gmail.com> and
-is Copyright (C) 2006-2014 <al.danial@gmail.com>.
+is Copyright (C) 2006-2015 <al.danial@gmail.com>.
 
 The manual page was originally written by Jari Aalto <jari.aalto@cante.net>.
 
