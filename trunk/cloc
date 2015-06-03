@@ -187,8 +187,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              may be pairs of files, directories, or archives.
                              Use --diff-alignment to generate a list showing
                              which file pairs where compared.  See also
-                             --count+diff, --diff-timeout, --ignore-case, 
-                             --ignore-whitespace.
+                             --count-and-diff, --diff-alignment, --diff-timeout, 
+                             --ignore-case, --ignore-whitespace.
    --diff-timeout <N>        Ignore files which take more than <N> seconds
                              to process.  Default is 10 seconds.
                              (Large files with many repeated lines can cause 
@@ -308,8 +308,8 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              relative path names will be resolved starting from 
                              the directory where cloc is invoked.  
                              See also --list-file.
-   --include-lang=<L1>[,L2,] Include only the given comma separated languages
-                             L1, L2, L3, et cetera, in the count.
+   --include-lang=<L1>[,L2,] Count only the given comma separated languages
+                             L1, L2, L3, et cetera.
    --match-d=<regex>         Only count files in directories matching the Perl
                              regex.  For example
                                --match-d='/(src|include)/'
@@ -368,12 +368,12 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
                              if some reports were produced with this option
                              while others were produced without it.)
    --by-percent  X           Instead of comment and blank line counts, show 
-                             these values as percentages based on 
-                             the method given by X:
-                                X = 'c'   -> lines of code
-                                X = 'cm'  -> lines of code + comments
-                                X = 'cb'  -> lines of code + blanks
-                                X = 'cmb' -> lines of code + comments + blanks
+                             these values as percentages based on the value 
+                             of X in the denominator:
+                                X = 'c'   -> # lines of code
+                                X = 'cm'  -> # lines of code + comments
+                                X = 'cb'  -> # lines of code + blanks
+                                X = 'cmb' -> # lines of code + comments + blanks
                              For example, if using method 'c' and your code
                              has twice as many lines of comments as lines 
                              of code, the value in the comment column will 
@@ -393,13 +393,14 @@ Usage: $script [options] <file(s)/dir(s)> | <set 1> <set 2> | <report files>
    --sql=<file>              Write results as SQL create and insert statements
                              which can be read by a database program such as
                              SQLite.  If <file> is -, output is sent to STDOUT.
-   --sql-project=<name>      Use <name> as the project identifier for the
-                             current run.  Only valid with the --sql option.
-   --sql-style=<style>       Write SQL statements in the given style.
-                             Currently, the only style option is Oracle.
    --sql-append              Append SQL insert statements to the file specified
                              by --sql and do not generate table creation
                              statements.  Only valid with the --sql option.
+   --sql-project=<name>      Use <name> as the project identifier for the
+                             current run.  Only valid with the --sql option.
+   --sql-style=<style>       Write SQL statements in the given style instead
+                             of the default SQLite format.  Currently, the 
+                             only style option is Oracle.
    --sum-one                 For plain text reports, show the SUM: output line
                              even if only one input file is processed.
    --xml                     Write the results in XML.
