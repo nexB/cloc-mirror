@@ -1,3 +1,98 @@
+                Release Notes for cloc version 1.64
+                   http://cloc.sourceforge.net
+                           June  4 2015
+
+New Languages:
+    o DITA
+    o dtrace
+    o Elixir
+    o Embedded Ruby
+    o Julia
+    o Mercury
+    o Prolog
+    o Protocol Buffers
+    o PureScript
+    o Qt Project
+    o Racket
+    o SAS
+    o Standard ML
+    o Titanium Style Sheet
+    o Visual FoxPro
+    o Windows Module Definition
+
+Updates:
+    o Add support for sharpsign vertical bar block comments in Lisp.
+    o Added python, python2.6, python2.7, python3, python3.3, python3.4
+      as script executables to identify Python files that don't end in .py.
+    o Added rexx and regina as script executables for Rexx.
+    o Extend Assembly filters to include !, |, @, --.
+    o Add for, FOR, ftn, FTN extensions for Fortran 77.
+    o Improve --show-lang so that it exactly matches a language instead of
+      finding the language in a regex (eg 'C' matched nearly everything).
+    o Update --explain to also print language extensions.
+    o Change --sql schema by adding fields File_dirname, File_basename to 
+      table 't' of SQL output to simplify obtaining per-directory metrics
+    o Escape embedded single quotes in file names (bug #127) for SQL output.
+    o Improved language detection for Objective C (earlier misidentified
+      as MATLAB or other .m languages).
+    o Sort duplicate file lists by full path instead of basename to give
+      repeatable output.
+    o Change SQL schema 'text' type to more standard 'varchar(500)'.
+    o Added .gradle extension for Groovy.
+    o Better handling of files ending with .d (could be Linux init scripts).
+    o Added .robot extension for RobotFramework.
+    o Support Python unicode docstrings, patch by <clemens@kaposi.name>.
+    o Ignore line ending styles when diff'ing Windows and Unix files.
+
+
+New options and features:
+
+   --count-and-diff <set1> <set2>
+                            First perform direct code counts of source file(s)
+                            of <set1> and <set2> separately, then perform a 
+                            diff of these.  Inputs may be pairs of files, 
+                            directories, or archives.  See also --diff, 
+                            --diff-alignment, --diff-timeout, --ignore-case, 
+                            --ignore-whitespace.
+
+   --include-lang=<L1>[,L2,]
+                           Count only the given comma separated languages
+                           L1, L2, L3, et cetera.
+                           Patch by Ryan Lindeman.
+
+   --by-percent  X         Instead of comment and blank line counts, show
+                           these values as percentages based on the value
+                           of X in the denominator:
+                              X = 'c'   -> # lines of code
+                              X = 'cm'  -> # lines of code + comments
+                              X = 'cb'  -> # lines of code + blanks
+                              X = 'cmb' -> # lines of code + comments + blanks
+                           For example, if using method 'c' and your code
+                           has twice as many lines of comments as lines
+                           of code, the value in the comment column will
+                           be 200%.  The code column remains a line count.
+                           Patch by Ryan Lindeman.
+
+   --sql-style=<style>     Write SQL statements in the given style instead
+                           of the default SQLite format.  Currently, the
+                           only style option is Oracle.
+
+
+Bug Fixes:
+    o Added a more sophisticated method to align top level directories
+      for --diff.
+    o Fixes XML output when running with --sum-reports and --xml so the
+      .lang file ends with <languages/> and the .file file ends with
+      <files/> (previously both ended with <languages/>).
+    o Fix logig error when handling HAML block comments.
+    o Fix language filter for Groovy.
+    o Fix some forward and backslash issues with file name parsing
+      in Windows filenames during --diff.
+    o Handle --exclude-file-list when running with --diff.
+    o Fix regex error for detecting double extensions (eg .sproc.sql)
+      provided by Super Dave <faygo@users.sf.net>
+
+============================================================================
                 Release Notes for cloc version 1.62
                    http://cloc.sourceforge.net
                            July 29 2014
